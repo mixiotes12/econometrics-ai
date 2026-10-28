@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control Operativo - EconoMetrics Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              900: '#312e81',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-slate-950 text-slate-100 flex flex-col min-h-screen">
+  <!-- TOP HEADER -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 via-teal-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+          <i class="fa-solid fa-clipboard-list text-white text-lg"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-lg tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">Control Operativo</span>
+            <span class="text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Tracker</span>
+          </div>
+          <p class="text-xs text-slate-400 hidden sm:block">Registro Diario y Comparativa con EconoMetrics</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <a href="index.html" class="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs px-3 py-2 rounded-lg transition font-medium">
+          <i class="fa-solid fa-arrow-left"></i>
+          <span>Volver a EconoMetrics</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+    
+    <!-- SELECCIÓN DE PROYECTO -->
+    <div class="glass-panel p-6 rounded-2xl border border-slate-800/80">
+      <div class="flex items-center justify-between flex-wrap gap-4">
+        <div>
+          <h2 class="text-base font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-link text-indigo-400"></i> Vincular Proyecto
+          </h2>
+          <p class="text-xs text-slate-400">Selecciona un proyecto previamente guardado en EconoMetrics para cargar sus metas mensuales.</p>
+        </div>
+        <select id="projectSelect" class="w-full max-w-sm bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          <option value="">-- Selecciona un proyecto guardado --</option>
+        </select>
+      </div>
+      
+      <!-- METAS PROYECTADAS (Solo visible si hay proyecto seleccionado) -->
+      <div id="projectGoals" class="mt-4 pt-4 border-t border-slate-800 hidden grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div>
+          <div class="text-[10px] text-slate-400 uppercase tracking-wider">Meta Ventas (Mes)</div>
+          <div id="goalUnits" class="text-lg font-bold text-indigo-400 font-mono">0 uds</div>
+        </div>
+        <div>
+          <div class="text-[10px] text-slate-400 uppercase tracking-wider">Precio / Ud</div>
+          <div id="goalPrice" class="text-lg font-bold text-slate-200 font-mono">$0</div>
+        </div>
+        <div>
+          <div class="text-[10px] text-slate-400 uppercase tracking-wider">Presupuesto Riesgos (Mes)</div>
+          <div id="goalShrinkage" class="text-lg font-bold text-rose-400 font-mono">$0</div>
+        </div>
+        <div>
+          <div class="text-[10px] text-slate-400 uppercase tracking-wider">Costo Variable Esperado</div>
+          <div id="goalVariableCost" class="text-lg font-bold text-amber-400 font-mono">$0 / ud</div>
+        </div>
+      </div>
+    </div>
+
+    
+      <!-- Import Key Section -->
+      <div class="glass-panel p-4 rounded-xl border border-slate-800 mb-6 bg-slate-900/50">
+        <h3 class="text-xs font-bold text-slate-300 mb-2">Importar Proyecto desde Clave</h3>
+        <div class="flex gap-2">
+            <input type="text" id="importKeyInput" placeholder="Pega aquí la clave generada en EconoMetrics" class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 font-mono focus:outline-none focus:ring-2 focus:ring-teal-500">
+            <button id="importKeyBtn" class="bg-teal-600 hover:bg-teal-500 text-white px-4 py-2 rounded-lg text-xs font-semibold whitespace-nowrap"><i class="fa-solid fa-download"></i> Importar</button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      
+      <!-- FORMULARIO DE REGISTRO DIARIO -->
+      <div class="glass-panel p-6 rounded-2xl border border-slate-800/80 lg:col-span-1">
+        <h2 class="text-base font-bold text-white mb-4 flex items-center gap-2">
+          <i class="fa-solid fa-plus-circle text-emerald-400"></i> Nuevo Registro
+        </h2>
+        <form id="recordForm" class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Fecha</label>
+            <input type="date" id="recordDate" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Unidades Vendidas Reales</label>
+            <input type="number" id="recordUnits" min="0" step="1" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Ingresos Totales (MXN)</label>
+            <input type="number" id="recordRevenue" min="0" step="0.1" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          </div>
+          <hr class="border-slate-800">
+          <div>
+            <label class="block text-xs font-semibold text-rose-300 mb-1">Pérdidas por Robos/Mermas (MXN)</label>
+            <input type="number" id="recordShrinkage" value="0" min="0" step="0.1" class="w-full bg-slate-900 border border-rose-500/50 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-rose-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-amber-300 mb-1">Gastos Operativos (Compras, Viajes, etc) (MXN)</label>
+            <input type="number" id="recordExpenses" value="0" min="0" step="0.1" class="w-full bg-slate-900 border border-amber-500/50 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500">
+          </div>
+          
+          <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-lg transition mt-4">
+            Guardar Registro
+          </button>
+        </form>
+      </div>
+
+      <!-- DASHBOARD & HISTORIAL -->
+      <div class="lg:col-span-2 space-y-6">
+        
+        <!-- RESUMEN MENSUAL -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="glass-panel p-4 rounded-xl border border-slate-800">
+            <div class="text-[11px] font-medium text-slate-400 uppercase mb-1">Ventas Reales Acum.</div>
+            <div id="statTotalUnits" class="text-xl font-black text-indigo-400 font-mono">0</div>
+          </div>
+          <div class="glass-panel p-4 rounded-xl border border-slate-800">
+            <div class="text-[11px] font-medium text-slate-400 uppercase mb-1">Ingresos Acum.</div>
+            <div id="statTotalRevenue" class="text-xl font-black text-emerald-400 font-mono">$0</div>
+          </div>
+          <div class="glass-panel p-4 rounded-xl border border-slate-800">
+            <div class="text-[11px] font-medium text-slate-400 uppercase mb-1">Total Mermas/Robos</div>
+            <div id="statTotalShrinkage" class="text-xl font-black text-rose-400 font-mono">$0</div>
+          </div>
+          <div class="glass-panel p-4 rounded-xl border border-slate-800">
+            <div class="text-[11px] font-medium text-slate-400 uppercase mb-1">Gastos Variables</div>
+            <div id="statTotalExpenses" class="text-xl font-black text-amber-400 font-mono">$0</div>
+          </div>
+        </div>
+
+        <!-- ANÁLISIS Y DIAGNÓSTICO ESTADÍSTICO -->
+        <div class="glass-panel p-5 rounded-xl border border-slate-800 bg-slate-900/50">
+          <h3 class="text-sm font-bold text-white mb-3 flex items-center gap-2">
+            <i class="fa-solid fa-chart-pie text-cyan-400"></i> Análisis vs Proyección
+          </h3>
+          <div id="analysisInsights" class="space-y-2 text-sm text-slate-300">
+            <p class="text-slate-400 italic text-xs">Selecciona un proyecto y agrega registros para ver el análisis de desviaciones.</p>
+          </div>
+        </div>
+
+        <!-- TABLA DE REGISTROS -->
+        <div class="glass-panel p-0 rounded-2xl border border-slate-800/80 overflow-hidden">
+          <div class="p-4 border-b border-slate-800 flex justify-between items-center">
+            <h3 class="text-sm font-bold text-white">Historial de Operaciones</h3>
+            <button id="clearDataBtn" class="text-xs text-rose-400 hover:text-rose-300 underline">Borrar Datos</button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="bg-slate-900 border-b border-slate-800">
+                <tr>
+                  <th class="px-4 py-3 font-semibold">Fecha</th>
+                  <th class="px-4 py-3 font-semibold text-right">Unidades</th>
+                  <th class="px-4 py-3 font-semibold text-right">Ingresos</th>
+                  <th class="px-4 py-3 font-semibold text-right">Mermas/Robo</th>
+                  <th class="px-4 py-3 font-semibold text-right">Gastos</th>
+                  <th class="px-4 py-3 font-semibold text-center">Acción</th>
+                </tr>
+              </thead>
+              <tbody id="recordsTableBody" class="divide-y divide-slate-800/50">
+                <!-- Data goes here -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  
+  <script src="tracker.js"></script>
+</body>
+</html>

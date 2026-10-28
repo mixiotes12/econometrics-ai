@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ingeniería de Proyecto - EconoMetrics</title>
+  <script>
+    // Redirigir al flujo integrado de 5 pasos en index.html
+    window.location.replace("index.html");
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              900: '#312e81',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ startOnLoad: false, theme: 'dark' });
+    window.mermaid = mermaid;
+  </script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-slate-950 text-slate-100 flex flex-col min-h-screen">
+  
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 via-blue-500 to-indigo-400 flex items-center justify-center shadow-lg shadow-cyan-500/30">
+          <i class="fa-solid fa-cogs text-white text-lg"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-lg tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">Ingeniería del Proyecto</span>
+            <span class="text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">AI Tools</span>
+          </div>
+          <p class="text-xs text-slate-400 hidden sm:block">Presupuestos de Inversión y Diseño de Procesos</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <a href="index.html" class="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs px-3 py-2 rounded-lg transition font-medium">
+          <i class="fa-solid fa-arrow-left"></i>
+          <span>Volver a EconoMetrics</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
+    
+    <!-- 1. SOLICITUD DE INVERSIÓN (PRESUPUESTOS) -->
+    <section class="glass-panel p-6 rounded-2xl border border-slate-800/80">
+      <div class="flex items-center gap-3 mb-6 pb-4 border-b border-slate-800">
+        <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+          <i class="fa-solid fa-money-check-dollar"></i>
+        </div>
+        <div>
+          <h2 class="text-base font-bold text-white">Generador de Presupuestos de Inversión (Maquinaria Nueva)</h2>
+          <p class="text-xs text-slate-400">Describe el equipo que necesitas y Gemini buscará referencias en México para armar 3 presupuestos (Económico, Estándar, Premium).</p>
+        </div>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Input Form -->
+        <div class="space-y-4">
+          <div id="equipmentList" class="space-y-3">
+            <div class="flex gap-2 equipment-item">
+              <input type="text" placeholder="Ej: Máquina Espresso" class="eq-name w-1/3 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+              <input type="text" placeholder="Ej: 2 grupos, caldera 10L, semi-automática" class="eq-desc flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+              <button type="button" class="text-rose-400 hover:text-rose-300 px-2" onclick="this.parentElement.remove()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+          </div>
+          
+          <div class="flex gap-2">
+            <button id="addEqBtn" type="button" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-3 py-2 rounded-lg transition font-medium flex items-center gap-1">
+              <i class="fa-solid fa-plus"></i> Añadir Equipo
+            </button>
+            <button id="genBudgetsBtn" type="button" class="text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-4 py-2 rounded-lg transition shadow-lg shadow-emerald-500/25 flex items-center gap-2">
+              <i class="fa-solid fa-robot"></i> Generar 3 Presupuestos
+            </button>
+          </div>
+        </div>
+
+        <!-- Output Budgets -->
+        <div id="budgetsOutput" class="hidden">
+           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4" id="budgetsGrid">
+              <!-- Cards here -->
+           </div>
+           <div id="budgetsSummary" class="mt-4 p-3 bg-slate-900 rounded-lg border border-slate-800 text-xs text-slate-300"></div>
+           <div class="mt-3 flex justify-end">
+               <button id="useInvestmentBtn" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-4 py-2 rounded-lg transition hidden">
+                  Transferir Inversión a EconoMetrics
+               </button>
+           </div>
+        </div>
+        <div id="budgetsLoader" class="hidden flex-col items-center justify-center text-emerald-400 p-8 border border-slate-800 rounded-lg bg-slate-900/50">
+           <i class="fa-solid fa-circle-notch animate-spin text-3xl mb-3"></i>
+           <p class="text-sm font-bold">Investigando mercado y estructurando presupuestos...</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. DIAGRAMA DE FLUJO Y ENERGÍA -->
+    <section class="glass-panel p-6 rounded-2xl border border-slate-800/80">
+      <div class="flex items-center gap-3 mb-6 pb-4 border-b border-slate-800">
+        <div class="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center">
+          <i class="fa-solid fa-project-diagram"></i>
+        </div>
+        <div>
+          <h2 class="text-base font-bold text-white">Diseño de Producción: Flujograma y Consumo Eléctrico</h2>
+          <p class="text-xs text-slate-400">Describe tu proceso paso a paso. Gemini diseñará un diagrama de flujo y una estimación de consumo energético (Kw/h).</p>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <textarea id="processDesc" rows="3" placeholder="Ej: 1. Recepción de materia prima. 2. Horneado por 45 min a 200°C en Horno Industrial. 3. Enfriamiento y Empaque..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+        
+        <button id="genFlowchartBtn" type="button" class="text-xs bg-blue-600 hover:bg-blue-500 text-white font-semibold px-4 py-2 rounded-lg transition shadow-lg shadow-blue-500/25 flex items-center gap-2">
+          <i class="fa-solid fa-bolt"></i> Diseñar Proceso y Tabla de Kw/h
+        </button>
+      </div>
+
+      <div id="flowLoader" class="hidden mt-6 flex-col items-center justify-center text-blue-400 p-8 border border-slate-800 rounded-lg bg-slate-900/50">
+         <i class="fa-solid fa-circle-notch animate-spin text-3xl mb-3"></i>
+         <p class="text-sm font-bold">Analizando tiempos, movimientos y consumo energético...</p>
+      </div>
+
+      <div id="flowOutput" class="hidden mt-6 space-y-6">
+         <!-- Diagrama -->
+         <div class="p-4 bg-slate-950 rounded-xl border border-slate-800 overflow-x-auto">
+            <h3 class="text-xs font-bold text-slate-300 uppercase mb-3">Diagrama de Flujo (Simbología)</h3>
+            <div id="mermaidContainer" class="flex justify-center"></div>
+         </div>
+
+         <!-- Tabla de Actividades -->
+         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+             <div class="overflow-x-auto bg-slate-900/50 rounded-xl border border-slate-800">
+               <h3 class="text-xs font-bold text-slate-300 uppercase p-3 border-b border-slate-800">Tiempos y Movimientos</h3>
+               <table class="w-full text-left text-xs text-slate-300">
+                 <thead class="bg-slate-800/50">
+                   <tr>
+                     <th class="p-2 font-semibold text-center w-10">Paso</th>
+                     <th class="p-2 font-semibold">Actividad / Movimiento</th>
+                     <th class="p-2 font-semibold w-24">Tiempo</th>
+                   </tr>
+                 </thead>
+                 <tbody id="activitiesTable" class="divide-y divide-slate-800/50"></tbody>
+               </table>
+             </div>
+
+             <!-- Tabla Energética -->
+             <div class="overflow-x-auto bg-slate-900/50 rounded-xl border border-slate-800">
+               <h3 class="text-xs font-bold text-slate-300 uppercase p-3 border-b border-slate-800">Consumo Energético (Kw/h Mensual)</h3>
+               <table class="w-full text-left text-xs text-slate-300">
+                 <thead class="bg-slate-800/50">
+                   <tr>
+                     <th class="p-2 font-semibold">Equipo</th>
+                     <th class="p-2 font-semibold text-right">Consumo (Kw/h)</th>
+                     <th class="p-2 font-semibold text-right">Costo Estimado (MXN)</th>
+                   </tr>
+                 </thead>
+                 <tbody id="energyTable" class="divide-y divide-slate-800/50"></tbody>
+                 <tfoot class="bg-slate-800/80">
+                   <tr>
+                     <th class="p-2 font-bold text-right" colspan="2">TOTAL MENSUAL LUZ:</th>
+                     <th class="p-2 font-bold text-amber-400 text-right font-mono" id="totalEnergyCost">$0.00</th>
+                   </tr>
+                 </tfoot>
+               </table>
+             </div>
+         </div>
+      </div>
+
+    </section>
+  </main>
+  
+  <script src="engineering.js"></script>
+</body>
+</html>
