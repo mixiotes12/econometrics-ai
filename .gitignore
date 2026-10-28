@@ -37,3 +37,4 @@ update_*.py
 
 # Base de datos local del POS
 app/data/
+app/static/uploads/

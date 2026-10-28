@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inventarios y Catálogo - EconoMetrics</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: 'class' }</script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .inp { background:#0f172a; border:1px solid #334155; border-radius:.5rem; padding:.45rem .7rem; width:100%; font-size:.85rem; color:#f1f5f9; }
+    .inp:focus { outline:none; border-color:#38bdf8; } .inp:disabled { opacity:.55; }
+    .btn { padding:.45rem .85rem; border-radius:.5rem; font-size:.78rem; font-weight:600; transition:.15s; }
+    .btn-pri { background:#0284c7; color:#fff; } .btn-pri:hover { background:#0ea5e9; }
+    .btn-sec { background:#334155; color:#e2e8f0; } .btn-sec:hover { background:#475569; }
+    .btn-red { background:#b91c1c; color:#fff; } .btn-red:hover { background:#dc2626; }
+    .tab-btn { padding:.6rem 1rem; font-size:.8rem; font-weight:600; border-bottom:2px solid transparent; color:#94a3b8; white-space:nowrap; }
+    .tab-btn.active { color:#38bdf8; border-color:#38bdf8; }
+    th { text-align:left; font-weight:600; color:#94a3b8; font-size:.68rem; text-transform:uppercase; padding:.4rem .5rem; }
+    td { padding:.4rem .5rem; font-size:.8rem; border-top:1px solid #1e293b; vertical-align:middle; }
+    label.l { display:block; font-size:.68rem; color:#94a3b8; margin-bottom:.15rem; }
+    .card { background:#0f172a; border:1px solid #1e293b; border-radius:.75rem; padding:1rem; }
+    .pill { font-size:.65rem; padding:.1rem .5rem; border-radius:9999px; font-weight:700; }
+    .thumb { width:40px; height:40px; object-fit:cover; border-radius:.4rem; background:#1e293b; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+
+  <header class="border-b border-slate-800 bg-slate-900/80 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <a href="index.html" class="text-slate-400 hover:text-white"><i class="fa-solid fa-arrow-left"></i></a>
+        <i class="fa-solid fa-boxes-stacked text-sky-400"></i>
+        <span class="font-bold">Inventarios y Catálogo</span>
+        <span id="alertBadge" class="pill bg-slate-700 hidden cursor-pointer"></span>
+      </div>
+      <div class="flex items-center gap-3 text-xs">
+        <a href="pos.html" class="btn btn-sec"><i class="fa-solid fa-cash-register mr-1"></i>Punto de Venta</a>
+        <span id="whoami" class="text-slate-300"></span>
+      </div>
+    </div>
+    <nav id="tabs" class="max-w-7xl mx-auto px-4 flex gap-1 overflow-x-auto">
+      <button class="tab-btn active" data-tab="catalogo"><i class="fa-solid fa-table-list mr-1"></i>Catálogo</button>
+      <button class="tab-btn" data-tab="alertas"><i class="fa-solid fa-bell mr-1"></i>Puntos de reorden</button>
+      <button class="tab-btn" data-tab="kardex"><i class="fa-solid fa-right-left mr-1"></i>Movimientos</button>
+      <button class="tab-btn" data-tab="divisas"><i class="fa-solid fa-dollar-sign mr-1"></i>Divisas</button>
+      <button class="tab-btn" data-tab="analisis"><i class="fa-solid fa-chart-pie mr-1"></i>Análisis</button>
+    </nav>
+  </header>
+
+  <div id="noSession" class="hidden max-w-md mx-auto mt-20 card text-center space-y-3">
+    <p>Necesitas iniciar sesión en el Punto de Venta para usar este módulo.</p>
+    <a href="pos.html" class="btn btn-pri inline-block">Ir a iniciar sesión</a>
+  </div>
+
+  <main id="app" class="max-w-7xl mx-auto px-4 py-5">
+
+    <!-- CATÁLOGO -->
+    <section id="tab-catalogo" class="tab-panel space-y-3">
+      <div class="card flex flex-wrap gap-2 items-end">
+        <div class="flex-1 min-w-[180px]"><label class="l">Buscar</label><input id="fQ" class="inp" placeholder="Nombre, SKU, código, proveedor..."></div>
+        <div><label class="l">Categoría</label><select id="fCat" class="inp"><option value="">Todas</option></select></div>
+        <div><label class="l">Existencia</label><select id="fStatus" class="inp"><option value="">Todas</option><option value="ok">En stock</option><option value="reorden">En reorden</option><option value="agotado">Agotado</option></select></div>
+        <div><label class="l">Origen</label><select id="fImp" class="inp"><option value="">Todos</option><option value="true">Importados</option><option value="false">Nacionales</option></select></div>
+        <label class="text-xs flex items-center gap-1 pb-2"><input type="checkbox" id="fInactive"> Inactivos</label>
+        <button id="newProductBtn" class="btn btn-pri admin-only"><i class="fa-solid fa-plus mr-1"></i>Nuevo producto</button>
+      </div>
+      <div class="card overflow-x-auto">
+        <table class="w-full">
+          <thead><tr><th></th><th>Producto</th><th>Categoría</th><th>Costo</th><th>Precio c/IVA</th><th>Margen</th><th>Markup</th><th>Stock</th><th>Reorden</th><th>Origen</th><th></th></tr></thead>
+          <tbody id="catalogBody"></tbody>
+        </table>
+        <p id="catalogEmpty" class="text-center text-slate-500 text-xs py-6 hidden">Sin productos.</p>
+      </div>
+    </section>
+
+    <!-- ALERTAS -->
+    <section id="tab-alertas" class="tab-panel hidden space-y-3">
+      <div id="alertCards" class="grid sm:grid-cols-3 gap-3"></div>
+      <div class="card overflow-x-auto">
+        <table class="w-full"><thead><tr><th></th><th>Producto</th><th>Proveedor</th><th>Stock</th><th>Mínimo</th><th>Estado</th><th>Sugerido a comprar</th><th>Costo estimado</th><th></th></tr></thead><tbody id="alertsBody"></tbody></table>
+        <p id="alertsEmpty" class="text-center text-emerald-400 text-xs py-6 hidden">Todo el inventario está por encima de su punto de reorden.</p>
+      </div>
+    </section>
+
+    <!-- KARDEX -->
+    <section id="tab-kardex" class="tab-panel hidden space-y-3">
+      <div class="card flex flex-wrap gap-2 items-end">
+        <div><label class="l">Tipo</label><select id="kType" class="inp"><option value="">Todos</option><option value="entrada">Entradas</option><option value="venta">Ventas</option><option value="merma">Mermas</option><option value="ajuste">Ajustes</option><option value="devolucion">Devoluciones</option></select></div>
+        <div><label class="l">Periodo (días)</label><input id="kDays" type="number" value="30" min="1" class="inp !w-24"></div>
+        <button id="kRefresh" class="btn btn-sec">Actualizar</button>
+        <button id="openMoveBtn" class="btn btn-pri admin-only ml-auto"><i class="fa-solid fa-plus mr-1"></i>Registrar movimiento</button>
+      </div>
+      <div class="card overflow-x-auto">
+        <table class="w-full"><thead><tr><th>Fecha</th><th>Producto</th><th>Tipo</th><th>Cantidad</th><th>Costo unit.</th><th>Stock resultante</th><th>Motivo / Ref.</th><th>Usuario</th></tr></thead><tbody id="kardexBody"></tbody></table>
+      </div>
+    </section>
+
+    <!-- DIVISAS -->
+    <section id="tab-divisas" class="tab-panel hidden space-y-3">
+      <div class="card space-y-3 max-w-2xl">
+        <div class="flex justify-between items-center">
+          <h2 class="font-bold">Tipos de cambio (a MXN)</h2>
+          <div class="flex gap-2 admin-only"><button id="refreshRatesBtn" class="btn btn-sec"><i class="fa-solid fa-rotate mr-1"></i>Actualizar en línea</button><button id="applyRatesBtn" class="btn btn-pri">Recalcular costos de importados</button></div>
+        </div>
+        <table class="w-full"><thead><tr><th>Moneda</th><th>1 unidad = MXN</th><th>Fuente</th><th>Actualizado</th><th></th></tr></thead><tbody id="ratesBody"></tbody></table>
+        <p class="text-[11px] text-slate-500">Costo puesto = (precio en divisa × tipo de cambio) × (1 + arancel %) + flete + otros gastos por unidad. «Recalcular» aplica el tipo de cambio vigente a todos los productos importados.</p>
+        <div id="applyResult" class="text-xs"></div>
+      </div>
+    </section>
+
+    <!-- ANÁLISIS -->
+    <section id="tab-analisis" class="tab-panel hidden space-y-3">
+      <div class="card flex gap-2 items-end">
+        <div><label class="l">Periodo de análisis</label><select id="aDays" class="inp"><option value="30">30 días</option><option value="90" selected>90 días</option><option value="180">180 días</option><option value="365">365 días</option></select></div>
+        <button id="aRefresh" class="btn btn-sec">Actualizar</button>
+      </div>
+      <div id="aCards" class="grid grid-cols-2 lg:grid-cols-4 gap-3"></div>
+      <div class="grid lg:grid-cols-3 gap-3">
+        <div class="card"><h3 class="text-sm font-bold mb-2">Clasificación ABC (por ingresos)</h3><canvas id="abcChart" height="200"></canvas></div>
+        <div class="card"><h3 class="text-sm font-bold mb-2">Valor de inventario por categoría (costo)</h3><canvas id="catChart" height="200"></canvas></div>
+        <div class="card"><h3 class="text-sm font-bold mb-2">Mermas por motivo</h3><div id="mermaList" class="text-sm space-y-1"></div></div>
+      </div>
+      <div class="card overflow-x-auto">
+        <h3 class="text-sm font-bold mb-2">Rotación y clasificación por producto</h3>
+        <table class="w-full"><thead><tr><th>ABC</th><th>Producto</th><th>Uds. vendidas</th><th>Ingresos (sin IVA)</th><th>Utilidad</th><th>Stock</th><th>Valor a costo</th><th>Días de cobertura</th></tr></thead><tbody id="aBody"></tbody></table>
+      </div>
+      <div class="card overflow-x-auto">
+        <h3 class="text-sm font-bold mb-1">Baja rotación / inventario ocioso</h3>
+        <p class="text-[11px] text-slate-500 mb-2">Productos con existencia y sin ventas en el periodo, o con más de 90 días de cobertura.</p>
+        <table class="w-full"><thead><tr><th>Producto</th><th>Stock</th><th>Valor a costo</th><th>Uds. vendidas</th><th>Días de cobertura</th></tr></thead><tbody id="slowBody"></tbody></table>
+      </div>
+    </section>
+  </main>
+
+  <!-- MODAL PRODUCTO -->
+  <div id="productModal" class="fixed inset-0 z-[90] bg-black/70 hidden items-start justify-center p-4 overflow-y-auto">
+    <form id="productForm" class="bg-slate-900 border border-slate-700 rounded-2xl p-5 w-full max-w-4xl my-6 space-y-4">
+      <div class="flex justify-between items-center"><h2 id="pmTitle" class="font-bold">Producto</h2><button type="button" id="pmClose" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button></div>
+      <input type="hidden" id="pId">
+      <div class="grid sm:grid-cols-4 gap-3">
+        <div class="sm:row-span-3 flex flex-col items-center gap-2">
+          <img id="pImg" class="w-full aspect-square object-cover rounded-xl bg-slate-800" alt="">
+          <input type="file" id="pFile" accept="image/png,image/jpeg,image/webp" class="hidden">
+          <div class="flex gap-1"><button type="button" id="pPick" class="btn btn-sec">Foto</button><button type="button" id="pPhotoDel" class="btn btn-sec">Quitar</button></div>
+        </div>
+        <div class="sm:col-span-2"><label class="l">Nombre *</label><input id="pName" class="inp" required></div>
+        <div><label class="l">Categoría</label><input id="pCategory" class="inp" list="catList"><datalist id="catList"></datalist></div>
+        <div><label class="l">SKU</label><input id="pSku" class="inp"></div>
+        <div><label class="l">Código de barras</label><input id="pBarcode" class="inp"></div>
+        <div><label class="l">Proveedor</label><input id="pSupplier" class="inp"></div>
+        <div><label class="l">IVA</label><select id="pIva" class="inp"><option value="iva16">16%</option><option value="iva0">Tasa 0%</option><option value="exento">Exento</option></select></div>
+        <div class="flex items-end gap-4 text-xs"><label><input type="checkbox" id="pTrack" checked> Controlar inventario</label><label><input type="checkbox" id="pActive" checked> Activo</label></div>
+      </div>
+
+      <fieldset class="card space-y-2">
+        <legend class="text-xs font-bold text-sky-300 px-1">Costos, precio y margen</legend>
+        <div class="grid sm:grid-cols-5 gap-3">
+          <div><label class="l">Costo unitario (MXN)</label><input id="pCost" type="number" step="0.01" min="0" class="inp" value="0"></div>
+          <div><label class="l">Precio público (IVA incl.) *</label><input id="pPrice" type="number" step="0.01" min="0" class="inp" required></div>
+          <div><label class="l">Margen deseado %</label><input id="pWantMargin" type="number" step="0.1" min="0" max="99" class="inp" placeholder="ej. 35"></div>
+          <div class="flex items-end"><button type="button" id="pApplyMargin" class="btn btn-sec w-full">Calcular precio</button></div>
+          <div id="pMarginView" class="text-xs space-y-0.5"></div>
+        </div>
+      </fieldset>
+
+      <fieldset class="card space-y-2">
+        <legend class="text-xs font-bold text-sky-300 px-1">Existencias y punto de reorden</legend>
+        <div class="grid sm:grid-cols-4 gap-3">
+          <div><label class="l">Existencia actual</label><input id="pStock" type="number" step="0.01" class="inp" value="0"></div>
+          <div><label class="l">Stock mínimo (punto de reorden)</label><input id="pMin" type="number" step="0.01" min="0" class="inp" value="0"></div>
+          <div><label class="l">Stock máximo</label><input id="pMax" type="number" step="0.01" min="0" class="inp" value="0"></div>
+          <div><label class="l">Cantidad de reorden</label><input id="pReorderQty" type="number" step="0.01" min="0" class="inp" value="0"></div>
+        </div>
+        <p id="pStockNote" class="text-[11px] text-slate-500 hidden">La existencia de un producto ya creado solo cambia con movimientos (pestaña Movimientos) para mantener el kardex.</p>
+      </fieldset>
+
+      <fieldset class="card space-y-2">
+        <legend class="text-xs font-bold text-sky-300 px-1"><label><input type="checkbox" id="pImported"> Producto importado (costo en divisa)</label></legend>
+        <div id="importBox" class="grid sm:grid-cols-4 gap-3 opacity-50">
+          <div><label class="l">Moneda</label><select id="pCurrency" class="inp"><option>USD</option><option>EUR</option><option>MXN</option></select></div>
+          <div><label class="l">Costo en divisa (unidad)</label><input id="pForeign" type="number" step="0.0001" min="0" class="inp" value="0"></div>
+          <div><label class="l">Tipo de cambio <span id="pRateHint" class="text-sky-400"></span></label><input id="pRate" type="number" step="0.0001" min="0" class="inp" placeholder="vigente"></div>
+          <div><label class="l">Arancel / impuestos importación %</label><input id="pDuties" type="number" step="0.01" min="0" class="inp" value="0"></div>
+          <div><label class="l">Flete por unidad (MXN)</label><input id="pFreight" type="number" step="0.01" min="0" class="inp" value="0"></div>
+          <div><label class="l">Otros gastos por unidad (MXN)</label><input id="pOther" type="number" step="0.01" min="0" class="inp" value="0"></div>
+          <div><label class="l">País de origen</label><input id="pOrigin" class="inp"></div>
+          <div class="flex items-end text-sm">Costo puesto: <b id="pLanded" class="ml-1 text-amber-300">$0.00</b></div>
+        </div>
+      </fieldset>
+
+      <details class="text-xs"><summary class="cursor-pointer text-slate-400">Claves SAT (facturación)</summary>
+        <div class="grid grid-cols-2 gap-3 mt-2 max-w-sm"><div><label class="l">Clave producto/servicio</label><input id="pSatP" class="inp" value="01010101"></div><div><label class="l">Clave unidad</label><input id="pSatU" class="inp" value="H87"></div></div>
+      </details>
+      <div id="pError" class="text-red-400 text-xs hidden"></div>
+      <div class="flex justify-end gap-2"><button type="button" id="pCancel" class="btn btn-sec">Cancelar</button><button class="btn btn-pri" type="submit">Guardar producto</button></div>
+    </form>
+  </div>
+
+  <!-- MODAL MOVIMIENTO -->
+  <div id="moveModal" class="fixed inset-0 z-[90] bg-black/70 hidden items-center justify-center p-4">
+    <form id="moveForm" class="bg-slate-900 border border-slate-700 rounded-2xl p-5 w-full max-w-md space-y-3">
+      <h2 class="font-bold">Registrar movimiento de inventario</h2>
+      <div><label class="l">Producto</label><select id="mProduct" class="inp"></select></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="l">Tipo</label><select id="mType" class="inp"><option value="entrada">Entrada (compra / reposición)</option><option value="merma">Merma (caducidad, robo, daño)</option><option value="ajuste">Ajuste (conteo físico)</option></select></div>
+        <div><label class="l" id="mQtyLabel">Cantidad</label><input id="mQty" type="number" step="0.01" min="0" class="inp" required></div>
+        <div id="mCostBox"><label class="l">Costo unitario de compra</label><input id="mCost" type="number" step="0.01" min="0" class="inp" placeholder="opcional"></div>
+      </div>
+      <div><label class="l">Motivo / referencia</label><input id="mReason" class="inp"></div>
+      <p id="mHint" class="text-[11px] text-slate-500"></p>
+      <div id="mError" class="text-red-400 text-xs hidden"></div>
+      <div class="flex justify-end gap-2"><button type="button" id="mCancel" class="btn btn-sec">Cancelar</button><button class="btn btn-pri" type="submit">Registrar</button></div>
+    </form>
+  </div>
+
+  <script src="inventario.js"></script>
+</body>
+</html>

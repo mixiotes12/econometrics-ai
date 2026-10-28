@@ -283,6 +283,9 @@ from .pos import router as pos_router, init_pos_db
 init_pos_db()
 app.include_router(pos_router)
 
+from .inventory import router as inventory_router
+app.include_router(inventory_router)
+
 # Static files for the frontend
 static_dir = os.path.join(os.path.dirname(__file__), "static")
 if not os.path.exists(static_dir):

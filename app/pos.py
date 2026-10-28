@@ -122,6 +122,58 @@ CREATE TABLE IF NOT EXISTS invoices (
 );
 """
 
+SCHEMA_INVENTORY = """
+CREATE TABLE IF NOT EXISTS stock_movements (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    product_id INTEGER NOT NULL REFERENCES products(id),
+    type TEXT NOT NULL,                     -- entrada | ajuste | merma | venta | devolucion
+    delta REAL NOT NULL,                    -- cambio con signo en existencias
+    unit_cost REAL NOT NULL DEFAULT 0,
+    stock_after REAL NOT NULL DEFAULT 0,
+    reason TEXT NOT NULL DEFAULT '',
+    ref TEXT NOT NULL DEFAULT '',
+    cashier_id INTEGER,
+    created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_mov_product ON stock_movements(product_id, created_at);
+CREATE TABLE IF NOT EXISTS exchange_rates (
+    currency TEXT PRIMARY KEY,
+    rate_mxn REAL NOT NULL,
+    source TEXT NOT NULL DEFAULT 'manual',
+    updated_at TEXT NOT NULL
+);
+"""
+
+# Columnas de Fase 2 agregadas a products (migración idempotente)
+PRODUCT_EXTRA_COLUMNS = {
+    "category": "TEXT NOT NULL DEFAULT ''",
+    "supplier": "TEXT NOT NULL DEFAULT ''",
+    "image": "TEXT",
+    "min_stock": "REAL NOT NULL DEFAULT 0",       # punto de reorden
+    "max_stock": "REAL NOT NULL DEFAULT 0",
+    "reorder_qty": "REAL NOT NULL DEFAULT 0",
+    "is_imported": "INTEGER NOT NULL DEFAULT 0",
+    "currency": "TEXT NOT NULL DEFAULT 'MXN'",
+    "foreign_cost": "REAL NOT NULL DEFAULT 0",
+    "exchange_rate": "REAL NOT NULL DEFAULT 1",
+    "duties_pct": "REAL NOT NULL DEFAULT 0",
+    "freight_cost": "REAL NOT NULL DEFAULT 0",
+    "other_cost": "REAL NOT NULL DEFAULT 0",
+    "origin_country": "TEXT NOT NULL DEFAULT ''",
+}
+
+
+def log_movement(conn, product_id: int, mtype: str, delta: float, unit_cost: float = 0.0,
+                 reason: str = "", ref: str = "", cashier_id: Optional[int] = None):
+    """Registra un movimiento (kardex). Debe llamarse DESPUÉS de actualizar products.stock."""
+    stock_after = conn.execute("SELECT stock FROM products WHERE id=?", (product_id,)).fetchone()["stock"]
+    conn.execute(
+        "INSERT INTO stock_movements(product_id, type, delta, unit_cost, stock_after, reason, ref, cashier_id, created_at) "
+        "VALUES (?,?,?,?,?,?,?,?,?)",
+        (product_id, mtype, delta, unit_cost, stock_after, reason, ref, cashier_id, now()),
+    )
+
+
 DEFAULT_SETTINGS = {
     "business_name": "Mi Negocio",
     "legal_name": "",
@@ -164,6 +216,14 @@ def hash_pin(pin: str) -> str:
 def init_pos_db():
     with db() as conn:
         conn.executescript(SCHEMA)
+        conn.executescript(SCHEMA_INVENTORY)
+        existing = {r["name"] for r in conn.execute("PRAGMA table_info(products)")}
+        for col, ddl in PRODUCT_EXTRA_COLUMNS.items():
+            if col not in existing:
+                conn.execute(f"ALTER TABLE products ADD COLUMN {col} {ddl}")
+        conn.execute("INSERT OR IGNORE INTO exchange_rates(currency, rate_mxn, source, updated_at) VALUES ('MXN', 1, 'base', ?)", (now(),))
+        conn.execute("INSERT OR IGNORE INTO exchange_rates(currency, rate_mxn, source, updated_at) VALUES ('USD', 18.0, 'inicial (actualizar)', ?)", (now(),))
+        conn.execute("INSERT OR IGNORE INTO exchange_rates(currency, rate_mxn, source, updated_at) VALUES ('EUR', 19.5, 'inicial (actualizar)', ?)", (now(),))
         for k, v in DEFAULT_SETTINGS.items():
             conn.execute("INSERT OR IGNORE INTO settings(key, value) VALUES (?, ?)", (k, v))
         if conn.execute("SELECT COUNT(*) FROM cashiers").fetchone()[0] == 0:
@@ -549,6 +609,7 @@ def create_sale(req: SaleReq, me: dict = Depends(current_cashier)):
             )
             if p["track_stock"]:
                 conn.execute("UPDATE products SET stock = stock - ? WHERE id=?", (qty, p["id"]))
+                log_movement(conn, p["id"], "venta", -qty, p["cost"], "Venta POS", f"V-{sale_id:06d}", me["id"])
         return get_sale(conn, sale_id)
 
 
@@ -599,7 +660,9 @@ def cancel_sale(sale_id: int, _: dict = Depends(admin_only)):
         if sale["invoice"]:
             raise HTTPException(400, "La venta ya está facturada; cancela primero la factura.")
         for it in sale["items"]:
-            conn.execute("UPDATE products SET stock = stock + ? WHERE id=? AND track_stock=1", (it["qty"], it["product_id"]))
+            cur = conn.execute("UPDATE products SET stock = stock + ? WHERE id=? AND track_stock=1", (it["qty"], it["product_id"]))
+            if cur.rowcount:
+                log_movement(conn, it["product_id"], "devolucion", it["qty"], 0, "Cancelación de venta", sale["folio"], _["id"])
         conn.execute("UPDATE sales SET status='cancelada' WHERE id=?", (sale_id,))
         return get_sale(conn, sale_id)
 
