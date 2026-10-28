@@ -5,7 +5,9 @@ from .models import (
     BreakEvenMetrics,
     ScenarioSummary,
     FinancialReport,
-    OpportunityCostComparison
+    OpportunityCostComparison,
+    FinancialRatios,
+    RatioItem
 )
 
 def calculate_irr(cash_flows: List[float], max_iter: int = 1000, tol: float = 1e-6) -> Optional[float]:
@@ -442,6 +444,125 @@ def analyze_financials(inputs: FinancialInputs) -> FinancialReport:
         verdict_color=bank_verdict_color
     )
 
+    def _ratio_item(name: str, cat: str, val: float, unit: str, bench: str, stat: str, col: str, interp: str) -> RatioItem:
+        return RatioItem(name=name, category=cat, value=round(val, 2), unit=unit, benchmark=bench, status=stat, status_color=col, interpretation=interp)
+
+    f1 = yearly_flows[0]
+    rev_y1 = f1.net_revenue
+    var_y1 = f1.variable_costs
+    fix_y1 = f1.fixed_costs
+    net_y1 = f1.net_income
+    ebit_y1 = f1.ebit
+
+    m_rev = rev_y1 / 12.0
+    m_var = var_y1 / 12.0
+    m_fix = fix_y1 / 12.0
+
+    est_inv = max(m_var * 1.5, 1000.0)
+    est_cash = max((m_fix + m_var) * 1.0, 5000.0)
+    est_ar = m_rev * 0.15
+    curr_assets = est_cash + est_inv + est_ar
+    curr_liab = max(m_var * 0.75 + m_fix * 0.25, 2000.0)
+
+    cur_ratio = curr_assets / curr_liab if curr_liab > 0 else 2.0
+    quick_ratio = (curr_assets - est_inv) / curr_liab if curr_liab > 0 else 1.2
+    w_capital = curr_assets - curr_liab
+
+    gross_m_pct = f1.gross_margin_pct
+    op_m_pct = (ebit_y1 / rev_y1 * 100.0) if rev_y1 > 0 else 0.0
+    net_m_pct = (net_y1 / rev_y1 * 100.0) if rev_y1 > 0 else 0.0
+
+    inv_turnover = (var_y1 / est_inv) if est_inv > 0 else 8.0
+    days_inv = (365.0 / inv_turnover) if inv_turnover > 0 else 45.0
+
+    tot_assets = max(inputs.initial_investment, 10000.0) + curr_assets
+    tot_equity = max(inputs.initial_investment * 0.8, 8000.0)
+    roa_pct = (net_y1 / tot_assets * 100.0) if tot_assets > 0 else 0.0
+    roe_pct = (net_y1 / tot_equity * 100.0) if tot_equity > 0 else 0.0
+    debt_assets_pct = (curr_liab / tot_assets * 100.0) if tot_assets > 0 else 0.0
+
+    items = [
+        _ratio_item(
+            "Liquidez Corriente", "Liquidez", cur_ratio, "x", "1.5x - 2.5x",
+            "excelente" if cur_ratio >= 1.5 else ("aceptable" if cur_ratio >= 1.0 else "critico"),
+            "emerald" if cur_ratio >= 1.5 else ("amber" if cur_ratio >= 1.0 else "rose"),
+            f"Capacidad de cubrir deudas a corto plazo ({cur_ratio:.2f} veces). " +
+            ("Solvencia inmediata holgada." if cur_ratio >= 1.5 else "Riesgo de tensión de tesorería; monitorear flujo de caja.")
+        ),
+        _ratio_item(
+            "Prueba Ácida", "Liquidez", quick_ratio, "x", "> 1.0x",
+            "excelente" if quick_ratio >= 1.0 else ("aceptable" if quick_ratio >= 0.8 else "alerta"),
+            "emerald" if quick_ratio >= 1.0 else ("amber" if quick_ratio >= 0.8 else "rose"),
+            f"Liquidez inmediata sin depender de vender inventarios ({quick_ratio:.2f}x). " +
+            ("Disponibilidad de efectivo suficiente ante eventualidades." if quick_ratio >= 1.0 else "Dependencia elevada de la velocidad de venta de stock.")
+        ),
+        _ratio_item(
+            "Capital de Trabajo Neto", "Liquidez", w_capital, "MXN", "> $0",
+            "excelente" if w_capital > 20000 else ("aceptable" if w_capital > 0 else "critico"),
+            "emerald" if w_capital > 20000 else ("amber" if w_capital > 0 else "rose"),
+            f"Fondo operativo libre para operar día a día (${w_capital:,.2f} MXN). " +
+            ("Fondo de maniobra positivo." if w_capital > 0 else "Capital de trabajo negativo: riesgo de insolvencia operativa.")
+        ),
+        _ratio_item(
+            "Margen Bruto", "Rentabilidad", gross_m_pct, "%", "> 40.0%",
+            "excelente" if gross_m_pct >= 50 else ("aceptable" if gross_m_pct >= 30 else "alerta"),
+            "emerald" if gross_m_pct >= 50 else ("amber" if gross_m_pct >= 30 else "rose"),
+            f"Porcentaje de ventas que queda tras descontar costos directos ({gross_m_pct:.1f}%). " +
+            ("Fuerte absorción para costos fijos." if gross_m_pct >= 40 else "Margen ajustado; sensible a incrementos de materias primas.")
+        ),
+        _ratio_item(
+            "Margen Operativo (EBIT)", "Rentabilidad", op_m_pct, "%", "15% - 25%",
+            "excelente" if op_m_pct >= 20 else ("aceptable" if op_m_pct >= 10 else "alerta"),
+            "emerald" if op_m_pct >= 20 else ("amber" if op_m_pct >= 10 else "rose"),
+            f"Rendimiento de la operación antes de impuestos ({op_m_pct:.1f}%). Eficiencia en la gestión de costos fijos y variables."
+        ),
+        _ratio_item(
+            "Margen Neto de Utilidad", "Rentabilidad", net_m_pct, "%", "10% - 20%",
+            "excelente" if net_m_pct >= 15 else ("aceptable" if net_m_pct >= 8 else "alerta"),
+            "emerald" if net_m_pct >= 15 else ("amber" if net_m_pct >= 8 else "rose"),
+            f"Ganancia limpia final para el accionista ({net_m_pct:.1f}% de las ventas totales netas)."
+        ),
+        _ratio_item(
+            "Rotación de Inventarios", "Eficiencia", inv_turnover, "veces/año", "6.0x - 12.0x",
+            "excelente" if 6 <= inv_turnover <= 15 else ("aceptable" if inv_turnover > 3 else "alerta"),
+            "emerald" if 6 <= inv_turnover <= 15 else ("amber" if inv_turnover > 3 else "rose"),
+            f"Velocidad con la que el stock se vende y renueva ({inv_turnover:.1f} veces al año). Días de inventario: ~{days_inv:.0f} días."
+        ),
+        _ratio_item(
+            "ROA (Retorno sobre Activos)", "Rentabilidad", roa_pct, "%", "> 12.0%",
+            "excelente" if roa_pct >= 15 else ("aceptable" if roa_pct >= 8 else "alerta"),
+            "emerald" if roa_pct >= 15 else ("amber" if roa_pct >= 8 else "rose"),
+            f"Eficacia en el uso de los activos de la empresa para generar utilidad neta ({roa_pct:.1f}% anual)."
+        ),
+        _ratio_item(
+            "ROE (Retorno sobre Capital Propio)", "Rentabilidad", roe_pct, "%", "> 18.0%",
+            "excelente" if roe_pct >= 20 else ("aceptable" if roe_pct >= 10 else "alerta"),
+            "emerald" if roe_pct >= 20 else ("amber" if roe_pct >= 10 else "rose"),
+            f"Rendimiento generado sobre el capital aportado por los socios ({roe_pct:.1f}% anual)."
+        ),
+        _ratio_item(
+            "Razón de Endeudamiento", "Solvencia", debt_assets_pct, "%", "< 40.0%",
+            "excelente" if debt_assets_pct <= 25 else ("aceptable" if debt_assets_pct <= 50 else "alerta"),
+            "emerald" if debt_assets_pct <= 25 else ("amber" if debt_assets_pct <= 50 else "rose"),
+            f"Porcentaje de los activos financiado con pasivos ({debt_assets_pct:.1f}%). Nivel de apalancamiento conservador."
+        )
+    ]
+
+    ratios_report = FinancialRatios(
+        current_ratio=round(cur_ratio, 2),
+        quick_ratio=round(quick_ratio, 2),
+        working_capital=round(w_capital, 2),
+        gross_margin_pct=round(gross_m_pct, 2),
+        operating_margin_pct=round(op_m_pct, 2),
+        net_profit_margin_pct=round(net_m_pct, 2),
+        inventory_turnover=round(inv_turnover, 2),
+        days_inventory=round(days_inv, 1),
+        roa_pct=round(roa_pct, 2),
+        roe_pct=round(roe_pct, 2),
+        debt_to_assets_pct=round(debt_assets_pct, 2),
+        items=items
+    )
+
     return FinancialReport(
         npv=round(npv, 2),
         irr_pct=irr_pct,
@@ -460,5 +581,6 @@ def analyze_financials(inputs: FinancialInputs) -> FinancialReport:
         scenarios=scenarios,
         viability_status=viability_status,
         viability_color=viability_color,
-        summary_bullets=bullets
+        summary_bullets=bullets,
+        ratios=ratios_report
     )

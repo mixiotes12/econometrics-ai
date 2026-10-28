@@ -363,6 +363,40 @@ def init_pos_db():
                 ("Administrador", hash_pin("1234"), now()),
             )
 
+        # Seed productos de ejemplo si está vacío
+        if conn.execute("SELECT COUNT(*) FROM products").fetchone()[0] == 0:
+            sample_prods = [
+                ("CAF-ESP-01", "750100100001", "Café Espresso Doble 4oz", 45.0, 12.0, "iva16", 120.0, 1, "01010101", "H87", 1, "Bebidas Calientes", "Proveedor Local", 30.0, 300.0, 100.0, 0, "MXN", 0.0, 1.0, 0.0, 0.0, 0.0, "México"),
+                ("CAF-AME-02", "750100100002", "Café Americano Especial 12oz", 55.0, 14.5, "iva16", 95.0, 1, "01010101", "H87", 1, "Bebidas Calientes", "Proveedor Local", 25.0, 250.0, 80.0, 0, "MXN", 0.0, 1.0, 0.0, 0.0, 0.0, "México"),
+                ("CAF-LAT-03", "750100100003", "Café Latte Vainilla 16oz", 72.0, 22.0, "iva16", 80.0, 1, "01010101", "H87", 1, "Bebidas Calientes", "Proveedor Local", 20.0, 200.0, 60.0, 0, "MXN", 0.0, 1.0, 0.0, 0.0, 0.0, "México"),
+                ("GRN-VER-01", "750100100004", "Bolsa Café de Origen Coatepec 250g", 195.0, 90.0, "iva0", 40.0, 1, "01010101", "H87", 1, "Granos y Origen", "Cooperativa Veracruz", 15.0, 100.0, 30.0, 0, "MXN", 0.0, 1.0, 0.0, 0.0, 0.0, "México"),
+                ("PAN-CRO-01", "750100100005", "Croissant Mantequilla Francés", 48.0, 18.0, "iva16", 28.0, 1, "01010101", "H87", 1, "Panadería Artesanal", "Panadería Local", 10.0, 60.0, 20.0, 0, "MXN", 0.0, 1.0, 0.0, 0.0, 0.0, "México"),
+                ("ACC-PRE-01", "750100100006", "Prensa Francesa Acero Inoxidable 800ml", 520.0, 250.0, "iva16", 14.0, 1, "01010101", "H87", 1, "Accesorios y Métodos", "Importaciones Globales", 5.0, 30.0, 10.0, 1, "USD", 11.5, 18.0, 15.0, 25.0, 10.0, "Italia"),
+            ]
+            cols = ("sku, barcode, name, price, cost, iva_type, stock, track_stock, sat_product_key, sat_unit_key, "
+                    "active, category, supplier, min_stock, max_stock, reorder_qty, is_imported, currency, foreign_cost, "
+                    "exchange_rate, duties_pct, freight_cost, other_cost, origin_country")
+            placeholders = ",".join("?" for _ in range(len(sample_prods[0])))
+            for sp in sample_prods:
+                conn.execute(f"INSERT INTO products({cols}) VALUES ({placeholders})", sp)
+                pid = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+                log_movement(conn, pid, "entrada", sp[6], sp[4], "Existencia inicial del catálogo", "INVENTARIO_INICIAL", 1)
+
+        # Seed empleados de ejemplo si está vacío
+        if conn.execute("SELECT COUNT(*) FROM employees").fetchone()[0] == 0:
+            areas = {r["name"]: r["id"] for r in conn.execute("SELECT id, name FROM areas")}
+            sample_emps = [
+                ("Carlos Mendoza", "Gerente de Sucursal", areas.get("Administración") or areas.get("Ventas / Caja"), "2025-01-15", "activo", 18500.0, "quincenal", "carlos.mendoza@negocio.com", now()),
+                ("Ana Morales", "Cajera Principal / Barista", areas.get("Ventas / Caja"), "2025-02-01", "activo", 12000.0, "quincenal", "ana.morales@negocio.com", now()),
+                ("Jorge Ramos", "Almacenista y Control de Stock", areas.get("Almacén"), "2025-02-15", "activo", 10500.0, "quincenal", "jorge.ramos@negocio.com", now()),
+            ]
+            for se in sample_emps:
+                conn.execute(
+                    "INSERT INTO employees(name, position, area_id, hire_date, status, monthly_salary, pay_frequency, email, created_at) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    se
+                )
+
 
 def get_settings(conn) -> dict:
     return {r["key"]: r["value"] for r in conn.execute("SELECT key, value FROM settings")}

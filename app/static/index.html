@@ -392,8 +392,24 @@
           </div>
 
           <div>
-            <label class="block text-xs font-semibold text-slate-300 mb-1.5">Giro o Sector del Negocio *</label>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">Sector Económico *</label>
+            <select id="sectorSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="Comercio al por menor (Retail)">Comercio al por menor (Retail / Tienda)</option>
+              <option value="Alimentos y Bebidas (Hospitality)" selected>Alimentos y Bebidas (Restaurantes, Cafeterías, Bares)</option>
+              <option value="Servicios Profesionales y Personales">Servicios Profesionales y Personales (Gimnasios, Clínicas, Talleres)</option>
+              <option value="Comercio Electrónico y Tecnología (Digital)">Comercio Electrónico y Tecnología (E-commerce D2C, SaaS)</option>
+              <option value="Manufactura e Industria Ligera">Manufactura e Industria Ligera (Textil, Empaque, Alimentos)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">Giro Comercial Específico *</label>
             <input type="text" id="businessType" value="Cafetería de Especialidad y Panadería Artesanal" placeholder="Ej. Restaurante, E-commerce, Software B2B, Gimnasio..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">Actividad Económica / Especialidad</label>
+            <input type="text" id="economicActivity" value="Preparación de café de especialidad, bebidas de autor y repostería artesanal" placeholder="Ej. Venta al por menor de productos textiles, Servicios dentales..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
           </div>
 
           <div class="md:col-span-2">
@@ -408,21 +424,75 @@
         </div>
       </div>
 
-      <!-- UBICACIÓN Y COMPETENCIA -->
+      <!-- UBICACIÓN, GEOLOCALIZACIÓN Y ENTORNO -->
       <div class="glass-panel p-6 rounded-2xl border border-slate-800/80">
-        <div class="flex items-center gap-3 mb-6 pb-4 border-b border-slate-800">
-          <div class="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center">
-            <i class="fa-solid fa-location-dot"></i>
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-800">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center">
+              <i class="fa-solid fa-location-dot"></i>
+            </div>
+            <div>
+              <h2 class="text-base font-bold text-white">Geolocalización, Entorno y Competencia</h2>
+              <p class="text-xs text-slate-400">Entidad federativa, tipo de zona comercial y análisis territorial de compras.</p>
+            </div>
           </div>
+
+          <button type="button" id="btnOpenGeoModal" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition shadow-md shadow-blue-500/20 flex items-center gap-2 self-start sm:self-auto cursor-pointer">
+            <i class="fa-solid fa-compass text-amber-300"></i>
+            <span>Sugerencias de Adquisición por Ubicación</span>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           <div>
-            <h2 class="text-base font-bold text-white">Ubicación, Entorno y Competencia</h2>
-            <p class="text-xs text-slate-400">Factores geográficos, tráfico peatonal/digital y nivel de competencia en la zona.</p>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">Estado / Entidad Federativa (México) *</label>
+            <select id="geoState" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="Ciudad de México" selected>Ciudad de México (Centro / CEDA)</option>
+              <option value="Estado de México">Estado de México (Hub 3PL / Logística)</option>
+              <option value="Jalisco">Jalisco (Occidente / Tech / GDL)</option>
+              <option value="Nuevo León">Nuevo León (Norte / Industrial MTY)</option>
+              <option value="Puebla">Puebla (Centro-Oriente / Textil / Auto)</option>
+              <option value="Querétaro">Querétaro (Bajío / Aeroespacial)</option>
+              <option value="Guanajuato">Guanajuato (Bajío / Puerto Interior)</option>
+              <option value="Baja California">Baja California (Frontera Tijuana / Ensenada)</option>
+              <option value="Quintana Roo">Quintana Roo (Cancún / Riviera Maya)</option>
+              <option value="Yucatán">Yucatán (Mérida / Progreso)</option>
+              <option value="Veracruz">Veracruz (Puerto del Atlántico)</option>
+              <option value="Chihuahua">Chihuahua (Frontera Juárez)</option>
+              <option value="Coahuila">Coahuila (Saltillo / Frontera)</option>
+              <option value="Sonora">Sonora (Frontera Nogales)</option>
+              <option value="Aguascalientes">Aguascalientes (Bajío)</option>
+              <option value="San Luis Potosí">San Luis Potosí (Eje Carretero 57)</option>
+              <option value="Sinaloa">Sinaloa (Agrícola / Culiacán / Mazatlán)</option>
+              <option value="Tamaulipas">Tamaulipas (Nuevo Laredo / Altamira)</option>
+              <option value="Otras entidades">Otras entidades federativas...</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">Municipio / Alcaldía / Ciudad</label>
+            <input type="text" id="geoMunicipality" value="Cuauhtémoc (Roma / Condesa)" placeholder="Ej. Guadalajara, Monterrey, Zapopan, Benito Juárez..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">Tipo de Zona Comercial *</label>
+            <select id="geoZoneType" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="Corredor comercial de alto flujo peatonal" selected>Corredor comercial de alto flujo peatonal</option>
+              <option value="Plaza o Centro Comercial (Mall)">Plaza o Centro Comercial (Mall)</option>
+              <option value="Centro Histórico o Zona Turística">Centro Histórico o Zona Turística</option>
+              <option value="Zona Residencial de nivel socioeconómico medio-alto (A/B/C+)">Zona Residencial medio-alto (A/B/C+)</option>
+              <option value="Zona Residencial de nivel medio/popular (C/D+)">Zona Residencial medio/popular (C/D+)</option>
+              <option value="Parque Industrial o Corredor Logístico">Parque Industrial o Corredor Logístico</option>
+              <option value="Zona Corporativa / Complejos de Oficinas">Zona Corporativa / Oficinas</option>
+              <option value="Zona Universitaria / Escolar">Zona Universitaria / Escolar</option>
+              <option value="100% Digital / Envíos a Domicilio">100% Digital / Envíos a Domicilio</option>
+            </select>
           </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div>
-            <label class="block text-xs font-semibold text-slate-300 mb-1.5">Ubicación Geográfica / Tipo de Zona *</label>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">Ubicación Geográfica / Dirección Detallada *</label>
             <input type="text" id="location" value="Avenida comercial de alto flujo en colonia de nivel socioeconómico medio-alto (C+/B/A)." placeholder="Ej. Plaza comercial zona poniente, Local a pie de calle, 100% digital..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
           </div>
 
@@ -860,6 +930,29 @@
         </div>
       </div>
 
+      <!-- PANEL INTEGRAL DE RAZONES FINANCIERAS 360° -->
+      <div id="financialRatiosSection" class="glass-panel p-6 rounded-2xl border border-slate-800">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 mb-5 border-b border-slate-800">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center text-base">
+              <i class="fa-solid fa-calculator"></i>
+            </div>
+            <div>
+              <h3 class="text-base font-bold text-white flex items-center gap-2">
+                <span>Razones Financieras Integrales (Ratios 360°)</span>
+                <span class="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">Diagnóstico Cuantitativo</span>
+              </h3>
+              <p class="text-xs text-slate-400">Indicadores clave de liquidez, rentabilidad operativa, rotación de inventarios y solvencia patrimonial.</p>
+            </div>
+          </div>
+          <span class="text-xs text-purple-300/80 font-mono bg-purple-500/10 px-2.5 py-1 rounded-lg border border-purple-500/20">Fórmulas Financieras Validadas</span>
+        </div>
+
+        <div id="financialRatiosGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Renderizado dinámicamente con app.js -->
+        </div>
+      </div>
+
       <!-- CHARTS ROW -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- CHART 1: Cash Flow Projection -->
@@ -1089,5 +1182,39 @@ mermaid.initialize({
 window.mermaid = mermaid;
 </script>
 <script src="app.js?v=20261014_3"></script>
+  <!-- MODAL DE SUGERENCIAS DE ADQUISICIÓN POR GEOLOCALIZACIÓN -->
+  <div id="geoAcquisitionModal" class="fixed inset-0 z-[100] bg-black/80 hidden items-center justify-center p-4 backdrop-blur-sm overflow-y-auto">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl my-6">
+      <div class="p-5 border-b border-slate-800 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center text-lg">
+            <i class="fa-solid fa-compass"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+              <span>Sugerencias de Adquisición y Cadena de Suministro</span>
+              <span id="geoModalBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">Geolocalización</span>
+            </h3>
+            <p id="geoModalSubtitle" class="text-xs text-slate-400">Recomendaciones estratégicas de abastecimiento según tu estado y sector comercial</p>
+          </div>
+        </div>
+        <button type="button" id="closeGeoModalBtn" class="text-slate-400 hover:text-white text-lg p-2 rounded-lg hover:bg-slate-800 transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div id="geoModalContent" class="p-6 overflow-y-auto space-y-5 text-sm">
+        <!-- Contenido dinámico -->
+      </div>
+
+      <div class="p-4 border-t border-slate-800 flex justify-between items-center bg-slate-950/40">
+        <span class="text-xs text-slate-500">EconoMetrics AI · Logística y Cadena de Suministro México</span>
+        <button type="button" id="closeGeoModalFooterBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-4 py-2 rounded-lg transition">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>

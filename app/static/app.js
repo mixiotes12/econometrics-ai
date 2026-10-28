@@ -217,8 +217,41 @@ function initEventListeners() {
   // Auto-save on business profile inputs
   const businessInputs = [
     "businessName", "businessType", "businessDescription", "targetMarket",
-    "location", "locationDetails", "competitionLevel", "competitionDetails", "competitiveAdvantage"
+    "location", "locationDetails", "competitionLevel", "competitionDetails", "competitiveAdvantage",
+    "sectorSelect", "economicActivity", "geoState", "geoMunicipality", "geoZoneType"
   ];
+
+  // Geolocation & Acquisition Modal listeners (Fase 4)
+  const geoModal = document.getElementById("geoAcquisitionModal");
+  const btnOpenGeoModal = document.getElementById("btnOpenGeoModal");
+  const closeGeoModalBtn = document.getElementById("closeGeoModalBtn");
+  const closeGeoModalFooterBtn = document.getElementById("closeGeoModalFooterBtn");
+
+  if (btnOpenGeoModal && geoModal) {
+    btnOpenGeoModal.addEventListener("click", () => {
+      openGeoAcquisitionModal();
+    });
+  }
+  if (closeGeoModalBtn && geoModal) {
+    closeGeoModalBtn.addEventListener("click", () => {
+      geoModal.classList.add("hidden");
+      geoModal.classList.remove("flex");
+    });
+  }
+  if (closeGeoModalFooterBtn && geoModal) {
+    closeGeoModalFooterBtn.addEventListener("click", () => {
+      geoModal.classList.add("hidden");
+      geoModal.classList.remove("flex");
+    });
+  }
+  if (geoModal) {
+    geoModal.addEventListener("click", (e) => {
+      if (e.target === geoModal) {
+        geoModal.classList.add("hidden");
+        geoModal.classList.remove("flex");
+      }
+    });
+  }
   businessInputs.forEach(id => {
     const el = document.getElementById(id);
     if (el) {
@@ -358,6 +391,11 @@ function applyFormData(data) {
   setVal("competitionLevel", b.competition_level || "Media");
   setVal("competitionDetails", b.competition_details || "");
   setVal("competitiveAdvantage", b.competitive_advantage || "");
+  setVal("sectorSelect", b.sector);
+  setVal("economicActivity", b.economic_activity || "");
+  setVal("geoState", b.state);
+  setVal("geoMunicipality", b.municipality || "");
+  setVal("geoZoneType", b.zone_type);
 
   setVal("initialInvestment", f.initial_investment);
   setVal("discountRate", f.discount_rate_pct);
@@ -600,7 +638,13 @@ function getFormData() {
     location_details: getText("locationDetails", ""),
     competition_level: getText("competitionLevel", "Media"),
     competition_details: getText("competitionDetails", ""),
-    competitive_advantage: getText("competitiveAdvantage", "")
+    competitive_advantage: getText("competitiveAdvantage", ""),
+    sector: getText("sectorSelect", "Comercio al por menor"),
+    commercial_branch: getText("businessType", "Comercio / Servicios"),
+    economic_activity: getText("economicActivity", ""),
+    state: getText("geoState", "Ciudad de México"),
+    municipality: getText("geoMunicipality", ""),
+    zone_type: getText("geoZoneType", "Corredor comercial de alto flujo peatonal")
   };
 
   const getNum = (id, defaultVal) => {
@@ -831,6 +875,11 @@ function renderFinancialReport(report) {
 
   // Render Charts
   renderCharts(report);
+
+  // Render Financial Ratios 360° (Fase 4)
+  if (report.ratios) {
+    renderFinancialRatios(report.ratios);
+  }
 }
 
 function renderScenariosTable(scenarios) {
@@ -1509,4 +1558,317 @@ function initEngineeringAndTrackerListeners() {
     });
   }
 
+}
+
+
+// ----------------- RAZONES FINANCIERAS 360° (FASE 4) -----------------
+function renderFinancialRatios(ratios) {
+  const container = document.getElementById("financialRatiosGrid");
+  if (!container) return;
+  container.innerHTML = "";
+
+  if (!ratios || !ratios.items || ratios.items.length === 0) {
+    container.innerHTML = `
+      <div class="col-span-full text-center py-6 text-slate-500 text-xs">
+        <i class="fa-solid fa-calculator mb-1 text-lg"></i>
+        <p>No se han calculado razones financieras para este escenario.</p>
+      </div>`;
+    return;
+  }
+
+  const categoryIcons = {
+    "Liquidez": "fa-water",
+    "Rentabilidad": "fa-chart-line",
+    "Eficiencia": "fa-arrows-rotate",
+    "Solvencia": "fa-shield-halved"
+  };
+
+  ratios.items.forEach(item => {
+    const icon = categoryIcons[item.category] || "fa-scale-balanced";
+    
+    let badgeStyle = "bg-emerald-500/20 text-emerald-300 border-emerald-500/30";
+    let valStyle = "text-emerald-400";
+    let cardBorder = "border-slate-800 hover:border-emerald-500/40";
+
+    if (item.status_color === "blue") {
+      badgeStyle = "bg-blue-500/20 text-blue-300 border-blue-500/30";
+      valStyle = "text-blue-400";
+      cardBorder = "border-slate-800 hover:border-blue-500/40";
+    } else if (item.status_color === "amber") {
+      badgeStyle = "bg-amber-500/20 text-amber-300 border-amber-500/30";
+      valStyle = "text-amber-400";
+      cardBorder = "border-slate-800 hover:border-amber-500/40";
+    } else if (item.status_color === "rose") {
+      badgeStyle = "bg-rose-500/20 text-rose-300 border-rose-500/30";
+      valStyle = "text-rose-400";
+      cardBorder = "border-slate-800 hover:border-rose-500/40";
+    }
+
+    let formattedVal = "";
+    if (item.unit === "%") {
+      formattedVal = `${item.value.toFixed(1)}%`;
+    } else if (item.unit === "MXN") {
+      formattedVal = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(item.value);
+    } else if (item.unit === "días") {
+      formattedVal = `${Math.round(item.value)} días`;
+    } else if (item.unit === "veces/año" || item.unit === "x") {
+      formattedVal = `${item.value.toFixed(2)}${item.unit === 'x' ? 'x' : ' v/a'}`;
+    } else {
+      formattedVal = `${item.value} ${item.unit}`;
+    }
+
+    const card = document.createElement("div");
+    card.className = `p-4 rounded-xl bg-slate-900/90 border ${cardBorder} flex flex-col justify-between transition shadow-sm`;
+    card.innerHTML = `
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-[11px] font-semibold text-slate-400 flex items-center gap-1.5">
+            <i class="fa-solid ${icon} text-slate-500"></i> ${item.category}
+          </span>
+          <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${badgeStyle}">
+            ${item.status}
+          </span>
+        </div>
+        <div class="text-sm font-bold text-white mb-1">${item.name}</div>
+        <div class="flex items-baseline gap-2 mb-2">
+          <span class="text-2xl font-black font-mono ${valStyle}">${formattedVal}</span>
+          <span class="text-[11px] text-slate-500 font-mono">Meta: ${item.benchmark}</span>
+        </div>
+      </div>
+      <p class="text-xs text-slate-400 mt-2 pt-2 border-t border-slate-800/80 leading-relaxed">
+        ${item.interpretation}
+      </p>
+    `;
+    container.appendChild(card);
+  });
+}
+
+// ----------------- GEOLOCALIZACIÓN Y SUGERENCIAS DE ADQUISICIÓN (FASE 4) -----------------
+async function openGeoAcquisitionModal() {
+  const modal = document.getElementById("geoAcquisitionModal");
+  const content = document.getElementById("geoModalContent");
+  const badge = document.getElementById("geoModalBadge");
+  const subtitle = document.getElementById("geoModalSubtitle");
+  if (!modal || !content) return;
+
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+
+  content.innerHTML = `
+    <div class="flex flex-col items-center justify-center py-12 text-center space-y-4">
+      <div class="w-12 h-12 rounded-full border-4 border-indigo-500/20 border-t-indigo-500 animate-spin"></div>
+      <div>
+        <h4 class="text-sm font-bold text-white">Analizando Cadena de Suministro Territorial...</h4>
+        <p class="text-xs text-slate-400 mt-1">Evaluando geolocalización, fletes, hubs logísticos y ventajas de compra local vs. importación.</p>
+      </div>
+    </div>
+  `;
+
+  const state = document.getElementById("geoState")?.value || "Ciudad de México";
+  const sector = document.getElementById("sectorSelect")?.value || "Comercio al por menor (Retail)";
+  const branch = document.getElementById("businessType")?.value || "Comercio / Servicios";
+  const activity = document.getElementById("economicActivity")?.value || "";
+  const municipality = document.getElementById("geoMunicipality")?.value || "";
+  const zoneType = document.getElementById("geoZoneType")?.value || "Corredor comercial";
+  const name = document.getElementById("businessName")?.value || "Mi Negocio";
+  const description = document.getElementById("businessDescription")?.value || "";
+  const targetMarket = document.getElementById("targetMarket")?.value || "";
+  const location = document.getElementById("location")?.value || "";
+  const competitiveAdvantage = document.getElementById("competitiveAdvantage")?.value || "";
+
+  if (badge) badge.textContent = `${state} • ${sector.split(' ')[0]}`;
+  if (subtitle) subtitle.textContent = `Estrategia de abastecimiento y adquisición para ${branch} en ${state}`;
+
+  const payload = {
+    business: {
+      name,
+      business_type: branch,
+      description,
+      target_market: targetMarket,
+      location,
+      competitive_advantage: competitiveAdvantage,
+      sector,
+      commercial_branch: branch,
+      economic_activity: activity,
+      state,
+      municipality,
+      zone_type: zoneType
+    },
+    custom_api_key: localStorage.getItem("gemini_api_key") || null,
+    gemini_model: localStorage.getItem("gemini_model") || "gemini-3.5-flash"
+  };
+
+  try {
+    const headers = { "Content-Type": "application/json" };
+    const savedKey = localStorage.getItem("gemini_api_key");
+    if (savedKey) headers["X-Gemini-API-Key"] = savedKey;
+
+    const res = await fetch("/api/geo/acquisition-suggestions", {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `Error del servidor (${res.status})`);
+    }
+
+    const data = await res.json();
+    renderGeoModalContent(data);
+  } catch (err) {
+    content.innerHTML = `
+      <div class="p-6 rounded-xl bg-rose-500/10 border border-rose-500/30 text-center space-y-3">
+        <i class="fa-solid fa-triangle-exclamation text-rose-400 text-2xl"></i>
+        <h4 class="text-sm font-bold text-white">No se pudieron cargar las sugerencias de adquisición</h4>
+        <p class="text-xs text-rose-300">${err.message || "Error al conectar con el servicio de geolocalización."}</p>
+        <button type="button" onclick="openGeoAcquisitionModal()" class="px-3.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold transition">
+          Reintentar
+        </button>
+      </div>
+    `;
+  }
+}
+
+function renderGeoModalContent(data) {
+  const content = document.getElementById("geoModalContent");
+  if (!content) return;
+
+  let productsRows = "";
+  if (data.recommended_key_products && data.recommended_key_products.length > 0) {
+    productsRows = data.recommended_key_products.map(p => {
+      let sourceBadge = "bg-blue-500/20 text-blue-300 border-blue-500/30";
+      if (p.suggested_source.includes("Importación")) {
+        sourceBadge = "bg-amber-500/20 text-amber-300 border-amber-500/30";
+      } else if (p.suggested_source.includes("Local")) {
+        sourceBadge = "bg-emerald-500/20 text-emerald-300 border-emerald-500/30";
+      }
+
+      return `
+        <tr class="border-b border-slate-800 hover:bg-slate-800/40 transition">
+          <td class="py-3 px-3">
+            <div class="font-bold text-slate-100">${p.name}</div>
+            <div class="text-[11px] text-slate-400">${p.category}</div>
+          </td>
+          <td class="py-3 px-3 text-center font-mono font-bold text-emerald-400">
+            ${p.target_margin_pct.toFixed(0)}%
+          </td>
+          <td class="py-3 px-3 text-center">
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+              ${p.turnover_speed}
+            </span>
+          </td>
+          <td class="py-3 px-3 text-xs text-slate-300 leading-snug">
+            ${p.local_advantage}
+          </td>
+          <td class="py-3 px-3 text-right">
+            <span class="text-[10px] font-bold px-2.5 py-1 rounded-lg border ${sourceBadge} whitespace-nowrap">
+              ${p.suggested_source}
+            </span>
+          </td>
+        </tr>
+      `;
+    }).join("");
+  } else {
+    productsRows = `<tr><td colspan="5" class="py-4 text-center text-xs text-slate-500">No hay productos sugeridos.</td></tr>`;
+  }
+
+  let calendarCards = "";
+  if (data.seasonal_buying_calendar && data.seasonal_buying_calendar.length > 0) {
+    calendarCards = data.seasonal_buying_calendar.map(c => `
+      <div class="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-xs font-black text-indigo-300">${c.season_period}</span>
+            <span class="text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+              ${c.discount_opportunity}
+            </span>
+          </div>
+          <div class="text-xs font-bold text-white mb-1">${c.recommended_focus}</div>
+          <p class="text-[11px] text-slate-400 leading-relaxed">${c.action}</p>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  content.innerHTML = `
+    <!-- Top verdicts -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="p-4 rounded-xl bg-slate-950/60 border border-indigo-500/30">
+        <div class="flex items-center gap-2 text-indigo-400 font-bold text-xs uppercase tracking-wider mb-2">
+          <i class="fa-solid fa-map-location-dot"></i>
+          <span>Estrategia Regional de Abastecimiento</span>
+        </div>
+        <p class="text-xs text-slate-200 leading-relaxed">${data.regional_supply_strategy}</p>
+      </div>
+
+      <div class="p-4 rounded-xl bg-slate-950/60 border border-emerald-500/30">
+        <div class="flex items-center gap-2 text-emerald-400 font-bold text-xs uppercase tracking-wider mb-2">
+          <i class="fa-solid fa-scale-balanced"></i>
+          <span>Veredicto: Abastecimiento Local vs. Importación</span>
+        </div>
+        <p class="text-xs text-slate-200 leading-relaxed">${data.local_vs_import_verdict}</p>
+      </div>
+    </div>
+
+    <!-- Middle Logistics & Pricing Insights -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="p-4 rounded-xl bg-slate-950/40 border border-slate-800">
+        <div class="flex items-center gap-2 text-amber-400 font-bold text-xs uppercase tracking-wider mb-2">
+          <i class="fa-solid fa-truck-fast"></i>
+          <span>Logística, Fletes y Hubs de Distribución</span>
+        </div>
+        <p class="text-xs text-slate-300 leading-relaxed">${data.logistics_and_freight_insights}</p>
+      </div>
+
+      <div class="p-4 rounded-xl bg-slate-950/40 border border-slate-800">
+        <div class="flex items-center gap-2 text-purple-400 font-bold text-xs uppercase tracking-wider mb-2">
+          <i class="fa-solid fa-tags"></i>
+          <span>Competitividad y Políticas de Precios Locales</span>
+        </div>
+        <p class="text-xs text-slate-300 leading-relaxed">${data.local_competitive_pricing}</p>
+      </div>
+    </div>
+
+    <!-- Key Products Table -->
+    <div class="glass-panel p-4 rounded-xl border border-slate-800">
+      <div class="flex items-center justify-between mb-3">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-2">
+          <i class="fa-solid fa-boxes-stacked text-indigo-400"></i>
+          <span>Productos Clave Sugeridos para Adquisición (${data.sector})</span>
+        </h4>
+        <span class="text-[10px] text-slate-400">Márgenes y Rotación Esperada</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr class="border-b border-slate-800 text-[11px] font-semibold text-slate-400 uppercase">
+              <th class="py-2 px-3">Producto / Especialidad</th>
+              <th class="py-2 px-3 text-center">Margen Meta</th>
+              <th class="py-2 px-3 text-center">Rotación</th>
+              <th class="py-2 px-3">Ventaja Geográfica</th>
+              <th class="py-2 px-3 text-right">Fuente de Compra</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${productsRows}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Seasonal Buying Calendar -->
+    <div class="glass-panel p-4 rounded-xl border border-slate-800">
+      <div class="flex items-center justify-between mb-3">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-2">
+          <i class="fa-solid fa-calendar-days text-amber-400"></i>
+          <span>Calendario Estacional de Compras y Negociación</span>
+        </h4>
+        <span class="text-[10px] text-slate-400">Optimización de Inventario por Temporalidad</span>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        ${calendarCards}
+      </div>
+    </div>
+  `;
 }

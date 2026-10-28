@@ -63,6 +63,11 @@ TEMPLATES = [
         "business": {
             "name": "Aura Café & Roastery",
             "business_type": "Cafetería de Especialidad y Panadería Artesanal",
+            "sector": "Alimentos y Bebidas (Hospitality)",
+            "commercial_branch": "Cafetería de Especialidad & Brunch",
+            "state": "Ciudad de México",
+            "municipality": "Cuauhtémoc (Colonia Roma / Condesa)",
+            "zone_type": "Corredor comercial de alto flujo peatonal",
             "description": "Venta de café de origen, bebidas de autor, métodos de extracción y repostería artesanal con área de coworking ligera y terraza.",
             "target_market": "Profesionistas jóvenes de 22 a 45 años, nómadas digitales, estudiantes universitarios y amantes del buen café.",
             "location": "Avenida comercial de alto flujo en colonia de nivel socioeconómico medio-alto (C+/B/A).",
@@ -95,6 +100,11 @@ TEMPLATES = [
         "business": {
             "name": "Botanica Organics D2C",
             "business_type": "Comercio Electrónico Direct-to-Consumer (D2C)",
+            "sector": "Comercio Electrónico y Tecnología (Digital)",
+            "commercial_branch": "E-Commerce D2C (Marca Propia)",
+            "state": "Estado de México",
+            "municipality": "Tlalnepantla (Corredor Logístico 3PL)",
+            "zone_type": "100% Digital / Envíos a Domicilio",
             "description": "Marca propia de productos de cuidado facial y corporal veganos, libres de crueldad animal, empaques biodegradables.",
             "target_market": "Mujeres y hombres de 18 a 38 años preocupados por el cuidado de la piel y la sustentabilidad.",
             "location": "Canal 100% digital (Shopify + Amazon + MercadoLibre) con almacén centralizado 3PL.",
@@ -127,6 +137,11 @@ TEMPLATES = [
         "business": {
             "name": "MedFlow Cloud",
             "business_type": "Software as a Service (SaaS) B2B",
+            "sector": "Comercio Electrónico y Tecnología (Digital)",
+            "commercial_branch": "Software SaaS B2B",
+            "state": "Jalisco",
+            "municipality": "Zapopan (Silicon Valley Mexicano)",
+            "zone_type": "100% Digital / Envíos a Domicilio",
             "description": "Plataforma en la nube de gestión integral para consultorios médicos y clínicas dentales (agenda, expediente electrónico, facturación y recordatorios por WhatsApp).",
             "target_market": "Médicos especialistas independientes y clínicas privadas de 2 a 10 consultorios.",
             "location": "Venta remota nacional e internacional (Hispanoamérica).",
@@ -159,6 +174,11 @@ TEMPLATES = [
         "business": {
             "name": "CoreLab Boutique Studio",
             "business_type": "Estudio Fitness / Pilates Reformer & HIIT",
+            "sector": "Servicios Profesionales y Personales",
+            "commercial_branch": "Gimnasio Boutique / Fitness & Pilates",
+            "state": "Nuevo León",
+            "municipality": "San Pedro Garza García",
+            "zone_type": "Plaza o Centro Comercial (Mall)",
             "description": "Clases grupales semi-personalizadas de alta intensidad y Pilates Reformer en sesiones de 50 minutos con coaches certificados.",
             "target_market": "Hombres y mujeres de 25 a 55 años que buscan entrenamiento efectivo, dinámico y en grupos reducidos (máximo 12 personas).",
             "location": "Plaza comercial abierta en zona residencial de alta plusvalía con estacionamiento propio.",
@@ -288,6 +308,10 @@ app.include_router(inventory_router)
 
 from .hr import router as hr_router
 app.include_router(hr_router)
+
+# Módulo de Geolocalización y Sugerencias de Adquisición (Fase 4)
+from .geo_service import router as geo_router
+app.include_router(geo_router)
 
 # Static files for the frontend
 static_dir = os.path.join(os.path.dirname(__file__), "static")

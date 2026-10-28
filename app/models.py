@@ -11,6 +11,16 @@ class BusinessProfile(BaseModel):
     competition_level: str = Field(default="Media", description="Nivel de competencia (Baja, Media, Alta, Saturada)")
     competition_details: Optional[str] = Field("", description="Principales competidores identificados y diferenciadores clave")
     competitive_advantage: Optional[str] = Field("", description="Ventaja competitiva o Moat propuesto")
+    # Campos de Sector, Giro y Geolocalización (Fase 4)
+    sector: Optional[str] = Field(default="Comercio al por menor", description="Sector económico (Comercio, Alimentos, Servicios, Manufactura, etc.)")
+    commercial_branch: Optional[str] = Field(default="", description="Giro comercial específico (ej. Cafetería, Farmacia, Taller, Boutique)")
+    economic_activity: Optional[str] = Field(default="", description="Actividad económica formal o código del catálogo")
+    state: Optional[str] = Field(default="Ciudad de México", description="Estado o entidad federativa")
+    municipality: Optional[str] = Field(default="", description="Municipio, alcaldía o ciudad")
+    zone_type: Optional[str] = Field(default="Corredor comercial de alto flujo", description="Tipo de zona (comercial, industrial, residencial, etc.)")
+    postal_code: Optional[str] = Field(default="", description="Código postal")
+    geo_lat: Optional[float] = Field(default=None, description="Latitud geográfica")
+    geo_lng: Optional[float] = Field(default=None, description="Longitud geográfica")
 
 class FinancialInputs(BaseModel):
     initial_investment: float = Field(default=0.0, ge=0, description="Inversión inicial total en Pesos Mexicanos (MXN)")
@@ -87,6 +97,30 @@ class ScenarioSummary(BaseModel):
     total_5yr_net_profit: float
     roi_annual_avg_pct: float
 
+class RatioItem(BaseModel):
+    name: str
+    category: str  # Liquidez, Rentabilidad, Eficiencia, Solvencia
+    value: float
+    unit: str  # x, %, MXN, días
+    benchmark: str
+    status: str  # excelente, aceptable, alerta, critico
+    status_color: str  # emerald, blue, amber, rose
+    interpretation: str
+
+class FinancialRatios(BaseModel):
+    current_ratio: float
+    quick_ratio: float
+    working_capital: float
+    gross_margin_pct: float
+    operating_margin_pct: float
+    net_profit_margin_pct: float
+    inventory_turnover: float
+    days_inventory: float
+    roa_pct: float
+    roe_pct: float
+    debt_to_assets_pct: float
+    items: List[RatioItem]
+
 class FinancialReport(BaseModel):
     npv: float
     irr_pct: Optional[float]
@@ -106,6 +140,7 @@ class FinancialReport(BaseModel):
     viability_status: str
     viability_color: str
     summary_bullets: List[str]
+    ratios: Optional[FinancialRatios] = None
 
 class RiskMatrixItem(BaseModel):
     category: str
@@ -171,4 +206,36 @@ class FlowchartResponse(BaseModel):
     activities: List[ActivityItem]
     consumables_table: List[ConsumableItem]
     total_monthly_consumables_cost: float
+    generated_at: str
+
+class KeyProductSuggestion(BaseModel):
+    name: str
+    category: str
+    target_margin_pct: float
+    turnover_speed: str  # Alta, Media, Rápida
+    local_advantage: str
+    suggested_source: str  # Proveedor Local, Importación Directa, Distribuidor Regional
+
+class SeasonalCalendarItem(BaseModel):
+    season_period: str
+    action: str
+    recommended_focus: str
+    discount_opportunity: str
+
+class AcquisitionSuggestionRequest(BaseModel):
+    business: BusinessProfile
+    custom_api_key: Optional[str] = None
+    gemini_model: Optional[str] = "gemini-3.5-flash"
+
+class AcquisitionSuggestionResponse(BaseModel):
+    state: str
+    zone_type: str
+    sector: str
+    commercial_branch: str
+    regional_supply_strategy: str
+    local_vs_import_verdict: str
+    logistics_and_freight_insights: str
+    recommended_key_products: List[KeyProductSuggestion]
+    seasonal_buying_calendar: List[SeasonalCalendarItem]
+    local_competitive_pricing: str
     generated_at: str
