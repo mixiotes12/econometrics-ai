@@ -159,9 +159,26 @@ function initEventListeners() {
     runFullGeminiAnalysis();
   });
 
-  document.getElementById("exportPdfBtn").addEventListener("click", () => {
-    window.print();
-  });
+  const exportPdfBtn = document.getElementById("exportPdfBtn");
+  if (exportPdfBtn) {
+    exportPdfBtn.addEventListener("click", () => {
+      window.print();
+    });
+  }
+
+  const exportCsvBtn = document.getElementById("exportCsvBtn");
+  if (exportCsvBtn) {
+    exportCsvBtn.addEventListener("click", () => {
+      exportFinancialReportToCsv();
+    });
+  }
+
+  const tab6ExportCsvBtn = document.getElementById("tab6ExportCsvBtn");
+  if (tab6ExportCsvBtn) {
+    tab6ExportCsvBtn.addEventListener("click", () => {
+      exportFinancialReportToCsv();
+    });
+  }
 
   // Live calculation & auto-save on financial inputs
   const liveInputs = [
@@ -697,6 +714,8 @@ async function runQuickCalculation() {
     currentFinancialReport = report;
     renderFinancialReport(report);
     document.getElementById("exportPdfBtn").classList.remove("hidden");
+    const exportCsvBtn = document.getElementById("exportCsvBtn");
+    if (exportCsvBtn) exportCsvBtn.classList.remove("hidden");
   } catch (err) {
     console.error("Calculation error:", err);
   }
@@ -1871,4 +1890,156 @@ function renderGeoModalContent(data) {
       </div>
     </div>
   `;
+}
+
+
+// ----------------- EXPORTACIÓN DE MODELO FINANCIERO A EXCEL / CSV (FASE 5) -----------------
+function exportFinancialReportToCsv() {
+  if (!currentFinancialReport) {
+    showToast("Primero calcula o carga un reporte financiero para exportar.", false);
+    return;
+  }
+
+  const r = currentFinancialReport;
+  const b = getFormData().business;
+  const f = getFormData().financials;
+
+  const now = new Date();
+  const dateStr = now.toLocaleDateString("es-MX", { year: "numeric", month: "2-digit", day: "2-digit" });
+  const timeStr = now.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
+
+  const escapeCsv = (str) => {
+    if (str === null || str === undefined) return '""';
+    const s = String(str).replace(/"/g, '""');
+    return `"${s}"`;
+  };
+
+  const rows = [];
+  rows.push(["ECONOMETRICS AI - MODELO FINANCIERO Y EVALUACIÓN DE PROYECTO 360°"]);
+  rows.push(["Fecha y Hora de Emisión", `${dateStr} ${timeStr}`]);
+  rows.push(["Dictamen de Viabilidad Global", r.viability_status]);
+  rows.push([]);
+
+  rows.push(["1. IDENTIDAD DEL NEGOCIO Y GEOLOCALIZACIÓN"]);
+  rows.push(["Nombre del Proyecto / Negocio", b.name]);
+  rows.push(["Sector Económico", b.sector]);
+  rows.push(["Giro Comercial Específico", b.business_type]);
+  rows.push(["Actividad Económica", b.economic_activity || "No especificada"]);
+  rows.push(["Entidad Federativa (Estado)", b.state]);
+  rows.push(["Municipio / Alcaldía", b.municipality || "No especificada"]);
+  rows.push(["Tipo de Zona Comercial", b.zone_type]);
+  rows.push(["Ubicación Detallada", b.location]);
+  rows.push(["Ventaja Competitiva / Moat", b.competitive_advantage || "No especificada"]);
+  rows.push([]);
+
+  rows.push(["2. PARÁMETROS OPERATIVOS Y FINANCIEROS CLAVE"]);
+  rows.push(["Inversión Inicial Total (MXN)", f.initial_investment]);
+  rows.push(["Precio de Venta Promedio (MXN)", f.monthly_price]);
+  rows.push(["Demanda Estimada Mensual (unidades)", f.monthly_units]);
+  rows.push(["Costo Variable Unitario (MXN)", f.unit_variable_cost]);
+  rows.push(["Costos Fijos Operativos Mensuales (MXN)", f.monthly_fixed_costs]);
+  rows.push(["Fondo Mensual Mantenimiento/Capex (MXN)", f.monthly_maintenance_cost]);
+  rows.push(["Tasa de Descuento Anual / WACC (%)", f.discount_rate_pct]);
+  rows.push(["Tasa Pasiva Libre de Riesgo CETES/Banco (%)", f.bank_risk_free_rate_pct]);
+  rows.push(["Tasa de Mermas, Robos y Desperdicios (%)", f.shrinkage_risk_loss_pct]);
+  rows.push(["Crecimiento Anual de Ventas (%)", f.annual_sales_growth_pct]);
+  rows.push(["Inflación Anual Proyectada (%)", f.annual_inflation_pct]);
+  rows.push(["Tasa Impositiva ISR (%)", f.tax_rate_pct]);
+  rows.push(["Años de Depreciación de Activos", f.depreciation_years]);
+  rows.push([]);
+
+  rows.push(["3. MÉTRICAS DE RENTABILIDAD Y EVALUACIÓN DE INVERSIÓN"]);
+  rows.push(["Métrica", "Valor", "Unidad", "Veredicto"]);
+  rows.push(["Valor Actual Neto (VAN / NPV)", r.npv, "MXN", r.npv >= 0 ? "Viable (Crea Valor Económico)" : "Inviable (Destruye Valor)"]);
+  rows.push(["Tasa Interna de Retorno (TIR / IRR)", r.irr_pct !== null ? `${r.irr_pct.toFixed(2)}%` : "N/D", "%", r.irr_pct && r.irr_pct >= r.discount_rate_pct ? "Supera Tasa de Descuento" : "Inferior a Tasa de Descuento"]);
+  rows.push(["Periodo de Recuperación Simple (Payback)", r.payback_years !== null ? `${r.payback_years.toFixed(2)} años` : "No recupera", "años", "Recuperación de inversión inicial"]);
+  rows.push(["Periodo de Recuperación Descontado", r.discounted_payback_years !== null ? `${r.discounted_payback_years.toFixed(2)} años` : "> Horizonte", "años", "Recuperación a valor presente"]);
+  rows.push(["Punto de Equilibrio Mensual (Unidades)", Math.round(r.break_even.monthly_breakeven_units), "unidades/mes", "Volumen mínimo para no perder"]);
+  rows.push(["Punto de Equilibrio Mensual (Ingresos)", r.break_even.monthly_breakeven_revenue, "MXN/mes", "Facturación mínima de sobrevivencia"]);
+  rows.push(["Margen de Seguridad Operativo", `${r.break_even.margin_of_safety_pct.toFixed(1)}%`, "%", "Colchón de ventas sobre el equilibrio"]);
+  rows.push(["Razón Beneficio / Costo (B/C)", r.benefit_cost_ratio.toFixed(2), "veces", r.benefit_cost_ratio >= 1.0 ? "Beneficios superan los costos" : "Costos superan beneficios"]);
+  rows.push(["Retorno Anual Promedio (ROI)", `${r.roi_annual_avg_pct.toFixed(1)}%`, "%", "Rendimiento neto anual sobre inversión"]);
+  if (r.bank_comparison) {
+    rows.push(["Premio de Riesgo vs CETES/Banco", `${r.bank_comparison.risk_premium_pct.toFixed(1)}%`, "%", r.bank_comparison.verdict]);
+    rows.push(["Diferencial Mensual vs Banco", r.bank_comparison.monthly_difference, "MXN/mes", "Ganancia adicional mensual"]);
+  }
+  rows.push([]);
+
+  // Pro-Forma
+  if (r.yearly_cash_flows && r.yearly_cash_flows.length > 0) {
+    rows.push(["4. ESTADO DE RESULTADOS Y PROYECCIÓN DE FLUJOS (PRO-FORMA A 5 AÑOS)"]);
+    const yearsHeader = ["Concepto Financiero", ...r.yearly_cash_flows.map(y => `Año ${y.year}`)];
+    rows.push(yearsHeader);
+
+    const proformaFields = [
+      { label: "Unidades Vendidas", key: "units_sold" },
+      { label: "Precio Promedio Unitario ($)", key: "price_unit" },
+      { label: "Ingresos Brutos ($)", key: "revenue" },
+      { label: "(-) Mermas, Robos y Desperdicios ($)", key: "shrinkage_loss" },
+      { label: "(=) Ingresos Netos ($)", key: "net_revenue" },
+      { label: "(-) Costos Variables ($)", key: "variable_costs" },
+      { label: "(=) Margen Bruto ($)", key: "gross_margin" },
+      { label: "(-) Costos Fijos ($)", key: "fixed_costs" },
+      { label: "(=) EBITDA ($)", key: "ebitda" },
+      { label: "(-) Depreciación ($)", key: "depreciation" },
+      { label: "(=) EBIT / Utilidad Operativa ($)", key: "ebit" },
+      { label: "(-) Impuestos ISR ($)", key: "taxes" },
+      { label: "(=) Utilidad Neta ($)", key: "net_income" },
+      { label: "(+) Depreciación Recuperada ($)", key: "depreciation" },
+      { label: "(=) Flujo de Caja Libre ($)", key: "free_cash_flow" },
+      { label: "Flujo de Caja Libre Descontado ($)", key: "discounted_fcf" },
+      { label: "Flujo Acumulado Descontado ($)", key: "cumulative_discounted_fcf" }
+    ];
+
+    proformaFields.forEach(field => {
+      const line = [field.label];
+      r.yearly_cash_flows.forEach(y => {
+        const val = y[field.key];
+        line.push(typeof val === "number" ? Math.round(val) : val);
+      });
+      rows.push(line);
+    });
+    rows.push([]);
+  }
+
+  // Ratios 360
+  if (r.ratios && r.ratios.items && r.ratios.items.length > 0) {
+    rows.push(["5. RAZONES FINANCIERAS INTEGRALES 360° (DIAGNÓSTICO CUANTITATIVO)"]);
+    rows.push(["Razón Financiera", "Categoría", "Valor Calculado", "Unidad", "Meta / Benchmark", "Estado", "Interpretación Ejecutiva"]);
+    r.ratios.items.forEach(it => {
+      rows.push([it.name, it.category, it.value, it.unit, it.benchmark, it.status.toUpperCase(), it.interpretation]);
+    });
+    rows.push([]);
+  }
+
+  // Scenarios
+  if (r.scenarios) {
+    rows.push(["6. ANÁLISIS DE SENSIBILIDAD POR ESCENARIOS"]);
+    rows.push(["Escenario", "Descripción", "VAN / NPV (MXN)", "TIR / IRR (%)", "Payback (Años)", "ROI Anual Promedio (%)"]);
+    [r.scenarios.pessimistic, r.scenarios.base, r.scenarios.optimistic].forEach(sc => {
+      if (sc) {
+        rows.push([
+          sc.name,
+          sc.description,
+          sc.npv,
+          sc.irr_pct !== null ? `${sc.irr_pct.toFixed(2)}%` : "N/D",
+          sc.payback_years !== null ? `${sc.payback_years.toFixed(2)}` : "> 5",
+          `${sc.roi_annual_avg_pct.toFixed(1)}%`
+        ]);
+      }
+    });
+  }
+
+  const csvContent = "\uFEFF" + rows.map(row => row.map(cell => escapeCsv(cell)).join(",")).join("\r\n");
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  const safeName = (b.name || "Proyecto").replace(/[^a-zA-Z0-9_-]/g, "_");
+  link.setAttribute("href", url);
+  link.setAttribute("download", `Modelo_Financiero_EconoMetrics_${safeName}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+  showToast("Modelo Financiero exportado a Excel / CSV exitosamente.", true);
 }
