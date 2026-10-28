@@ -272,7 +272,10 @@
         scales: type === "bar" ? { x: { ticks: { color: "#94a3b8" } }, y: { ticks: { color: "#94a3b8" } } } : {} } });
   }
 
-  const applyRole = () => document.querySelectorAll(".admin-only").forEach((el) => { if (!(me && me.is_admin)) el.classList.add("hidden"); });
+  const can = (perm) => !!me && (me.is_admin || (me.permissions || []).includes(perm));
+  const applyRole = () => document.querySelectorAll(".admin-only").forEach((el) => {
+    if (!(can("products.manage") || can("inventory.move") || can("rates.manage"))) el.classList.add("hidden");
+  });
 
   // ---------- Eventos
   function bind() {
@@ -320,7 +323,7 @@
 
   document.addEventListener("DOMContentLoaded", async () => {
     if (!token || !me) return showNoSession();
-    $("whoami").textContent = `${me.name} · ${me.is_admin ? "Administrador" : "Cajero"}`;
+    $("whoami").textContent = `${me.name} · ${me.role_label || (me.is_admin ? "Administrador" : "Cajero")}`;
     bind();
     try { await loadRates(); await loadCatalog(); } catch {}
   });

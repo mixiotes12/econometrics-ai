@@ -12,6 +12,7 @@
   let shift = null;
   let settings = {};
   let currentInvoiceSale = null;
+  const can = (perm) => !!me && (me.is_admin || (me.permissions || []).includes(perm));
 
   // ---------- API
   async function api(path, opts = {}) {
@@ -53,13 +54,29 @@
   }
   async function startApp() {
     $("loginOverlay").classList.add("hidden");
-    $("whoami").textContent = `${me.name} · ${me.is_admin ? "Administrador" : "Cajero"}`;
-    document.querySelectorAll(".admin-only").forEach((b) => b.classList.toggle("hidden", !me.is_admin));
+    $("whoami").textContent = `${me.name} · ${me.role_label || (me.is_admin ? "Administrador" : "Cajero")}`;
+    document.querySelectorAll("[data-perm]").forEach((b) => b.classList.toggle("hidden", !can(b.dataset.perm)));
+    document.querySelectorAll(".admin-only").forEach((b) => b.classList.toggle("hidden", !can("settings.manage")));
+    if (me.must_change_pin) await forcePinChange();
     settings = await api("/settings");
     await refreshShift();
     renderCart();
     switchTab("venta");
     $("scanInput").focus();
+  }
+
+  async function forcePinChange() {
+    const cur = prompt("Por seguridad debes cambiar tu PIN inicial.\nPIN actual:");
+    const nuevo = cur && prompt("Nuevo PIN (4 a 8 dígitos, no uses 1234):");
+    if (!cur || !nuevo) return;
+    try {
+      const r = await fetch("/api/hr/me/pin", { method: "POST", headers: { "Content-Type": "application/json", "X-POS-Token": token },
+        body: JSON.stringify({ current_pin: cur, new_pin: nuevo }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(typeof d.detail === "string" ? d.detail : "PIN inválido (4 a 8 dígitos)");
+      me.must_change_pin = false; sessionStorage.setItem("pos_me", JSON.stringify(me));
+      alert("PIN actualizado.");
+    } catch (e) { alert(e.message + "\nPodrás intentarlo de nuevo al volver a iniciar sesión."); }
   }
 
   // ---------- Tabs
@@ -180,7 +197,7 @@
       <td>${fmt(s.total)}</td><td class="${s.status === "cancelada" ? "text-red-400" : ""}">${esc(s.status)}</td>
       <td class="space-x-1 whitespace-nowrap"><button class="btn btn-sec !py-0.5" data-ticket="${s.id}"><i class="fa-solid fa-print"></i></button>
       ${s.status === "completada" && !s.invoiced ? `<button class="btn btn-pri !py-0.5" data-invoice="${s.id}" data-folio="${esc(s.folio)}">Facturar</button>` : ""}
-      ${me.is_admin && s.status === "completada" && !s.invoiced ? `<button class="btn btn-red !py-0.5" data-cancel="${s.id}">Cancelar</button>` : ""}</td></tr>`).join("");
+      ${can("sales.cancel") && s.status === "completada" && !s.invoiced ? `<button class="btn btn-red !py-0.5" data-cancel="${s.id}">Cancelar</button>` : ""}</td></tr>`).join("");
     const inv = await api("/invoices");
     $("invoicesBody").innerHTML = inv.map((i) => `<tr><td>${esc(i.serie)}-${esc(i.folio)}</td><td>${esc(i.sale_folio)}</td><td>${esc(i.rfc)}</td><td>${esc(i.razon_social)}</td>
       <td>${fmt(i.total)}</td><td>${esc(i.status.replace("_", " "))}</td>
@@ -229,7 +246,7 @@
     $("loginBtn").onclick = doLogin;
     $("loginPin").addEventListener("keydown", (e) => e.key === "Enter" && doLogin());
     $("logoutBtn").onclick = async () => { try { await api("/logout", { method: "POST" }); } catch {} logoutLocal(); };
-    $("tabs").addEventListener("click", (e) => { const b = e.target.closest(".tab-btn"); if (b) switchTab(b.dataset.tab); });
+    $("tabs").addEventListener("click", (e) => { const b = e.target.closest(".tab-btn"); if (b && b.dataset.tab) switchTab(b.dataset.tab); });
 
     $("scanInput").addEventListener("keydown", (e) => e.key === "Enter" && scan());
     $("scanBtn").onclick = scan;

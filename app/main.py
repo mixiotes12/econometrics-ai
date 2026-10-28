@@ -286,6 +286,9 @@ app.include_router(pos_router)
 from .inventory import router as inventory_router
 app.include_router(inventory_router)
 
+from .hr import router as hr_router
+app.include_router(hr_router)
+
 # Static files for the frontend
 static_dir = os.path.join(os.path.dirname(__file__), "static")
 if not os.path.exists(static_dir):

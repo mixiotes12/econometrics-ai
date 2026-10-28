@@ -19,7 +19,7 @@ import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
-from .pos import IVA_TYPES, admin_only, current_cashier, db, log_movement, money, now
+from .pos import IVA_TYPES, audit, current_cashier, db, log_movement, money, now, require
 
 router = APIRouter(prefix="/api/inv", tags=["Inventarios"])
 
@@ -168,13 +168,14 @@ def categories(_: dict = Depends(current_cashier)):
 
 
 @router.post("/products")
-def create_product(p: ProductFull, me: dict = Depends(admin_only)):
+def create_product(p: ProductFull, me: dict = Depends(require("products.manage"))):
     try:
         with db() as conn:
             d = prepare(conn, p)
             stock0 = d["stock"]
             conn.execute(f"INSERT INTO products({','.join(COLS)}) VALUES ({','.join(':' + c for c in COLS)})", d)
             pid = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+            audit(conn, me, "producto_creado", d["name"], "producto")
             if d["track_stock"] and stock0:
                 log_movement(conn, pid, "entrada", stock0, d["cost"], "Existencia inicial", "", me["id"])
             return enrich(conn.execute("SELECT * FROM products WHERE id=?", (pid,)).fetchone())
@@ -183,7 +184,7 @@ def create_product(p: ProductFull, me: dict = Depends(admin_only)):
 
 
 @router.put("/products/{pid}")
-def update_product(pid: int, p: ProductFull, me: dict = Depends(admin_only)):
+def update_product(pid: int, p: ProductFull, me: dict = Depends(require("products.manage"))):
     try:
         with db() as conn:
             old = conn.execute("SELECT stock FROM products WHERE id=?", (pid,)).fetchone()
@@ -194,6 +195,7 @@ def update_product(pid: int, p: ProductFull, me: dict = Depends(admin_only)):
             d["id"] = pid
             sets = ",".join(f"{c}=:{c}" for c in COLS)
             conn.execute(f"UPDATE products SET {sets} WHERE id=:id", d)
+            audit(conn, me, "producto_editado", d["name"], "producto")
             return enrich(conn.execute("SELECT * FROM products WHERE id=?", (pid,)).fetchone())
     except sqlite3.IntegrityError:
         raise HTTPException(400, "SKU o código de barras duplicado.")
@@ -212,7 +214,7 @@ def _remove_file(url: Optional[str]):
 
 
 @router.post("/products/{pid}/image")
-def upload_image(pid: int, body: ImageIn, _: dict = Depends(admin_only)):
+def upload_image(pid: int, body: ImageIn, _: dict = Depends(require("products.manage"))):
     m = DATA_URL_RE.match(body.data_url.strip())
     if not m:
         raise HTTPException(400, "Formato de imagen inválido (PNG, JPEG o WEBP).")
@@ -237,7 +239,7 @@ def upload_image(pid: int, body: ImageIn, _: dict = Depends(admin_only)):
 
 
 @router.delete("/products/{pid}/image")
-def delete_image(pid: int, _: dict = Depends(admin_only)):
+def delete_image(pid: int, _: dict = Depends(require("products.manage"))):
     with db() as conn:
         r = conn.execute("SELECT image FROM products WHERE id=?", (pid,)).fetchone()
         if not r:
@@ -272,7 +274,7 @@ class MovementIn(BaseModel):
 
 
 @router.post("/products/{pid}/movement")
-def add_movement(pid: int, m: MovementIn, me: dict = Depends(admin_only)):
+def add_movement(pid: int, m: MovementIn, me: dict = Depends(require("inventory.move"))):
     with db() as conn:
         p = conn.execute("SELECT * FROM products WHERE id=?", (pid,)).fetchone()
         if not p:
@@ -300,6 +302,7 @@ def add_movement(pid: int, m: MovementIn, me: dict = Depends(admin_only)):
             delta = m.qty - p["stock"]
         conn.execute("UPDATE products SET stock = stock + ? WHERE id=?", (delta, pid))
         log_movement(conn, pid, m.type, delta, unit_cost, m.reason.strip(), "", me["id"])
+        audit(conn, me, "inventario_" + m.type, f"{p['name']}: {delta:+g} (motivo: {m.reason.strip() or '-'})", "inventario")
         return enrich(conn.execute("SELECT * FROM products WHERE id=?", (pid,)).fetchone())
 
 
@@ -334,7 +337,7 @@ def list_rates(_: dict = Depends(current_cashier)):
 
 
 @router.put("/rates/{currency}")
-def set_rate(currency: str, body: RateIn, _: dict = Depends(admin_only)):
+def set_rate(currency: str, body: RateIn, _: dict = Depends(require("rates.manage"))):
     currency = currency.upper()
     if currency not in CURRENCIES or currency == "MXN":
         raise HTTPException(400, "Solo se puede editar USD o EUR.")
@@ -345,7 +348,7 @@ def set_rate(currency: str, body: RateIn, _: dict = Depends(admin_only)):
 
 
 @router.post("/rates/refresh")
-def refresh_rates(_: dict = Depends(admin_only)):
+def refresh_rates(_: dict = Depends(require("rates.manage"))):
     """Actualiza USD y EUR contra MXN desde open.er-api.com (requiere Internet)."""
     try:
         r = httpx.get("https://open.er-api.com/v6/latest/USD", timeout=10)
@@ -363,7 +366,7 @@ def refresh_rates(_: dict = Depends(admin_only)):
 
 
 @router.post("/rates/apply")
-def apply_rates(_: dict = Depends(admin_only)):
+def apply_rates(_: dict = Depends(require("rates.manage"))):
     """Recalcula el costo de todos los productos importados con el tipo de cambio vigente."""
     updated = []
     with db() as conn:

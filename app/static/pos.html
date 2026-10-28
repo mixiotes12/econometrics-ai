@@ -36,7 +36,7 @@
       <div><label class="l">PIN</label><input id="loginPin" type="password" inputmode="numeric" maxlength="8" class="inp" autocomplete="off"></div>
       <div id="loginError" class="text-red-400 text-xs hidden"></div>
       <button id="loginBtn" class="btn btn-pri w-full">Entrar</button>
-      <p class="text-[11px] text-slate-500 text-center">Primer uso: Administrador / PIN 1234 (cámbialo en la pestaña Cajeros).</p>
+      <p class="text-[11px] text-slate-500 text-center">Primer uso: Administrador / PIN 1234 (el sistema te pedirá cambiarlo).</p>
       <a href="index.html" class="block text-center text-xs text-slate-400 hover:text-white">&larr; Volver a EconoMetrics</a>
     </div>
   </div>
@@ -51,6 +51,7 @@
         <span id="shiftBadge" class="text-[11px] px-2 py-0.5 rounded-full bg-slate-700">Sin turno</span>
       </div>
       <div class="flex items-center gap-3 text-xs">
+        <a href="personal.html" class="btn btn-sec"><i class="fa-solid fa-user-shield mr-1"></i>Personal</a>
         <a href="inventario.html" class="btn btn-sec"><i class="fa-solid fa-boxes-stacked mr-1"></i>Inventarios</a>
         <span id="whoami" class="text-slate-300"></span>
         <button id="logoutBtn" class="btn btn-sec">Salir</button>
@@ -60,9 +61,9 @@
       <button class="tab-btn active" data-tab="venta"><i class="fa-solid fa-barcode mr-1"></i>Venta</button>
       <button class="tab-btn" data-tab="caja"><i class="fa-solid fa-vault mr-1"></i>Caja / Turno</button>
       <button class="tab-btn" data-tab="ventas"><i class="fa-solid fa-receipt mr-1"></i>Ventas y Facturas</button>
-      <button class="tab-btn admin-only" data-tab="productos"><i class="fa-solid fa-boxes-stacked mr-1"></i>Productos</button>
-      <button class="tab-btn admin-only" data-tab="cajeros"><i class="fa-solid fa-users mr-1"></i>Cajeros</button>
-      <button class="tab-btn admin-only" data-tab="config"><i class="fa-solid fa-gear mr-1"></i>Configuración</button>
+      <button class="tab-btn hidden" data-perm="products.manage" data-tab="productos"><i class="fa-solid fa-boxes-stacked mr-1"></i>Productos</button>
+      <a class="tab-btn hidden" data-perm="users.manage" href="personal.html"><i class="fa-solid fa-users mr-1"></i>Usuarios y personal</a>
+      <button class="tab-btn hidden" data-perm="settings.manage" data-tab="config"><i class="fa-solid fa-gear mr-1"></i>Configuración</button>
     </nav>
   </header>
 

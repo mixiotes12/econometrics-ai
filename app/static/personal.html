@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Personal y Seguridad - EconoMetrics</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: 'class' }</script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .inp { background:#0f172a; border:1px solid #334155; border-radius:.5rem; padding:.45rem .7rem; width:100%; font-size:.85rem; color:#f1f5f9; }
+    .inp:focus { outline:none; border-color:#a78bfa; }
+    .btn { padding:.45rem .85rem; border-radius:.5rem; font-size:.78rem; font-weight:600; transition:.15s; }
+    .btn-pri { background:#7c3aed; color:#fff; } .btn-pri:hover { background:#8b5cf6; }
+    .btn-sec { background:#334155; color:#e2e8f0; } .btn-sec:hover { background:#475569; }
+    .btn-red { background:#b91c1c; color:#fff; } .btn-red:hover { background:#dc2626; }
+    .tab-btn { padding:.6rem 1rem; font-size:.8rem; font-weight:600; border-bottom:2px solid transparent; color:#94a3b8; white-space:nowrap; }
+    .tab-btn.active { color:#a78bfa; border-color:#a78bfa; }
+    th { text-align:left; font-weight:600; color:#94a3b8; font-size:.68rem; text-transform:uppercase; padding:.4rem .5rem; }
+    td { padding:.4rem .5rem; font-size:.8rem; border-top:1px solid #1e293b; vertical-align:middle; }
+    label.l { display:block; font-size:.68rem; color:#94a3b8; margin-bottom:.15rem; }
+    .card { background:#0f172a; border:1px solid #1e293b; border-radius:.75rem; padding:1rem; }
+    .pill { font-size:.65rem; padding:.1rem .5rem; border-radius:9999px; font-weight:700; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+  <header class="border-b border-slate-800 bg-slate-900/80 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <a href="index.html" class="text-slate-400 hover:text-white"><i class="fa-solid fa-arrow-left"></i></a>
+        <i class="fa-solid fa-user-shield text-violet-400"></i>
+        <span class="font-bold">Personal y Seguridad</span>
+      </div>
+      <div class="flex items-center gap-3 text-xs">
+        <button id="clockBtn" class="btn btn-sec hidden"></button>
+        <a href="pos.html" class="btn btn-sec"><i class="fa-solid fa-cash-register mr-1"></i>POS</a>
+        <a href="inventario.html" class="btn btn-sec"><i class="fa-solid fa-boxes-stacked mr-1"></i>Inventarios</a>
+        <span id="whoami" class="text-slate-300"></span>
+      </div>
+    </div>
+    <nav id="tabs" class="max-w-7xl mx-auto px-4 flex gap-1 overflow-x-auto">
+      <button class="tab-btn hidden" data-perm="users.manage" data-tab="usuarios"><i class="fa-solid fa-users mr-1"></i>Usuarios</button>
+      <button class="tab-btn hidden" data-perm="users.manage" data-tab="roles"><i class="fa-solid fa-key mr-1"></i>Roles y permisos</button>
+      <button class="tab-btn hidden" data-perm="users.manage" data-tab="areas"><i class="fa-solid fa-sitemap mr-1"></i>Áreas</button>
+      <button class="tab-btn hidden" data-perm="hr.manage|hr.payroll" data-tab="personal"><i class="fa-solid fa-id-badge mr-1"></i>Personal</button>
+      <button class="tab-btn" data-tab="asistencia"><i class="fa-solid fa-clock mr-1"></i>Asistencia</button>
+      <button class="tab-btn hidden" data-perm="hr.manage|hr.payroll" data-tab="nomina"><i class="fa-solid fa-money-check-dollar mr-1"></i>Nómina y costo laboral</button>
+      <button class="tab-btn hidden" data-perm="audit.view" data-tab="bitacora"><i class="fa-solid fa-clipboard-list mr-1"></i>Bitácora</button>
+    </nav>
+  </header>
+
+  <div id="noSession" class="hidden max-w-md mx-auto mt-20 card text-center space-y-3">
+    <p>Necesitas iniciar sesión en el Punto de Venta para usar este módulo.</p>
+    <a href="pos.html" class="btn btn-pri inline-block">Ir a iniciar sesión</a>
+  </div>
+
+  <main id="app" class="max-w-7xl mx-auto px-4 py-5">
+
+    <!-- USUARIOS -->
+    <section id="tab-usuarios" class="tab-panel hidden space-y-3">
+      <form id="userForm" class="card grid sm:grid-cols-6 gap-3">
+        <input type="hidden" id="uId">
+        <div class="sm:col-span-2"><label class="l">Nombre *</label><input id="uName" class="inp" required></div>
+        <div><label class="l">Rol (nivel de control)</label><select id="uRole" class="inp"></select></div>
+        <div><label class="l">Área</label><select id="uArea" class="inp"></select></div>
+        <div><label class="l">PIN (4-8 dígitos)</label><input id="uPin" type="password" inputmode="numeric" maxlength="8" class="inp" placeholder="Vacío = sin cambio"></div>
+        <div class="flex items-end"><label class="text-xs"><input type="checkbox" id="uActive" checked> Activo</label></div>
+        <div class="sm:col-span-2"><label class="l">Correo</label><input id="uEmail" type="email" class="inp"></div>
+        <div><label class="l">Teléfono</label><input id="uPhone" class="inp"></div>
+        <div class="sm:col-span-3 flex items-end gap-2"><button class="btn btn-pri" type="submit">Guardar usuario</button><button type="button" id="uReset" class="btn btn-sec">Nuevo</button>
+          <span id="uMsg" class="text-xs"></span></div>
+      </form>
+      <div class="card overflow-x-auto">
+        <table class="w-full"><thead><tr><th>Usuario</th><th>Rol</th><th>Área</th><th>Último acceso</th><th>Estado</th><th></th></tr></thead><tbody id="usersBody"></tbody></table>
+      </div>
+    </section>
+
+    <!-- ROLES -->
+    <section id="tab-roles" class="tab-panel hidden">
+      <div class="card overflow-x-auto"><h2 class="font-bold mb-2">Matriz de permisos por rol</h2>
+        <table class="w-full" id="rolesTable"></table></div>
+    </section>
+
+    <!-- ÁREAS -->
+    <section id="tab-areas" class="tab-panel hidden space-y-3">
+      <form id="areaForm" class="card grid sm:grid-cols-4 gap-3">
+        <input type="hidden" id="aId">
+        <div><label class="l">Nombre *</label><input id="aName" class="inp" required></div>
+        <div class="sm:col-span-2"><label class="l">Descripción</label><input id="aDesc" class="inp"></div>
+        <div class="flex items-end gap-2"><label class="text-xs"><input type="checkbox" id="aActive" checked> Activa</label><button class="btn btn-pri" type="submit">Guardar</button><button type="button" id="aReset" class="btn btn-sec">Nueva</button></div>
+      </form>
+      <div class="card overflow-x-auto"><table class="w-full"><thead><tr><th>Área</th><th>Descripción</th><th>Usuarios</th><th>Empleados</th><th>Estado</th><th></th></tr></thead><tbody id="areasBody"></tbody></table></div>
+    </section>
+
+    <!-- PERSONAL -->
+    <section id="tab-personal" class="tab-panel hidden space-y-3">
+      <form id="empForm" class="card grid sm:grid-cols-6 gap-3 hr-edit">
+        <input type="hidden" id="eId">
+        <div class="sm:col-span-2"><label class="l">Nombre completo *</label><input id="eName" class="inp" required></div>
+        <div><label class="l">Puesto</label><input id="ePosition" class="inp"></div>
+        <div><label class="l">Área</label><select id="eArea" class="inp"></select></div>
+        <div><label class="l">Usuario del sistema</label><select id="eUser" class="inp"></select></div>
+        <div><label class="l">Sueldo mensual bruto</label><input id="eSalary" type="number" step="0.01" min="0" class="inp" value="0"></div>
+        <div><label class="l">Frecuencia de pago</label><select id="ePayFreq" class="inp"><option value="semanal">Semanal</option><option value="quincenal" selected>Quincenal</option><option value="mensual">Mensual</option></select></div>
+        <div><label class="l">Fecha de ingreso</label><input id="eHire" type="date" class="inp"></div>
+        <div><label class="l">Estatus</label><select id="eStatus" class="inp"><option value="activo">Activo</option><option value="baja">Baja</option></select></div>
+        <div><label class="l">Fecha de baja</label><input id="eTerm" type="date" class="inp"></div>
+        <div><label class="l">RFC</label><input id="eRfc" class="inp uppercase"></div>
+        <div><label class="l">CURP</label><input id="eCurp" class="inp uppercase"></div>
+        <div><label class="l">NSS</label><input id="eNss" class="inp"></div>
+        <div><label class="l">Teléfono</label><input id="ePhone" class="inp"></div>
+        <div><label class="l">Correo</label><input id="eEmail" type="email" class="inp"></div>
+        <div class="sm:col-span-4"><label class="l">Notas</label><input id="eNotes" class="inp"></div>
+        <div class="sm:col-span-2 flex items-end gap-2"><button class="btn btn-pri" type="submit">Guardar empleado</button><button type="button" id="eReset" class="btn btn-sec">Nuevo</button><span id="eMsg" class="text-xs"></span></div>
+      </form>
+      <div class="card overflow-x-auto">
+        <div class="flex justify-between items-center mb-2"><h2 class="font-bold">Plantilla</h2><label class="text-xs"><input type="checkbox" id="eInactive"> Incluir bajas</label></div>
+        <table class="w-full"><thead><tr><th>Nombre</th><th>Puesto</th><th>Área</th><th>Usuario</th><th>Sueldo mensual</th><th>Ingreso</th><th>Estatus</th><th></th></tr></thead><tbody id="empBody"></tbody></table>
+      </div>
+      <div class="card overflow-x-auto hr-edit">
+        <h2 class="font-bold mb-2">Incidencias (faltas, bonos, deducciones, horas extra)</h2>
+        <form id="incForm" class="grid sm:grid-cols-6 gap-2 mb-3">
+          <div class="sm:col-span-2"><label class="l">Empleado</label><select id="iEmp" class="inp"></select></div>
+          <div><label class="l">Fecha</label><input id="iDate" type="date" class="inp" required></div>
+          <div><label class="l">Tipo</label><select id="iType" class="inp"><option value="falta">Falta (días)</option><option value="bono">Bono ($)</option><option value="hora_extra">Hora extra ($)</option><option value="deduccion">Deducción ($)</option><option value="vacaciones">Vacaciones (días)</option><option value="incapacidad">Incapacidad (días)</option></select></div>
+          <div><label class="l">Cantidad</label><input id="iAmount" type="number" step="0.01" min="0" class="inp" placeholder="días o $"></div>
+          <div><label class="l">Nota</label><input id="iNote" class="inp"></div>
+          <div class="sm:col-span-6"><button class="btn btn-pri" type="submit">Registrar incidencia</button> <span id="iMsg" class="text-xs"></span></div>
+        </form>
+        <table class="w-full"><thead><tr><th>Fecha</th><th>Empleado</th><th>Tipo</th><th>Cantidad</th><th>Nota</th><th></th></tr></thead><tbody id="incBody"></tbody></table>
+      </div>
+    </section>
+
+    <!-- ASISTENCIA -->
+    <section id="tab-asistencia" class="tab-panel hidden space-y-3">
+      <div class="card flex flex-wrap gap-2 items-end">
+        <div><label class="l">Desde</label><input id="tFrom" type="date" class="inp"></div>
+        <div><label class="l">Hasta</label><input id="tTo" type="date" class="inp"></div>
+        <div id="tEmpBox" class="hidden"><label class="l">Empleado</label><select id="tEmp" class="inp"></select></div>
+        <button id="tRefresh" class="btn btn-sec">Consultar</button>
+        <p id="tLinkMsg" class="text-xs text-amber-400 ml-auto"></p>
+      </div>
+      <div class="card overflow-x-auto"><table class="w-full"><thead><tr><th>Fecha</th><th>Empleado</th><th>Entrada</th><th>Salida</th><th>Horas</th><th></th></tr></thead><tbody id="attBody"></tbody></table>
+        <p id="attTotal" class="text-xs text-slate-400 mt-2"></p></div>
+    </section>
+
+    <!-- NÓMINA -->
+    <section id="tab-nomina" class="tab-panel hidden space-y-3">
+      <div class="card flex flex-wrap gap-2 items-end">
+        <div><label class="l">Mes</label><input id="pMonth" type="month" class="inp"></div>
+        <div><label class="l">Periodo</label><select id="pPeriod" class="inp"><option value="mensual">Mes completo</option><option value="q1">1ª quincena (1-15)</option><option value="q2">2ª quincena (16-fin)</option></select></div>
+        <button id="pRefresh" class="btn btn-pri">Calcular</button>
+        <div class="ml-auto grid grid-cols-4 gap-2 hr-edit" id="cfgBox">
+          <div><label class="l">Carga patronal %</label><input id="cBurden" type="number" step="0.1" class="inp"></div>
+          <div><label class="l">Aguinaldo (días)</label><input id="cAgui" type="number" step="0.1" class="inp"></div>
+          <div><label class="l">Vacaciones (días)</label><input id="cVac" type="number" step="0.1" class="inp"></div>
+          <div><label class="l">Prima vac. %</label><input id="cPrima" type="number" step="0.1" class="inp"></div>
+        </div>
+        <button id="cSave" class="btn btn-sec hr-edit">Guardar parámetros</button>
+      </div>
+      <div id="payCards" class="grid grid-cols-2 lg:grid-cols-4 gap-3"></div>
+      <div class="card overflow-x-auto"><table class="w-full"><thead><tr><th>Empleado</th><th>Área</th><th>Sueldo periodo</th><th>Faltas</th><th>Bonos / extras</th><th>Deducciones</th><th>Pago bruto</th><th>Carga patronal</th><th>Provisiones</th><th>Costo total</th></tr></thead><tbody id="payBody"></tbody></table>
+        <p id="payNote" class="text-[11px] text-amber-400/80 mt-2"></p></div>
+      <div class="card overflow-x-auto"><h3 class="font-bold text-sm mb-2">Costo por área</h3><table class="w-full"><thead><tr><th>Área</th><th>Personas</th><th>Pago bruto</th><th>Costo total</th></tr></thead><tbody id="areaCostBody"></tbody></table></div>
+      <div class="card"><h3 class="font-bold text-sm mb-1">Costo laboral mensual estándar (para costos fijos)</h3><div id="laborBox" class="text-sm"></div>
+        <p class="text-[11px] text-slate-500 mt-1">Este monto se puede importar desde el análisis financiero (botón «Importar costo laboral» junto a Costos Fijos).</p></div>
+    </section>
+
+    <!-- BITÁCORA -->
+    <section id="tab-bitacora" class="tab-panel hidden space-y-3">
+      <div class="card flex flex-wrap gap-2 items-end">
+        <div><label class="l">Días</label><input id="bDays" type="number" value="7" min="1" class="inp !w-20"></div>
+        <div><label class="l">Acción</label><select id="bAction" class="inp"><option value="">Todas</option></select></div>
+        <div class="flex-1 min-w-[160px]"><label class="l">Buscar</label><input id="bQ" class="inp" placeholder="Usuario o detalle"></div>
+        <button id="bRefresh" class="btn btn-sec">Consultar</button>
+      </div>
+      <div class="card overflow-x-auto"><table class="w-full"><thead><tr><th>Fecha</th><th>Usuario</th><th>Acción</th><th>Detalle</th></tr></thead><tbody id="auditBody"></tbody></table></div>
+    </section>
+  </main>
+
+  <script src="personal.js"></script>
+</body>
+</html>

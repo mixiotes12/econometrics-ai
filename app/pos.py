@@ -14,7 +14,7 @@ import secrets
 import sqlite3
 import hashlib
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, timedelta
 from html import escape
 from typing import List, Optional
 from xml.etree import ElementTree as ET
@@ -174,7 +174,129 @@ def log_movement(conn, product_id: int, mtype: str, delta: float, unit_cost: flo
     )
 
 
+ROLES = {
+    "admin": {"label": "Administrador", "perms": ["*"]},
+    "gerente": {"label": "Gerente de tienda", "perms": [
+        "pos.sell", "sales.cancel", "shifts.view_all", "products.manage", "inventory.move", "rates.manage",
+        "finance.view", "hr.manage", "audit.view"]},
+    "cajero": {"label": "Cajero", "perms": ["pos.sell"]},
+    "almacenista": {"label": "Almacenista", "perms": ["products.manage", "inventory.move"]},
+    "contador": {"label": "Contador / Finanzas", "perms": ["shifts.view_all", "finance.view", "rates.manage", "hr.payroll"]},
+}
+PERMISSIONS = {
+    "pos.sell": "Vender, abrir/cerrar turno, facturar",
+    "sales.cancel": "Cancelar ventas",
+    "shifts.view_all": "Ver turnos y ventas de todos los cajeros",
+    "products.manage": "Alta y edición de productos/catálogo",
+    "inventory.move": "Entradas, mermas y ajustes de inventario",
+    "rates.manage": "Administrar tipos de cambio",
+    "finance.view": "Ver costos y reportes financieros",
+    "hr.manage": "Administrar personal, asistencia e incidencias",
+    "hr.payroll": "Ver nómina y costo laboral",
+    "audit.view": "Consultar la bitácora de actividad",
+    "settings.manage": "Configuración del negocio",
+    "users.manage": "Usuarios, roles y áreas",
+}
+
+SCHEMA_HR = """
+CREATE TABLE IF NOT EXISTS areas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    description TEXT NOT NULL DEFAULT '',
+    active INTEGER NOT NULL DEFAULT 1
+);
+CREATE TABLE IF NOT EXISTS audit_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    user_name TEXT NOT NULL DEFAULT '',
+    action TEXT NOT NULL,
+    entity TEXT NOT NULL DEFAULT '',
+    detail TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_audit_date ON audit_log(created_at);
+CREATE TABLE IF NOT EXISTS employees (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER UNIQUE REFERENCES cashiers(id),
+    name TEXT NOT NULL,
+    position TEXT NOT NULL DEFAULT '',
+    area_id INTEGER REFERENCES areas(id),
+    hire_date TEXT,
+    termination_date TEXT,
+    status TEXT NOT NULL DEFAULT 'activo',
+    monthly_salary REAL NOT NULL DEFAULT 0,
+    pay_frequency TEXT NOT NULL DEFAULT 'quincenal',
+    rfc TEXT NOT NULL DEFAULT '',
+    curp TEXT NOT NULL DEFAULT '',
+    nss TEXT NOT NULL DEFAULT '',
+    phone TEXT NOT NULL DEFAULT '',
+    email TEXT NOT NULL DEFAULT '',
+    notes TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS attendance (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    employee_id INTEGER NOT NULL REFERENCES employees(id),
+    work_date TEXT NOT NULL,
+    check_in TEXT NOT NULL,
+    check_out TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_att_emp ON attendance(employee_id, work_date);
+CREATE TABLE IF NOT EXISTS incidences (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    employee_id INTEGER NOT NULL REFERENCES employees(id),
+    date TEXT NOT NULL,
+    type TEXT NOT NULL,
+    amount REAL NOT NULL DEFAULT 0,
+    note TEXT NOT NULL DEFAULT '',
+    created_by INTEGER,
+    created_at TEXT NOT NULL
+);
+"""
+
+CASHIER_EXTRA_COLUMNS = {
+    "role": "TEXT NOT NULL DEFAULT 'cajero'",
+    "area_id": "INTEGER",
+    "email": "TEXT NOT NULL DEFAULT ''",
+    "phone": "TEXT NOT NULL DEFAULT ''",
+    "last_login": "TEXT",
+    "failed_attempts": "INTEGER NOT NULL DEFAULT 0",
+    "locked_until": "TEXT",
+    "must_change_pin": "INTEGER NOT NULL DEFAULT 0",
+}
+DEFAULT_AREAS = [
+    ("Ventas / Caja", "Punto de venta, cajeros y atención al cliente"),
+    ("Almacén", "Recepción, inventarios y mermas"),
+    ("Finanzas", "Contabilidad, facturación y reportes financieros"),
+    ("Recursos Humanos", "Personal, asistencia y nómina"),
+    ("Administración", "Dirección y gestión general"),
+]
+MAX_FAILED_LOGINS = 5
+LOCK_MINUTES = 5
+
+
+def has_perm(user: dict, perm: str) -> bool:
+    perms = ROLES.get(user.get("role", ""), {}).get("perms", [])
+    return "*" in perms or perm in perms
+
+
+def user_permissions(user: dict) -> list:
+    perms = ROLES.get(user.get("role", ""), {}).get("perms", [])
+    return list(PERMISSIONS) if "*" in perms else list(perms)
+
+
+def audit(conn, user, action: str, detail: str = "", entity: str = ""):
+    """Bitácora de actividad. `user` puede ser dict de usuario, None (sistema) o un nombre."""
+    uid, uname = (user["id"], user["name"]) if isinstance(user, dict) else (None, str(user or "sistema"))
+    conn.execute("INSERT INTO audit_log(user_id, user_name, action, entity, detail, created_at) VALUES (?,?,?,?,?,?)",
+                 (uid, uname, action, entity, detail, now()))
+
+
 DEFAULT_SETTINGS = {
+    "payroll_burden_pct": "30",
+    "aguinaldo_days": "15",
+    "vacation_days": "12",
+    "prima_vac_pct": "25",
     "business_name": "Mi Negocio",
     "legal_name": "",
     "rfc": "XAXX010101000",
@@ -221,6 +343,15 @@ def init_pos_db():
         for col, ddl in PRODUCT_EXTRA_COLUMNS.items():
             if col not in existing:
                 conn.execute(f"ALTER TABLE products ADD COLUMN {col} {ddl}")
+        conn.executescript(SCHEMA_HR)
+        cexisting = {r["name"] for r in conn.execute("PRAGMA table_info(cashiers)")}
+        for col, ddl in CASHIER_EXTRA_COLUMNS.items():
+            if col not in cexisting:
+                conn.execute(f"ALTER TABLE cashiers ADD COLUMN {col} {ddl}")
+        for aname, adesc in DEFAULT_AREAS:
+            conn.execute("INSERT OR IGNORE INTO areas(name, description) VALUES (?,?)", (aname, adesc))
+        conn.execute("UPDATE cashiers SET role='admin' WHERE is_admin=1 AND role<>'admin'")
+        conn.execute("UPDATE cashiers SET must_change_pin=1 WHERE pin_hash=? AND must_change_pin=0", (hash_pin("1234"),))
         conn.execute("INSERT OR IGNORE INTO exchange_rates(currency, rate_mxn, source, updated_at) VALUES ('MXN', 1, 'base', ?)", (now(),))
         conn.execute("INSERT OR IGNORE INTO exchange_rates(currency, rate_mxn, source, updated_at) VALUES ('USD', 18.0, 'inicial (actualizar)', ?)", (now(),))
         conn.execute("INSERT OR IGNORE INTO exchange_rates(currency, rate_mxn, source, updated_at) VALUES ('EUR', 19.5, 'inicial (actualizar)', ?)", (now(),))
@@ -228,7 +359,7 @@ def init_pos_db():
             conn.execute("INSERT OR IGNORE INTO settings(key, value) VALUES (?, ?)", (k, v))
         if conn.execute("SELECT COUNT(*) FROM cashiers").fetchone()[0] == 0:
             conn.execute(
-                "INSERT INTO cashiers(name, pin_hash, is_admin, active, created_at) VALUES (?,?,1,1,?)",
+                "INSERT INTO cashiers(name, pin_hash, is_admin, active, created_at, role, must_change_pin) VALUES (?,?,1,1,?,'admin',1)",
                 ("Administrador", hash_pin("1234"), now()),
             )
 
@@ -256,8 +387,25 @@ def current_cashier(x_pos_token: Optional[str] = Header(None)) -> dict:
     return dict(row)
 
 
+def require(perm: str):
+    """Dependencia FastAPI: exige un permiso del rol del usuario."""
+    def dep(c: dict = Depends(current_cashier)) -> dict:
+        if not has_perm(c, perm):
+            raise HTTPException(403, f"Tu rol no tiene permiso para esta acción ({perm}).")
+        return c
+    return dep
+
+
+def require_any(*perms: str):
+    def dep(c: dict = Depends(current_cashier)) -> dict:
+        if not any(has_perm(c, p) for p in perms):
+            raise HTTPException(403, "Tu rol no tiene permiso para esta acción.")
+        return c
+    return dep
+
+
 def admin_only(c: dict = Depends(current_cashier)) -> dict:
-    if not c["is_admin"]:
+    if c.get("role") != "admin":
         raise HTTPException(403, "Se requiere nivel Administrador.")
     return c
 
@@ -277,59 +425,49 @@ def public_cashiers():
 
 @router.post("/login")
 def login(req: LoginReq):
+    err = None
+    result = None
     with db() as conn:
         row = conn.execute("SELECT * FROM cashiers WHERE id=? AND active=1", (req.cashier_id,)).fetchone()
-    if not row or row["pin_hash"] != hash_pin(req.pin):
-        raise HTTPException(401, "Cajero o PIN incorrecto.")
-    token = secrets.token_hex(24)
-    SESSIONS[token] = row["id"]
-    return {"token": token, "cashier": {"id": row["id"], "name": row["name"], "is_admin": bool(row["is_admin"])}}
+        if not row:
+            err = (401, "Cajero o PIN incorrecto.")
+        elif row["locked_until"] and row["locked_until"] > now():
+            err = (423, f"Usuario bloqueado por intentos fallidos hasta las {row['locked_until'][11:16]}.")
+            audit(conn, row["name"], "login_bloqueado", "Intento durante bloqueo", "usuario")
+        elif row["pin_hash"] != hash_pin(req.pin):
+            attempts = row["failed_attempts"] + 1
+            if attempts >= MAX_FAILED_LOGINS:
+                until = (datetime.now() + timedelta(minutes=LOCK_MINUTES)).strftime("%Y-%m-%d %H:%M:%S")
+                conn.execute("UPDATE cashiers SET failed_attempts=0, locked_until=? WHERE id=?", (until, row["id"]))
+                audit(conn, row["name"], "usuario_bloqueado", f"{MAX_FAILED_LOGINS} intentos fallidos", "usuario")
+                err = (423, f"Demasiados intentos. Usuario bloqueado {LOCK_MINUTES} minutos.")
+            else:
+                conn.execute("UPDATE cashiers SET failed_attempts=? WHERE id=?", (attempts, row["id"]))
+                audit(conn, row["name"], "login_fallido", f"Intento {attempts}", "usuario")
+                err = (401, "Cajero o PIN incorrecto.")
+        else:
+            conn.execute("UPDATE cashiers SET failed_attempts=0, locked_until=NULL, last_login=? WHERE id=?", (now(), row["id"]))
+            token = secrets.token_hex(24)
+            SESSIONS[token] = row["id"]
+            user = dict(row)
+            audit(conn, user, "login", "", "usuario")
+            result = {"token": token, "cashier": {
+                "id": row["id"], "name": row["name"], "role": row["role"], "role_label": ROLES[row["role"]]["label"],
+                "is_admin": row["role"] == "admin", "permissions": user_permissions(user),
+                "area_id": row["area_id"], "must_change_pin": bool(row["must_change_pin"])}}
+    if err:
+        raise HTTPException(*err)
+    return result
 
 
 @router.post("/logout")
 def logout(x_pos_token: Optional[str] = Header(None)):
-    SESSIONS.pop(x_pos_token or "", None)
-    return {"ok": True}
-
-
-# ------------------------------------------------------------------ Cajeros (admin)
-class CashierIn(BaseModel):
-    name: str = Field(min_length=2)
-    pin: Optional[str] = Field(default=None, pattern=r"^\d{4,8}$")
-    is_admin: bool = False
-    active: bool = True
-
-
-@router.get("/cashiers")
-def list_cashiers(_: dict = Depends(admin_only)):
-    with db() as conn:
-        rows = conn.execute("SELECT id, name, is_admin, active, created_at FROM cashiers ORDER BY id").fetchall()
-    return [dict(r) for r in rows]
-
-
-@router.post("/cashiers")
-def create_cashier(c: CashierIn, _: dict = Depends(admin_only)):
-    if not c.pin:
-        raise HTTPException(400, "El PIN (4 a 8 dígitos) es obligatorio.")
-    with db() as conn:
-        cur = conn.execute(
-            "INSERT INTO cashiers(name, pin_hash, is_admin, active, created_at) VALUES (?,?,?,?,?)",
-            (c.name.strip(), hash_pin(c.pin), int(c.is_admin), int(c.active), now()),
-        )
-    return {"id": cur.lastrowid}
-
-
-@router.put("/cashiers/{cashier_id}")
-def update_cashier(cashier_id: int, c: CashierIn, me: dict = Depends(admin_only)):
-    if cashier_id == me["id"] and (not c.active or not c.is_admin):
-        raise HTTPException(400, "No puedes desactivarte ni quitarte el rol de administrador.")
-    with db() as conn:
-        conn.execute(
-            "UPDATE cashiers SET name=?, is_admin=?, active=? WHERE id=?",
-            (c.name.strip(), int(c.is_admin), int(c.active), cashier_id),
-        )
-        if c.pin:
-            conn.execute("UPDATE cashiers SET pin_hash=? WHERE id=?", (hash_pin(c.pin), cashier_id))
+    cid = SESSIONS.pop(x_pos_token or "", None)
+    if cid:
+        with db() as conn:
+            r = conn.execute("SELECT id, name FROM cashiers WHERE id=?", (cid,)).fetchone()
+            if r:
+                audit(conn, dict(r), "logout", "", "usuario")
     return {"ok": True}
 
 
@@ -341,11 +479,12 @@ def read_settings(_: dict = Depends(current_cashier)):
 
 
 @router.put("/settings")
-def write_settings(data: dict, _: dict = Depends(admin_only)):
+def write_settings(data: dict, me: dict = Depends(require("settings.manage"))):
     with db() as conn:
         for k, v in data.items():
             if k in DEFAULT_SETTINGS:
                 conn.execute("INSERT OR REPLACE INTO settings(key, value) VALUES (?, ?)", (k, str(v)))
+        audit(conn, me, "configuracion", "Se actualizó la configuración del negocio", "settings")
         return get_settings(conn)
 
 
@@ -413,7 +552,7 @@ def current_shift(me: dict = Depends(current_cashier)):
 
 
 @router.post("/shifts/open")
-def open_shift(req: OpenShiftReq, me: dict = Depends(current_cashier)):
+def open_shift(req: OpenShiftReq, me: dict = Depends(require("pos.sell"))):
     with db() as conn:
         if open_shift_of(conn, me["id"]):
             raise HTTPException(400, "Ya tienes un turno abierto.")
@@ -421,11 +560,12 @@ def open_shift(req: OpenShiftReq, me: dict = Depends(current_cashier)):
             "INSERT INTO shifts(cashier_id, opened_at, opening_float) VALUES (?,?,?)",
             (me["id"], now(), money(req.opening_float)),
         )
+        audit(conn, me, "turno_abierto", f"Fondo ${req.opening_float:.2f}", "turno")
         return {"id": cur.lastrowid}
 
 
 @router.post("/shifts/movement")
-def cash_movement(req: MovementReq, me: dict = Depends(current_cashier)):
+def cash_movement(req: MovementReq, me: dict = Depends(require("pos.sell"))):
     with db() as conn:
         s = open_shift_of(conn, me["id"])
         if not s:
@@ -438,7 +578,7 @@ def cash_movement(req: MovementReq, me: dict = Depends(current_cashier)):
 
 
 @router.get("/shifts/report/x")
-def corte_x(me: dict = Depends(current_cashier)):
+def corte_x(me: dict = Depends(require("pos.sell"))):
     """Corte X: reporte parcial sin cerrar el turno."""
     with db() as conn:
         s = open_shift_of(conn, me["id"])
@@ -448,7 +588,7 @@ def corte_x(me: dict = Depends(current_cashier)):
 
 
 @router.post("/shifts/close")
-def corte_z(req: CloseShiftReq, me: dict = Depends(current_cashier)):
+def corte_z(req: CloseShiftReq, me: dict = Depends(require("pos.sell"))):
     """Corte Z: cierra el turno, calcula la diferencia de arqueo."""
     with db() as conn:
         s = open_shift_of(conn, me["id"])
@@ -461,6 +601,7 @@ def corte_z(req: CloseShiftReq, me: dict = Depends(current_cashier)):
             "UPDATE shifts SET status='cerrado', closed_at=?, counted_cash=?, expected_cash=?, difference=?, notes=? WHERE id=?",
             (now(), money(req.counted_cash), expected, diff, req.notes or "", s["id"]),
         )
+        audit(conn, me, "turno_cerrado", f"Esperado ${expected:.2f}, contado ${req.counted_cash:.2f}, diferencia ${diff:.2f}", "turno")
         return shift_report(conn, s["id"])
 
 
@@ -469,7 +610,7 @@ def list_shifts(me: dict = Depends(current_cashier), limit: int = 50):
     with db() as conn:
         q = "SELECT s.*, c.name cashier_name FROM shifts s JOIN cashiers c ON c.id=s.cashier_id "
         args: list = []
-        if not me["is_admin"]:
+        if not has_perm(me, "shifts.view_all"):
             q += "WHERE s.cashier_id=? "
             args.append(me["id"])
         q += "ORDER BY s.id DESC LIMIT ?"
@@ -525,7 +666,7 @@ def product_by_code(code: str, _: dict = Depends(current_cashier)):
 
 
 @router.post("/products")
-def create_product(p: ProductIn, _: dict = Depends(admin_only)):
+def create_product(p: ProductIn, _: dict = Depends(require("products.manage"))):
     try:
         with db() as conn:
             cur = conn.execute(
@@ -537,7 +678,7 @@ def create_product(p: ProductIn, _: dict = Depends(admin_only)):
 
 
 @router.put("/products/{pid}")
-def update_product(pid: int, p: ProductIn, _: dict = Depends(admin_only)):
+def update_product(pid: int, p: ProductIn, _: dict = Depends(require("products.manage"))):
     try:
         with db() as conn:
             conn.execute(
@@ -568,7 +709,7 @@ def split_iva(gross: float, iva_type: str):
 
 
 @router.post("/sales")
-def create_sale(req: SaleReq, me: dict = Depends(current_cashier)):
+def create_sale(req: SaleReq, me: dict = Depends(require("pos.sell"))):
     if req.payment_method not in PAYMENT_METHODS:
         raise HTTPException(400, "Forma de pago inválida.")
     with db() as conn:
@@ -610,6 +751,7 @@ def create_sale(req: SaleReq, me: dict = Depends(current_cashier)):
             if p["track_stock"]:
                 conn.execute("UPDATE products SET stock = stock - ? WHERE id=?", (qty, p["id"]))
                 log_movement(conn, p["id"], "venta", -qty, p["cost"], "Venta POS", f"V-{sale_id:06d}", me["id"])
+        audit(conn, me, "venta", f"V-{sale_id:06d} total ${total:.2f} ({req.payment_method})", "venta")
         return get_sale(conn, sale_id)
 
 
@@ -632,7 +774,7 @@ def list_sales(me: dict = Depends(current_cashier), limit: int = 50, date: Optio
            "(SELECT COUNT(*) FROM invoices i WHERE i.sale_id=s.id) invoiced "
            "FROM sales s JOIN cashiers c ON c.id=s.cashier_id WHERE 1=1 ")
     args: list = []
-    if not me["is_admin"]:
+    if not has_perm(me, "shifts.view_all"):
         sql += "AND s.cashier_id=? "
         args.append(me["id"])
     if date:
@@ -651,7 +793,7 @@ def read_sale(sale_id: int, _: dict = Depends(current_cashier)):
 
 
 @router.post("/sales/{sale_id}/cancel")
-def cancel_sale(sale_id: int, _: dict = Depends(admin_only)):
+def cancel_sale(sale_id: int, _: dict = Depends(require("sales.cancel"))):
     """Cancela una venta (solo admin), regresa el stock. No permite cancelar si ya fue facturada."""
     with db() as conn:
         sale = get_sale(conn, sale_id)
@@ -664,6 +806,7 @@ def cancel_sale(sale_id: int, _: dict = Depends(admin_only)):
             if cur.rowcount:
                 log_movement(conn, it["product_id"], "devolucion", it["qty"], 0, "Cancelación de venta", sale["folio"], _["id"])
         conn.execute("UPDATE sales SET status='cancelada' WHERE id=?", (sale_id,))
+        audit(conn, _, "venta_cancelada", f"{sale['folio']} total ${sale['total']:.2f}", "venta")
         return get_sale(conn, sale_id)
 
 
@@ -791,7 +934,7 @@ def build_cfdi_xml(sale: dict, st: dict, inv: InvoiceReq, serie: str, folio: str
 
 
 @router.post("/sales/{sale_id}/invoice")
-def create_invoice(sale_id: int, req: InvoiceReq, _: dict = Depends(current_cashier)):
+def create_invoice(sale_id: int, req: InvoiceReq, me: dict = Depends(require("pos.sell"))):
     """
     Genera el CFDI 4.0 en XML (sin Sello/Certificado/Timbre). Queda 'pendiente_timbrado':
     el timbrado fiscal real requiere conectar un PAC y el CSD del emisor.
@@ -818,6 +961,7 @@ def create_invoice(sale_id: int, req: InvoiceReq, _: dict = Depends(current_cash
             (sale_id, serie, folio, rfc, req.razon_social.upper(), req.regimen_fiscal, req.codigo_postal,
              req.uso_cfdi, req.email, xml, now()),
         )
+        audit(conn, me, "factura", f"{serie}{folio} RFC {rfc} venta {sale['folio']}", "factura")
         return {"serie": serie, "folio": folio, "status": "pendiente_timbrado"}
 
 

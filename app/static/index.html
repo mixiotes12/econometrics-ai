@@ -86,6 +86,11 @@
           <span class="hidden md:inline">Punto de Venta</span>
         </a>
 
+        <a href="personal.html" title="Personal y Seguridad" class="flex items-center gap-1.5 bg-violet-600 hover:bg-violet-500 text-white border border-violet-500/50 text-xs px-2.5 py-2 rounded-lg transition font-medium">
+          <i class="fa-solid fa-user-shield"></i>
+          <span class="hidden md:inline">Personal</span>
+        </a>
+
         <a href="tracker.html" title="Ir a Control Operativo" class="flex items-center gap-1.5 bg-teal-600 hover:bg-teal-500 text-white border border-teal-500/50 text-xs px-2.5 py-2 rounded-lg transition font-medium">
           <i class="fa-solid fa-clipboard-list"></i>
           <span class="hidden md:inline">Control Diario</span>
@@ -584,6 +589,29 @@
               <input type="number" id="monthlyFixedCosts" value="75000" min="0" step="100" class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-14 pr-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-rose-500 font-mono">
             </div>
             <span class="text-[10px] text-slate-400 mt-1 block leading-tight">Renta, sueldos fijos, luz, agua, internet. Gastas esto vendas o no vendas nada.</span>
+            <button type="button" id="importPayrollBtn" class="mt-1.5 text-[11px] text-sky-300 hover:text-sky-200 underline" title="Requiere sesión iniciada en el Punto de Venta">
+              <i class="fa-solid fa-users"></i> Importar costo laboral desde Personal
+            </button>
+            <script>
+              document.getElementById("importPayrollBtn").addEventListener("click", async () => {
+                const token = sessionStorage.getItem("pos_token");
+                if (!token) return alert("Inicia sesión en el Punto de Venta (módulo Personal) para importar la nómina.");
+                try {
+                  const r = await fetch("/api/hr/labor-cost", { headers: { "X-POS-Token": token } });
+                  const d = await r.json();
+                  if (!r.ok) throw new Error(d.detail || "Sin permiso");
+                  const fmt = (n) => "$" + Number(n).toLocaleString("es-MX", { minimumFractionDigits: 2 });
+                  const input = document.getElementById("monthlyFixedCosts");
+                  const msg = `Costo laboral mensual de ${d.headcount} empleado(s): ${fmt(d.monthly_total_cost)}\n` +
+                    `(sueldos ${fmt(d.monthly_base_salaries)} + carga patronal ${fmt(d.monthly_employer_burden)} + provisiones ${fmt(d.monthly_provisions)})\n\n` +
+                    `Aceptar = SUMARLO a los costos fijos actuales (${fmt(input.value || 0)}).\nCancelar = no cambiar nada.`;
+                  if (confirm(msg)) {
+                    input.value = (parseFloat(input.value || 0) + d.monthly_total_cost).toFixed(2);
+                    input.dispatchEvent(new Event("input", { bubbles: true }));
+                  }
+                } catch (e) { alert("No se pudo importar: " + e.message); }
+              });
+            </script>
           </div>
 
           <div title="Fondo mensual para reparar y reemplazar tu equipo cuando venza su vida útil (Inversión / (Años * 12)).">
