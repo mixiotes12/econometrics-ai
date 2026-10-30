@@ -85,13 +85,13 @@
   <header class="border-b border-zinc-800 bg-zinc-900/80 sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <a href="index.html" class="text-zinc-400 hover:text-white"><i class="fa-solid fa-arrow-left"></i></a>
+        <a href="http://127.0.0.1:8000" class="text-zinc-400 hover:text-white"><i class="fa-solid fa-arrow-left"></i></a>
         <i class="fa-solid fa-user-shield text-violet-400"></i>
         <span class="font-bold">Personal y Seguridad</span>
       </div>
       <div class="flex items-center gap-3 text-xs">
         <button id="clockBtn" class="btn btn-sec hidden"></button>
-        <a href="pos.html" class="btn btn-sec"><i class="fa-solid fa-cash-register mr-1"></i>POS</a>
+        <a href="/cashier/pos.html" class="btn btn-sec"><i class="fa-solid fa-cash-register mr-1"></i>POS</a>
         <a href="inventario.html" class="btn btn-sec"><i class="fa-solid fa-boxes-stacked mr-1"></i>Inventarios</a>
         <span id="whoami" class="text-zinc-300"></span>
       </div>
@@ -109,7 +109,7 @@
 
   <div id="noSession" class="hidden max-w-md mx-auto mt-20 card text-center space-y-3">
     <p>Necesitas iniciar sesión en el Punto de Venta para usar este módulo.</p>
-    <a href="pos.html" class="btn btn-pri inline-block">Ir a iniciar sesión</a>
+    <a href="/cashier/pos.html" class="btn btn-pri inline-block">Ir a iniciar sesión</a>
   </div>
 
   <main id="app" class="max-w-7xl mx-auto px-4 py-5">

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Punto de Venta - EconoMetrics</title>
+  <title>Punto de Venta - TakeControl</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -94,7 +94,7 @@
       <div id="loginError" class="text-red-400 text-xs hidden"></div>
       <button id="loginBtn" class="btn btn-pri w-full">Entrar</button>
       <p class="text-[11px] text-slate-500 text-center">Primer uso: Administrador / PIN 1234 (el sistema te pedirá cambiarlo).</p>
-      <a href="index.html" class="block text-center text-xs text-zinc-400 hover:text-white">&larr; Volver a EconoMetrics</a>
+      <a href="http://127.0.0.1:8000" class="block text-center text-xs text-zinc-400 hover:text-white">&larr; Volver al Menú Principal</a>
     </div>
   </div>
 
@@ -102,14 +102,14 @@
   <header class="border-b border-zinc-800 bg-zinc-900/80 sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <a href="index.html" class="text-zinc-400 hover:text-white text-sm"><i class="fa-solid fa-arrow-left"></i></a>
+        <a href="http://127.0.0.1:8000" class="text-zinc-400 hover:text-white text-sm"><i class="fa-solid fa-arrow-left"></i></a>
         <i class="fa-solid fa-cash-register text-amber-400"></i>
         <span class="font-bold">Punto de Venta</span>
         <span id="shiftBadge" class="text-[11px] px-2 py-0.5 rounded-full bg-slate-700">Sin turno</span>
       </div>
       <div class="flex items-center gap-3 text-xs">
-        <a href="personal.html" class="btn btn-sec"><i class="fa-solid fa-user-shield mr-1"></i>Personal</a>
-        <a href="inventario.html" class="btn btn-sec"><i class="fa-solid fa-boxes-stacked mr-1"></i>Inventarios</a>
+        <a href="/manager/personal.html" class="btn btn-sec"><i class="fa-solid fa-user-shield mr-1"></i>Personal</a>
+        <a href="/manager/inventario.html" class="btn btn-sec"><i class="fa-solid fa-boxes-stacked mr-1"></i>Inventarios</a>
         <span id="whoami" class="text-zinc-300"></span>
         <button id="logoutBtn" class="btn btn-sec">Salir</button>
       </div>
@@ -119,7 +119,7 @@
       <button class="tab-btn" data-tab="caja"><i class="fa-solid fa-vault mr-1"></i>Caja / Turno</button>
       <button class="tab-btn" data-tab="ventas"><i class="fa-solid fa-receipt mr-1"></i>Ventas y Facturas</button>
       <button class="tab-btn hidden" data-perm="products.manage" data-tab="productos"><i class="fa-solid fa-boxes-stacked mr-1"></i>Productos</button>
-      <a class="tab-btn hidden" data-perm="users.manage" href="personal.html"><i class="fa-solid fa-users mr-1"></i>Usuarios y personal</a>
+      <a class="tab-btn hidden" data-perm="users.manage" href="/manager/personal.html"><i class="fa-solid fa-users mr-1"></i>Usuarios y personal</a>
       <button class="tab-btn hidden" data-perm="settings.manage" data-tab="config"><i class="fa-solid fa-gear mr-1"></i>Configuración</button>
     </nav>
   </header>

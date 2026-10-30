@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TakeControl - Panel de Acceso</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Outfit"', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-zinc-950 text-zinc-100 min-h-screen flex items-center justify-center font-sans antialiased">
+  <div class="max-w-md w-full p-8 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-xl">
+    <h1 class="text-3xl font-bold text-center text-emerald-400 mb-8">TakeControl</h1>
+
+    <div class="space-y-4">
+      <a href="/manager/inventario.html" class="block w-full py-3 px-4 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-xl text-center font-medium transition-colors">
+        Panel del Encargado (Manager)
+      </a>
+
+      <a href="/cashier/pos.html" class="block w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-500 border border-emerald-500 rounded-xl text-center font-medium transition-colors">
+        Panel de Registro en Caja (Cashier)
+      </a>
+
+      <a href="http://127.0.0.1:8000" class="block w-full py-3 px-4 bg-sky-600 hover:bg-sky-500 border border-sky-500 rounded-xl text-center font-medium transition-colors mt-4">
+        Volver a EconometricsAI
+      </a>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,40 +1,19 @@
-# Entornos virtuales
-venv/
 .venv/
-env/
-
-# Python cache
 __pycache__/
-*.py[cod]
-*$py.class
-*.so
-
-# Variables de entorno y secretos
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
 .env
-.env.*
-!.env.example
-
-# Archivos temporales y de pruebas
-*.png
-*.pdf
-scratch/
-test_*.py
-check_*.py
-rewrite_*.py
-refactor_*.py
-build_*.py
-generate_*.py
-update_*.py
-
-# Archivos de empaquetado
-*.zip
-*.tar.gz
-
-# IDE y editores
-.vscode/
-.idea/
-.DS_Store
-
-# Base de datos local del POS
-app/data/
-app/static/uploads/
+*.db
+*.sqlite
+*.sqlite3
+.pytest_cache/
+.coverage
+htmlcov/
+take_control/app/data/*.db

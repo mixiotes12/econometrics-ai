@@ -4,9 +4,9 @@ from pathlib import Path
 import subprocess
 import sys
 import venv
+import time
 
 ROOT = Path(__file__).resolve().parent
-
 
 def main():
     if sys.version_info < (3, 10):
@@ -33,15 +33,29 @@ def main():
         # Run on every start so dependencies added by a collaborator are installed.
         subprocess.run([str(python), "-m", "pip", "install", "-r",
                         str(ROOT / "requirements.txt")], cwd=ROOT, check=True)
-        print("Abre http://127.0.0.1:8000 — Ctrl+C para detener.", flush=True)
-        return subprocess.call([str(python), "-m", "uvicorn", "app.main:app",
+        print("Iniciando EconometricsAI (Puerto 8000) y TakeControl (Puerto 8001)...")
+        print("Abre http://127.0.0.1:8000 (EconometricsAI) o http://127.0.0.1:8001 (TakeControl) — Ctrl+C para detener ambos.", flush=True)
+
+        # Start both apps
+        p1 = subprocess.Popen([str(python), "-m", "uvicorn", "econometrics_ai.app.main:app",
                                 "--host", "127.0.0.1", "--port", "8000", "--reload",
-                                "--reload-dir", str(ROOT / "app")], cwd=ROOT)
+                                "--reload-dir", str(ROOT / "econometrics_ai")], cwd=ROOT)
+
+        p2 = subprocess.Popen([str(python), "-m", "uvicorn", "take_control.app.main:app",
+                                "--host", "127.0.0.1", "--port", "8001", "--reload",
+                                "--reload-dir", str(ROOT / "take_control")], cwd=ROOT)
+
+        p1.wait()
+        p2.wait()
+        return 0
     except subprocess.CalledProcessError as exc:
         print("No se pudieron instalar las dependencias. Revisa la conexion "
               "y el error anterior; puedes volver a ejecutar el inicio.", file=sys.stderr)
         return exc.returncode
     except KeyboardInterrupt:
+        print("\nDeteniendo ambos servidores...")
+        p1.terminate()
+        p2.terminate()
         return 0
 
 
