@@ -5,14 +5,71 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Inventarios y Catálogo - EconoMetrics</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script>tailwind.config = { darkMode: 'class' }</script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Outfit"', 'sans-serif'],
+            mono: ['"Space Mono"', 'monospace'],
+          },
+          colors: {
+            slate: {
+              50: '#fafafa',
+              100: '#f4f4f5',
+              200: '#e4e4e7',
+              300: '#d4d4d8',
+              400: '#a1a1aa',
+              500: '#71717a',
+              600: '#52525b',
+              700: '#3f3f46',
+              800: '#27272a',
+              900: '#18181b',
+              950: '#09090b',
+            },
+            indigo: {
+              400: '#9f7aea',
+              500: '#805ad5',
+              600: '#6b46c1',
+            },
+            emerald: {
+              400: '#68d391',
+              500: '#48bb78',
+              600: '#38a169',
+            },
+            amber: {
+              400: '#f6ad55',
+              500: '#ed8936',
+              600: '#dd6b20',
+            },
+            blue: {
+              400: '#63b3ed',
+              500: '#4299e1',
+              600: '#3182ce',
+            },
+            rose: {
+              400: '#fc8181',
+              500: '#f56565',
+              600: '#e53e3e',
+            },
+            cyan: {
+              400: '#0bc5ea',
+              500: '#00b5d8',
+              600: '#00a3c4',
+            }
+          }
+        }
+      }
+    }
+  </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="style.css">
   <style>
     .inp { background:#0f172a; border:1px solid #334155; border-radius:.5rem; padding:.45rem .7rem; width:100%; font-size:.85rem; color:#f1f5f9; }
     .inp:focus { outline:none; border-color:#38bdf8; } .inp:disabled { opacity:.55; }
-    .btn { padding:.45rem .85rem; border-radius:.5rem; font-size:.78rem; font-weight:600; transition:.15s; }
+    .btn { padding:.45rem .85rem; border-radius:.5rem; font-size:.78rem; font-weight:600; transition: all .15s ease-in-out; }
     .btn-pri { background:#0284c7; color:#fff; } .btn-pri:hover { background:#0ea5e9; }
     .btn-sec { background:#334155; color:#e2e8f0; } .btn-sec:hover { background:#475569; }
     .btn-red { background:#b91c1c; color:#fff; } .btn-red:hover { background:#dc2626; }
@@ -26,12 +83,12 @@
     .thumb { width:40px; height:40px; object-fit:cover; border-radius:.4rem; background:#1e293b; }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen">
+<body class="bg-zinc-950 text-zinc-100 min-h-screen">
 
-  <header class="border-b border-slate-800 bg-slate-900/80 sticky top-0 z-50">
+  <header class="border-b border-zinc-800 bg-zinc-900/80 sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <a href="index.html" class="text-slate-400 hover:text-white"><i class="fa-solid fa-arrow-left"></i></a>
+        <a href="index.html" class="text-zinc-400 hover:text-white"><i class="fa-solid fa-arrow-left"></i></a>
         <i class="fa-solid fa-boxes-stacked text-sky-400"></i>
         <span class="font-bold">Inventarios y Catálogo</span>
         <span id="alertBadge" class="pill bg-slate-700 hidden cursor-pointer"></span>
@@ -39,7 +96,7 @@
       <div class="flex items-center gap-3 text-xs">
         <a href="personal.html" class="btn btn-sec"><i class="fa-solid fa-user-shield mr-1"></i>Personal</a>
         <a href="pos.html" class="btn btn-sec"><i class="fa-solid fa-cash-register mr-1"></i>Punto de Venta</a>
-        <span id="whoami" class="text-slate-300"></span>
+        <span id="whoami" class="text-zinc-300"></span>
       </div>
     </div>
     <nav id="tabs" class="max-w-7xl mx-auto px-4 flex gap-1 overflow-x-auto">
@@ -138,12 +195,12 @@
 
   <!-- MODAL PRODUCTO -->
   <div id="productModal" class="fixed inset-0 z-[90] bg-black/70 hidden items-start justify-center p-4 overflow-y-auto">
-    <form id="productForm" class="bg-slate-900 border border-slate-700 rounded-2xl p-5 w-full max-w-4xl my-6 space-y-4">
-      <div class="flex justify-between items-center"><h2 id="pmTitle" class="font-bold">Producto</h2><button type="button" id="pmClose" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button></div>
+    <form id="productForm" class="bg-zinc-900 border border-zinc-700 rounded-[20px] p-5 w-full max-w-4xl my-6 space-y-4">
+      <div class="flex justify-between items-center"><h2 id="pmTitle" class="font-bold">Producto</h2><button type="button" id="pmClose" class="text-zinc-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button></div>
       <input type="hidden" id="pId">
       <div class="grid sm:grid-cols-4 gap-3">
         <div class="sm:row-span-3 flex flex-col items-center gap-2">
-          <img id="pImg" class="w-full aspect-square object-cover rounded-xl bg-slate-800" alt="">
+          <img id="pImg" class="w-full aspect-square object-cover rounded-xl bg-zinc-800" alt="">
           <input type="file" id="pFile" accept="image/png,image/jpeg,image/webp" class="hidden">
           <div class="flex gap-1"><button type="button" id="pPick" class="btn btn-sec">Foto</button><button type="button" id="pPhotoDel" class="btn btn-sec">Quitar</button></div>
         </div>
@@ -192,7 +249,7 @@
         </div>
       </fieldset>
 
-      <details class="text-xs"><summary class="cursor-pointer text-slate-400">Claves SAT (facturación)</summary>
+      <details class="text-xs"><summary class="cursor-pointer text-zinc-400">Claves SAT (facturación)</summary>
         <div class="grid grid-cols-2 gap-3 mt-2 max-w-sm"><div><label class="l">Clave producto/servicio</label><input id="pSatP" class="inp" value="01010101"></div><div><label class="l">Clave unidad</label><input id="pSatU" class="inp" value="H87"></div></div>
       </details>
       <div id="pError" class="text-red-400 text-xs hidden"></div>
@@ -202,7 +259,7 @@
 
   <!-- MODAL MOVIMIENTO -->
   <div id="moveModal" class="fixed inset-0 z-[90] bg-black/70 hidden items-center justify-center p-4">
-    <form id="moveForm" class="bg-slate-900 border border-slate-700 rounded-2xl p-5 w-full max-w-md space-y-3">
+    <form id="moveForm" class="bg-zinc-900 border border-zinc-700 rounded-[20px] p-5 w-full max-w-md space-y-3">
       <h2 class="font-bold">Registrar movimiento de inventario</h2>
       <div><label class="l">Producto</label><select id="mProduct" class="inp"></select></div>
       <div class="grid grid-cols-2 gap-3">

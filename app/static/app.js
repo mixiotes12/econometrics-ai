@@ -26,18 +26,18 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 function switchTab(tabIndex) {
   document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.classList.remove('active', 'text-white', 'border-indigo-500/50', 'bg-slate-800');
-    btn.classList.add('text-slate-300', 'border-slate-800', 'bg-slate-900');
-    btn.querySelector('span:first-child').classList.remove('bg-indigo-500', 'text-white');
-    btn.querySelector('span:first-child').classList.add('bg-indigo-500/30', 'text-indigo-300');
+    btn.classList.remove('active', 'text-white', 'border-purple-500/50', 'bg-zinc-800');
+    btn.classList.add('text-zinc-300', 'border-zinc-800', 'bg-zinc-900');
+    btn.querySelector('span:first-child').classList.remove('bg-purple-500', 'text-white');
+    btn.querySelector('span:first-child').classList.add('bg-purple-500/30', 'text-purple-300');
   });
 
   const activeBtn = document.getElementById(`tabBtn${tabIndex}`);
   if (activeBtn) {
-    activeBtn.classList.remove('text-slate-300', 'border-slate-800', 'bg-slate-900');
-    activeBtn.classList.add('active', 'text-white', 'border-indigo-500/50', 'bg-slate-800');
-    activeBtn.querySelector('span:first-child').classList.remove('bg-indigo-500/30', 'text-indigo-300');
-    activeBtn.querySelector('span:first-child').classList.add('bg-indigo-500', 'text-white');
+    activeBtn.classList.remove('text-zinc-300', 'border-zinc-800', 'bg-zinc-900');
+    activeBtn.classList.add('active', 'text-white', 'border-purple-500/50', 'bg-zinc-800');
+    activeBtn.querySelector('span:first-child').classList.remove('bg-purple-500/30', 'text-purple-300');
+    activeBtn.querySelector('span:first-child').classList.add('bg-purple-500', 'text-white');
   }
 
   for (let i = 1; i <= 6; i++) {
@@ -94,10 +94,10 @@ function updateApiKeyBadge(hasKey, labelText) {
   label.textContent = labelText || (hasKey ? "API Key: Configurada" : "Configurar API Key");
   if (hasKey) {
     btn.classList.add("border-emerald-500/40", "text-emerald-400");
-    btn.classList.remove("border-slate-700", "text-slate-300");
+    btn.classList.remove("border-zinc-700", "text-zinc-300");
   } else {
     btn.classList.remove("border-emerald-500/40", "text-emerald-400");
-    btn.classList.add("border-slate-700", "text-slate-300");
+    btn.classList.add("border-zinc-700", "text-zinc-300");
   }
 }
 
@@ -326,10 +326,10 @@ function showToast(message, isSuccess = true) {
   msgEl.textContent = message;
   if (isSuccess) {
     icon.className = "fa-solid fa-circle-check text-emerald-400 text-sm";
-    toast.className = "fixed bottom-6 right-6 z-50 bg-slate-900 border border-emerald-500/40 text-slate-100 text-xs font-medium px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 transition-all duration-300";
+    toast.className = "fixed bottom-6 right-6 z-50 bg-zinc-900 border border-emerald-500/40 text-zinc-100 text-xs font-medium px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 transition-all duration-300";
   } else {
     icon.className = "fa-solid fa-circle-exclamation text-amber-400 text-sm";
-    toast.className = "fixed bottom-6 right-6 z-50 bg-slate-900 border border-amber-500/40 text-slate-100 text-xs font-medium px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 transition-all duration-300";
+    toast.className = "fixed bottom-6 right-6 z-50 bg-zinc-900 border border-amber-500/40 text-zinc-100 text-xs font-medium px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 transition-all duration-300";
   }
 
   toast.classList.remove("hidden");
@@ -859,7 +859,7 @@ function renderFinancialReport(report) {
     const riskSpreadMoEl = document.getElementById("riskSpreadMonthlyDiff");
     if (riskSpreadMoEl) {
       riskSpreadMoEl.textContent = `(${comp.monthly_difference >= 0 ? '+' : ''}${fmt(comp.monthly_difference)}/mes)`;
-      riskSpreadMoEl.className = `text-xs font-bold font-mono ${comp.monthly_difference >= 0 ? 'text-slate-300' : 'text-rose-400'}`;
+      riskSpreadMoEl.className = `text-xs font-bold font-mono ${comp.monthly_difference >= 0 ? 'text-zinc-300' : 'text-rose-400'}`;
     }
 
     const riskVerdictEl = document.getElementById("riskSpreadVerdict");
@@ -913,7 +913,7 @@ function renderScenariosTable(scenarios) {
     const npvColor = sc.npv >= 0 ? "text-emerald-400 font-semibold" : "text-rose-400 font-semibold";
     tr.innerHTML = `
       <td class="py-2.5 px-3 font-bold">${sc.name}</td>
-      <td class="py-2.5 px-3 text-slate-400">${sc.description}</td>
+      <td class="py-2.5 px-3 text-zinc-400">${sc.description}</td>
       <td class="py-2.5 px-3 ${npvColor} font-mono">${fmt(sc.npv)}</td>
       <td class="py-2.5 px-3 font-mono">${sc.irr_pct !== null ? sc.irr_pct.toFixed(1) + '%' : 'N/D'}</td>
       <td class="py-2.5 px-3 font-mono">${sc.payback_years !== null ? sc.payback_years.toFixed(1) + ' años' : '> 5 años'}</td>
@@ -933,9 +933,9 @@ function renderProFormaTable(flows) {
     { label: "Precio Promedio ($)", key: "price_unit" },
     { label: "Ingresos Brutos ($)", key: "revenue", bold: true },
     { label: "(-) Mermas, Robos y Riesgos ($)", key: "shrinkage_loss", color: "text-rose-400" },
-    { label: "(=) Ingresos Netos ($)", key: "net_revenue", color: "text-slate-200", bold: true },
+    { label: "(=) Ingresos Netos ($)", key: "net_revenue", color: "text-zinc-200", bold: true },
     { label: "(-) Costos Variables ($)", key: "variable_costs" },
-    { label: "(=) Margen Bruto ($)", key: "gross_margin", bold: true, color: "text-indigo-300" },
+    { label: "(=) Margen Bruto ($)", key: "gross_margin", bold: true, color: "text-purple-300" },
     { label: "(-) Costos Fijos ($)", key: "fixed_costs" },
     { label: "(=) EBITDA ($)", key: "ebitda", bold: true },
     { label: "(-) Depreciación ($)", key: "depreciation" },
@@ -949,7 +949,7 @@ function renderProFormaTable(flows) {
 
   rows.forEach(r => {
     const tr = document.createElement("tr");
-    let html = `<td class="text-left py-2 px-3 ${r.bold ? 'font-bold' : ''} ${r.color || 'text-slate-300'}">${r.label}</td>`;
+    let html = `<td class="text-left py-2 px-3 ${r.bold ? 'font-bold' : ''} ${r.color || 'text-zinc-300'}">${r.label}</td>`;
     flows.forEach(f => {
       const val = f[r.key];
       const displayVal = r.isFmtNumber ? fmt(val) : `$${fmt(val)}`;
@@ -1028,7 +1028,7 @@ function renderCharts(report) {
       maintainAspectRatio: false,
       plugins: {
         legend: {
-          labels: { color: '#94a3b8', font: { size: 10 } }
+          labels: { color: '#a1a1aa', font: { size: 10 } }
         },
         tooltip: {
           callbacks: {
@@ -1039,12 +1039,12 @@ function renderCharts(report) {
       scales: {
         x: {
           grid: { color: 'rgba(51, 65, 85, 0.3)' },
-          ticks: { color: '#94a3b8', font: { size: 11 } }
+          ticks: { color: '#a1a1aa', font: { size: 11 } }
         },
         y: {
           grid: { color: 'rgba(51, 65, 85, 0.3)' },
           ticks: {
-            color: '#94a3b8',
+            color: '#a1a1aa',
             font: { size: 10 },
             callback: (val) => `$${(val / 1000).toFixed(0)}k MXN`
           }
@@ -1103,7 +1103,7 @@ function renderCharts(report) {
         {
           label: 'Costos Fijos',
           data: fixedCostPoints,
-          borderColor: '#94a3b8',
+          borderColor: '#a1a1aa',
           borderWidth: 1.5,
           borderDash: [6, 4],
           pointRadius: 0
@@ -1115,7 +1115,7 @@ function renderCharts(report) {
       maintainAspectRatio: false,
       plugins: {
         legend: {
-          labels: { color: '#94a3b8', font: { size: 10 } }
+          labels: { color: '#a1a1aa', font: { size: 10 } }
         },
         tooltip: {
           callbacks: {
@@ -1126,15 +1126,15 @@ function renderCharts(report) {
       },
       scales: {
         x: {
-          title: { display: true, text: 'Unidades Vendidas / Mes', color: '#94a3b8', font: { size: 10 } },
+          title: { display: true, text: 'Unidades Vendidas / Mes', color: '#a1a1aa', font: { size: 10 } },
           grid: { color: 'rgba(51, 65, 85, 0.3)' },
-          ticks: { color: '#94a3b8', font: { size: 10 } }
+          ticks: { color: '#a1a1aa', font: { size: 10 } }
         },
         y: {
-          title: { display: true, text: 'Monto Mensual ($ MXN)', color: '#94a3b8', font: { size: 10 } },
+          title: { display: true, text: 'Monto Mensual ($ MXN)', color: '#a1a1aa', font: { size: 10 } },
           grid: { color: 'rgba(51, 65, 85, 0.3)' },
           ticks: {
-            color: '#94a3b8',
+            color: '#a1a1aa',
             font: { size: 10 },
             callback: (val) => `$${(val / 1000).toFixed(0)}k MXN`
           }
@@ -1167,12 +1167,12 @@ function renderStrategicAdvice(advice, timestamp) {
       : (r.severity.toLowerCase().includes("media") ? "bg-amber-500/20 text-amber-300 border-amber-500/30" : "bg-emerald-500/20 text-emerald-300 border-emerald-500/30");
 
     tr.innerHTML = `
-      <td class="py-2.5 px-3 font-semibold text-slate-200">${r.category}</td>
-      <td class="py-2.5 px-3 text-slate-300">${r.risk}</td>
+      <td class="py-2.5 px-3 font-semibold text-zinc-200">${r.category}</td>
+      <td class="py-2.5 px-3 text-zinc-300">${r.risk}</td>
       <td class="py-2.5 px-3">
         <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${severityColor}">${r.severity}</span>
       </td>
-      <td class="py-2.5 px-3 text-slate-300">${r.mitigation}</td>
+      <td class="py-2.5 px-3 text-zinc-300">${r.mitigation}</td>
     `;
     risksTbody.appendChild(tr);
   });
@@ -1182,9 +1182,9 @@ function renderStrategicAdvice(advice, timestamp) {
   actionList.innerHTML = "";
   (advice.action_plan_steps || []).forEach((step, idx) => {
     const li = document.createElement("li");
-    li.className = "flex items-start gap-2 bg-slate-950/60 p-2.5 rounded-lg border border-slate-800";
+    li.className = "flex items-start gap-2 bg-zinc-950/60 p-2.5 rounded-lg border border-zinc-800";
     li.innerHTML = `
-      <span class="w-5 h-5 rounded-full bg-indigo-500/20 text-indigo-400 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">${idx + 1}</span>
+      <span class="w-5 h-5 rounded-full bg-purple-500/20 text-purple-400 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">${idx + 1}</span>
       <span>${step}</span>
     `;
     actionList.appendChild(li);
@@ -1195,7 +1195,7 @@ function renderStrategicAdvice(advice, timestamp) {
   growthList.innerHTML = "";
   (advice.growth_tactics || []).forEach((tac) => {
     const li = document.createElement("li");
-    li.className = "flex items-start gap-2 bg-slate-950/60 p-2.5 rounded-lg border border-slate-800";
+    li.className = "flex items-start gap-2 bg-zinc-950/60 p-2.5 rounded-lg border border-zinc-800";
     li.innerHTML = `
       <i class="fa-solid fa-circle-check text-cyan-400 text-xs shrink-0 mt-1"></i>
       <span>${tac}</span>
@@ -1224,8 +1224,8 @@ function initEngineeringAndTrackerListeners() {
     const div = document.createElement("div");
     div.className = "flex gap-2 equipment-item mt-2";
     div.innerHTML = `
-      <select class="eq-category w-1/4 bg-slate-900 border border-slate-700 rounded-lg px-2 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"><option value="Maquinaria">Maquinaria</option><option value="Servicios">Servicios</option><option value="Empleados">Empleados</option></select><input type="text" placeholder="Ej: Equipo" class="eq-name w-1/3 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
-      <input type="text" placeholder="Especificaciones" class="eq-desc flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+      <select class="eq-category w-1/4 bg-zinc-900 border border-zinc-700 rounded-lg px-2 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"><option value="Maquinaria">Maquinaria</option><option value="Servicios">Servicios</option><option value="Empleados">Empleados</option></select><input type="text" placeholder="Ej: Equipo" class="eq-name w-1/3 bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+      <input type="text" placeholder="Especificaciones" class="eq-desc flex-1 bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
       <button type="button" class="text-rose-400 hover:text-rose-300 px-2" onclick="this.parentElement.remove(); scheduleAutoSave();"><i class="fa-solid fa-xmark"></i></button>
     `;
     div.querySelector(".eq-category").value = item.category || "Maquinaria";
@@ -1293,16 +1293,16 @@ function initEngineeringAndTrackerListeners() {
     
     data.budgets.forEach(b => {
       let icon = "fa-star";
-      let color = "text-indigo-400";
+      let color = "text-purple-400";
       if(b.budget_type.toLowerCase().includes("econ")) { icon = "fa-piggy-bank"; color = "text-emerald-400"; }
       if(b.budget_type.toLowerCase().includes("prem") || b.budget_type.toLowerCase().includes("alt")) { icon = "fa-gem"; color = "text-amber-400"; }
 
-      const detailsHtml = b.details.map(d => `<li class="text-[10px] text-slate-300 mb-1 border-b border-slate-800 pb-1">${d}</li>`).join('');
+      const detailsHtml = b.details.map(d => `<li class="text-[10px] text-zinc-300 mb-1 border-b border-zinc-800 pb-1">${d}</li>`).join('');
 
       const card = document.createElement("div");
-      card.className = "bg-slate-900 rounded-xl border border-slate-800 p-4 relative cursor-pointer hover:border-emerald-500 transition group";
+      card.className = "bg-zinc-900 rounded-xl border border-zinc-800 p-4 relative cursor-pointer hover:border-emerald-500 transition group";
       card.innerHTML = `
-        <div class="text-xs font-bold text-slate-300 uppercase mb-2 flex items-center gap-1.5 ${color}">
+        <div class="text-xs font-bold text-zinc-300 uppercase mb-2 flex items-center gap-1.5 ${color}">
           <i class="fa-solid ${icon}"></i> ${b.budget_type}
         </div>
         <div class="text-lg font-black text-white font-mono mb-3">$${b.total_cost.toLocaleString('es-MX')}</div>
@@ -1352,7 +1352,7 @@ function initEngineeringAndTrackerListeners() {
   useInvestmentBtn.addEventListener("click", () => {
     document.getElementById("initialInvestment").value = selectedBudgetCost;
     document.getElementById("initialInvestment").setAttribute("readonly", true);
-    document.getElementById("initialInvestment").classList.add("bg-slate-800", "cursor-not-allowed");
+    document.getElementById("initialInvestment").classList.add("bg-zinc-800", "cursor-not-allowed");
     alert(`Inversión de $${selectedBudgetCost.toLocaleString('es-MX')} aplicada al modelo.`);
     scheduleAutoSave();
     switchTab(5);
@@ -1461,10 +1461,10 @@ function initEngineeringAndTrackerListeners() {
     data.activities.forEach(a => {
       activitiesTable.innerHTML += `
         <tr>
-          <td class="p-2 text-center text-slate-400 font-bold">${a.step_number}</td>
+          <td class="p-2 text-center text-zinc-400 font-bold">${a.step_number}</td>
           <td class="p-2">
-            <div class="font-medium text-slate-200">${a.activity}</div>
-            <div class="text-[10px] text-slate-500">${a.movements}</div>
+            <div class="font-medium text-zinc-200">${a.activity}</div>
+            <div class="text-[10px] text-zinc-500">${a.movements}</div>
           </td>
           <td class="p-2 font-mono text-cyan-400">${a.time_estimate}</td>
         </tr>
@@ -1476,7 +1476,7 @@ function initEngineeringAndTrackerListeners() {
     data.consumables_table.forEach(e => {
       consumablesTable.innerHTML += `
         <tr>
-          <td class="p-2 font-medium text-slate-200">${e.item_name}</td>
+          <td class="p-2 font-medium text-zinc-200">${e.item_name}</td>
           <td class="p-2 text-right font-mono">${e.quantity_monthly}</td>
           <td class="p-2 text-right font-mono text-amber-300">$${e.monthly_cost_estimate.toLocaleString('es-MX')}</td>
         </tr>
@@ -1588,7 +1588,7 @@ function renderFinancialRatios(ratios) {
 
   if (!ratios || !ratios.items || ratios.items.length === 0) {
     container.innerHTML = `
-      <div class="col-span-full text-center py-6 text-slate-500 text-xs">
+      <div class="col-span-full text-center py-6 text-zinc-500 text-xs">
         <i class="fa-solid fa-calculator mb-1 text-lg"></i>
         <p>No se han calculado razones financieras para este escenario.</p>
       </div>`;
@@ -1607,20 +1607,20 @@ function renderFinancialRatios(ratios) {
     
     let badgeStyle = "bg-emerald-500/20 text-emerald-300 border-emerald-500/30";
     let valStyle = "text-emerald-400";
-    let cardBorder = "border-slate-800 hover:border-emerald-500/40";
+    let cardBorder = "border-zinc-800 hover:border-emerald-500/40";
 
     if (item.status_color === "blue") {
       badgeStyle = "bg-blue-500/20 text-blue-300 border-blue-500/30";
       valStyle = "text-blue-400";
-      cardBorder = "border-slate-800 hover:border-blue-500/40";
+      cardBorder = "border-zinc-800 hover:border-blue-500/40";
     } else if (item.status_color === "amber") {
       badgeStyle = "bg-amber-500/20 text-amber-300 border-amber-500/30";
       valStyle = "text-amber-400";
-      cardBorder = "border-slate-800 hover:border-amber-500/40";
+      cardBorder = "border-zinc-800 hover:border-amber-500/40";
     } else if (item.status_color === "rose") {
       badgeStyle = "bg-rose-500/20 text-rose-300 border-rose-500/30";
       valStyle = "text-rose-400";
-      cardBorder = "border-slate-800 hover:border-rose-500/40";
+      cardBorder = "border-zinc-800 hover:border-rose-500/40";
     }
 
     let formattedVal = "";
@@ -1637,12 +1637,12 @@ function renderFinancialRatios(ratios) {
     }
 
     const card = document.createElement("div");
-    card.className = `p-4 rounded-xl bg-slate-900/90 border ${cardBorder} flex flex-col justify-between transition shadow-sm`;
+    card.className = `p-4 rounded-xl bg-zinc-900/90 border ${cardBorder} flex flex-col justify-between transition shadow-sm`;
     card.innerHTML = `
       <div>
         <div class="flex items-center justify-between mb-2">
-          <span class="text-[11px] font-semibold text-slate-400 flex items-center gap-1.5">
-            <i class="fa-solid ${icon} text-slate-500"></i> ${item.category}
+          <span class="text-[11px] font-semibold text-zinc-400 flex items-center gap-1.5">
+            <i class="fa-solid ${icon} text-zinc-500"></i> ${item.category}
           </span>
           <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${badgeStyle}">
             ${item.status}
@@ -1651,10 +1651,10 @@ function renderFinancialRatios(ratios) {
         <div class="text-sm font-bold text-white mb-1">${item.name}</div>
         <div class="flex items-baseline gap-2 mb-2">
           <span class="text-2xl font-black font-mono ${valStyle}">${formattedVal}</span>
-          <span class="text-[11px] text-slate-500 font-mono">Meta: ${item.benchmark}</span>
+          <span class="text-[11px] text-zinc-500 font-mono">Meta: ${item.benchmark}</span>
         </div>
       </div>
-      <p class="text-xs text-slate-400 mt-2 pt-2 border-t border-slate-800/80 leading-relaxed">
+      <p class="text-xs text-zinc-400 mt-2 pt-2 border-t border-zinc-800/80 leading-relaxed">
         ${item.interpretation}
       </p>
     `;
@@ -1675,10 +1675,10 @@ async function openGeoAcquisitionModal() {
 
   content.innerHTML = `
     <div class="flex flex-col items-center justify-center py-12 text-center space-y-4">
-      <div class="w-12 h-12 rounded-full border-4 border-indigo-500/20 border-t-indigo-500 animate-spin"></div>
+      <div class="w-12 h-12 rounded-full border-4 border-purple-500/20 border-t-purple-500 animate-spin"></div>
       <div>
         <h4 class="text-sm font-bold text-white">Analizando Cadena de Suministro Territorial...</h4>
-        <p class="text-xs text-slate-400 mt-1">Evaluando geolocalización, fletes, hubs logísticos y ventajas de compra local vs. importación.</p>
+        <p class="text-xs text-zinc-400 mt-1">Evaluando geolocalización, fletes, hubs logísticos y ventajas de compra local vs. importación.</p>
       </div>
     </div>
   `;
@@ -1764,20 +1764,20 @@ function renderGeoModalContent(data) {
       }
 
       return `
-        <tr class="border-b border-slate-800 hover:bg-slate-800/40 transition">
+        <tr class="border-b border-zinc-800 hover:bg-zinc-800/40 transition">
           <td class="py-3 px-3">
-            <div class="font-bold text-slate-100">${p.name}</div>
-            <div class="text-[11px] text-slate-400">${p.category}</div>
+            <div class="font-bold text-zinc-100">${p.name}</div>
+            <div class="text-[11px] text-zinc-400">${p.category}</div>
           </td>
           <td class="py-3 px-3 text-center font-mono font-bold text-emerald-400">
             ${p.target_margin_pct.toFixed(0)}%
           </td>
           <td class="py-3 px-3 text-center">
-            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300 border border-zinc-700">
               ${p.turnover_speed}
             </span>
           </td>
-          <td class="py-3 px-3 text-xs text-slate-300 leading-snug">
+          <td class="py-3 px-3 text-xs text-zinc-300 leading-snug">
             ${p.local_advantage}
           </td>
           <td class="py-3 px-3 text-right">
@@ -1789,22 +1789,22 @@ function renderGeoModalContent(data) {
       `;
     }).join("");
   } else {
-    productsRows = `<tr><td colspan="5" class="py-4 text-center text-xs text-slate-500">No hay productos sugeridos.</td></tr>`;
+    productsRows = `<tr><td colspan="5" class="py-4 text-center text-xs text-zinc-500">No hay productos sugeridos.</td></tr>`;
   }
 
   let calendarCards = "";
   if (data.seasonal_buying_calendar && data.seasonal_buying_calendar.length > 0) {
     calendarCards = data.seasonal_buying_calendar.map(c => `
-      <div class="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 flex flex-col justify-between">
+      <div class="p-3.5 rounded-xl bg-zinc-950/60 border border-zinc-800 flex flex-col justify-between">
         <div>
           <div class="flex items-center justify-between mb-1.5">
-            <span class="text-xs font-black text-indigo-300">${c.season_period}</span>
+            <span class="text-xs font-black text-purple-300">${c.season_period}</span>
             <span class="text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
               ${c.discount_opportunity}
             </span>
           </div>
           <div class="text-xs font-bold text-white mb-1">${c.recommended_focus}</div>
-          <p class="text-[11px] text-slate-400 leading-relaxed">${c.action}</p>
+          <p class="text-[11px] text-zinc-400 leading-relaxed">${c.action}</p>
         </div>
       </div>
     `).join("");
@@ -1813,55 +1813,55 @@ function renderGeoModalContent(data) {
   content.innerHTML = `
     <!-- Top verdicts -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div class="p-4 rounded-xl bg-slate-950/60 border border-indigo-500/30">
-        <div class="flex items-center gap-2 text-indigo-400 font-bold text-xs uppercase tracking-wider mb-2">
+      <div class="p-4 rounded-xl bg-zinc-950/60 border border-purple-500/30">
+        <div class="flex items-center gap-2 text-purple-400 font-bold text-xs uppercase tracking-wider mb-2">
           <i class="fa-solid fa-map-location-dot"></i>
           <span>Estrategia Regional de Abastecimiento</span>
         </div>
-        <p class="text-xs text-slate-200 leading-relaxed">${data.regional_supply_strategy}</p>
+        <p class="text-xs text-zinc-200 leading-relaxed">${data.regional_supply_strategy}</p>
       </div>
 
-      <div class="p-4 rounded-xl bg-slate-950/60 border border-emerald-500/30">
+      <div class="p-4 rounded-xl bg-zinc-950/60 border border-emerald-500/30">
         <div class="flex items-center gap-2 text-emerald-400 font-bold text-xs uppercase tracking-wider mb-2">
           <i class="fa-solid fa-scale-balanced"></i>
           <span>Veredicto: Abastecimiento Local vs. Importación</span>
         </div>
-        <p class="text-xs text-slate-200 leading-relaxed">${data.local_vs_import_verdict}</p>
+        <p class="text-xs text-zinc-200 leading-relaxed">${data.local_vs_import_verdict}</p>
       </div>
     </div>
 
     <!-- Middle Logistics & Pricing Insights -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div class="p-4 rounded-xl bg-slate-950/40 border border-slate-800">
+      <div class="p-4 rounded-xl bg-zinc-950/40 border border-zinc-800">
         <div class="flex items-center gap-2 text-amber-400 font-bold text-xs uppercase tracking-wider mb-2">
           <i class="fa-solid fa-truck-fast"></i>
           <span>Logística, Fletes y Hubs de Distribución</span>
         </div>
-        <p class="text-xs text-slate-300 leading-relaxed">${data.logistics_and_freight_insights}</p>
+        <p class="text-xs text-zinc-300 leading-relaxed">${data.logistics_and_freight_insights}</p>
       </div>
 
-      <div class="p-4 rounded-xl bg-slate-950/40 border border-slate-800">
+      <div class="p-4 rounded-xl bg-zinc-950/40 border border-zinc-800">
         <div class="flex items-center gap-2 text-purple-400 font-bold text-xs uppercase tracking-wider mb-2">
           <i class="fa-solid fa-tags"></i>
           <span>Competitividad y Políticas de Precios Locales</span>
         </div>
-        <p class="text-xs text-slate-300 leading-relaxed">${data.local_competitive_pricing}</p>
+        <p class="text-xs text-zinc-300 leading-relaxed">${data.local_competitive_pricing}</p>
       </div>
     </div>
 
     <!-- Key Products Table -->
-    <div class="glass-panel p-4 rounded-xl border border-slate-800">
+    <div class="glass-panel p-4 rounded-xl border border-zinc-800">
       <div class="flex items-center justify-between mb-3">
         <h4 class="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-2">
-          <i class="fa-solid fa-boxes-stacked text-indigo-400"></i>
+          <i class="fa-solid fa-boxes-stacked text-purple-400"></i>
           <span>Productos Clave Sugeridos para Adquisición (${data.sector})</span>
         </h4>
-        <span class="text-[10px] text-slate-400">Márgenes y Rotación Esperada</span>
+        <span class="text-[10px] text-zinc-400">Márgenes y Rotación Esperada</span>
       </div>
       <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse text-xs">
           <thead>
-            <tr class="border-b border-slate-800 text-[11px] font-semibold text-slate-400 uppercase">
+            <tr class="border-b border-zinc-800 text-[11px] font-semibold text-zinc-400 uppercase">
               <th class="py-2 px-3">Producto / Especialidad</th>
               <th class="py-2 px-3 text-center">Margen Meta</th>
               <th class="py-2 px-3 text-center">Rotación</th>
@@ -1877,13 +1877,13 @@ function renderGeoModalContent(data) {
     </div>
 
     <!-- Seasonal Buying Calendar -->
-    <div class="glass-panel p-4 rounded-xl border border-slate-800">
+    <div class="glass-panel p-4 rounded-xl border border-zinc-800">
       <div class="flex items-center justify-between mb-3">
         <h4 class="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-2">
           <i class="fa-solid fa-calendar-days text-amber-400"></i>
           <span>Calendario Estacional de Compras y Negociación</span>
         </h4>
-        <span class="text-[10px] text-slate-400">Optimización de Inventario por Temporalidad</span>
+        <span class="text-[10px] text-zinc-400">Optimización de Inventario por Temporalidad</span>
       </div>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         ${calendarCards}

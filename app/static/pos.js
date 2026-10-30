@@ -94,15 +94,15 @@
     shift = r.shift;
     const b = $("shiftBadge");
     b.textContent = shift ? `Turno #${shift.id} abierto` : "Sin turno";
-    b.className = "text-[11px] px-2 py-0.5 rounded-full " + (shift ? "bg-emerald-700" : "bg-slate-700");
+    b.className = "text-[11px] px-2 py-0.5 rounded-full " + (shift ? "bg-emerald-700" : "bg-zinc-700");
     return r;
   }
   function reportHtml(r) {
-    const row = (l, v, cls = "") => `<div class="flex justify-between ${cls}"><span class="text-slate-400">${l}</span><b>${v}</b></div>`;
+    const row = (l, v, cls = "") => `<div class="flex justify-between ${cls}"><span class="text-zinc-400">${l}</span><b>${v}</b></div>`;
     return row("Ventas", r.sales_count) + row("Subtotal", fmt(r.subtotal)) + row("IVA", fmt(r.iva)) + row("Total ventas", fmt(r.total), "text-amber-300") +
-      "<hr class='border-slate-800 my-1'>" +
+      "<hr class='border-zinc-800 my-1'>" +
       row("Efectivo", fmt(r.by_method.efectivo)) + row("Tarjeta", fmt(r.by_method.tarjeta)) + row("Transferencia", fmt(r.by_method.transferencia)) +
-      "<hr class='border-slate-800 my-1'>" +
+      "<hr class='border-zinc-800 my-1'>" +
       row("Fondo inicial", fmt(r.shift.opening_float)) + row("Entradas", fmt(r.cash_in)) + row("Retiros", fmt(r.cash_out)) +
       row("Canceladas", `${r.cancelled_count} (${fmt(r.cancelled_total)})`) +
       row("Efectivo esperado en caja", fmt(r.expected_cash), "text-emerald-400");
@@ -133,7 +133,7 @@
   function renderCart() {
     $("cartEmpty").classList.toggle("hidden", cart.length > 0);
     $("cartBody").innerHTML = cart.map((l, i) => `<tr>
-      <td>${esc(l.product.name)}<div class="text-[10px] text-slate-500">${esc(l.product.barcode || l.product.sku || "")} · IVA ${IVA_LABEL[l.product.iva_type]}</div></td>
+      <td>${esc(l.product.name)}<div class="text-[10px] text-zinc-500">${esc(l.product.barcode || l.product.sku || "")} · IVA ${IVA_LABEL[l.product.iva_type]}</div></td>
       <td>${fmt(l.product.price)}</td>
       <td><div class="flex items-center gap-1"><button class="btn btn-sec !px-2 !py-0.5" data-dec="${i}">-</button>
         <input type="number" min="0.01" step="any" value="${l.qty}" data-qty="${i}" class="inp !w-16 !py-0.5 text-center">
@@ -141,8 +141,8 @@
       <td class="text-right">${fmt(l.product.price * l.qty)}</td>
       <td><button class="text-red-400" data-del="${i}"><i class="fa-solid fa-trash"></i></button></td></tr>`).join("");
     const t = cartTotals();
-    const ivaRows = Object.entries(t.byType).map(([k, v]) => `<div class="flex justify-between text-slate-400"><span>IVA ${IVA_LABEL[k]}</span><span>${fmt(v)}</span></div>`).join("");
-    $("totals").innerHTML = `<div class="flex justify-between text-slate-400"><span>Subtotal</span><span>${fmt(t.subtotal)}</span></div>${ivaRows}
+    const ivaRows = Object.entries(t.byType).map(([k, v]) => `<div class="flex justify-between text-zinc-400"><span>IVA ${IVA_LABEL[k]}</span><span>${fmt(v)}</span></div>`).join("");
+    $("totals").innerHTML = `<div class="flex justify-between text-zinc-400"><span>Subtotal</span><span>${fmt(t.subtotal)}</span></div>${ivaRows}
       <div class="flex justify-between text-xl font-bold text-amber-300 pt-1"><span>Total</span><span>${fmt(t.total)}</span></div>`;
     updateChange();
   }

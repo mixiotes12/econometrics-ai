@@ -57,7 +57,7 @@
   async function loadUsers() {
     [areas, users] = await Promise.all([api("/areas"), api("/users")]);
     $("uArea").innerHTML = areaOptions();
-    $("usersBody").innerHTML = users.map((u) => `<tr class="${u.active ? "" : "opacity-50"}"><td><b>${esc(u.name)}</b><div class="text-[10px] text-slate-500">${esc(u.email || "")} ${esc(u.phone || "")}</div></td>
+    $("usersBody").innerHTML = users.map((u) => `<tr class="${u.active ? "" : "opacity-50"}"><td><b>${esc(u.name)}</b><div class="text-[10px] text-zinc-500">${esc(u.email || "")} ${esc(u.phone || "")}</div></td>
       <td><span class="pill bg-violet-900 text-violet-200">${esc(u.role_label)}</span></td><td>${esc(u.area_name || "—")}</td><td>${esc(u.last_login || "Nunca")}</td>
       <td>${u.locked ? '<span class="pill bg-red-900 text-red-300">Bloqueado</span>' : u.active ? "Activo" : "Inactivo"}${u.must_change_pin ? ' <span class="pill bg-amber-900 text-amber-300">PIN por cambiar</span>' : ""}</td>
       <td class="whitespace-nowrap"><button class="btn btn-sec !py-0.5" data-edituser="${u.id}">Editar</button>
@@ -72,8 +72,8 @@
     rolesData = await api("/roles");
     const r = rolesData.roles;
     $("rolesTable").innerHTML = `<thead><tr><th>Permiso</th>${r.map((x) => `<th class="text-center">${esc(x.label)}</th>`).join("")}</tr></thead><tbody>` +
-      Object.entries(rolesData.permissions).map(([p, d]) => `<tr><td>${esc(d)}<div class="text-[10px] text-slate-500">${p}</div></td>${
-        r.map((x) => `<td class="text-center">${x.permissions.includes(p) ? '<i class="fa-solid fa-check text-emerald-400"></i>' : '<span class="text-slate-700">—</span>'}</td>`).join("")}</tr>`).join("") + "</tbody>";
+      Object.entries(rolesData.permissions).map(([p, d]) => `<tr><td>${esc(d)}<div class="text-[10px] text-zinc-500">${p}</div></td>${
+        r.map((x) => `<td class="text-center">${x.permissions.includes(p) ? '<i class="fa-solid fa-check text-emerald-400"></i>' : '<span class="text-zinc-700">—</span>'}</td>`).join("")}</tr>`).join("") + "</tbody>";
   }
   async function ensureRoles() {
     if (!rolesData) rolesData = await api("/roles");
@@ -140,12 +140,12 @@
     const [p, labor] = await Promise.all([api(`/payroll?year=${y}&month=${+m}&period=${val("pPeriod")}`), api("/labor-cost")]);
     $("cBurden").value = p.settings.payroll_burden_pct; $("cAgui").value = p.settings.aguinaldo_days; $("cVac").value = p.settings.vacation_days; $("cPrima").value = p.settings.prima_vac_pct;
     const t = p.totals;
-    const card = (l, v, c = "") => `<div class="card"><div class="text-[11px] text-slate-400">${l}</div><div class="text-xl font-bold ${c}">${v}</div></div>`;
+    const card = (l, v, c = "") => `<div class="card"><div class="text-[11px] text-zinc-400">${l}</div><div class="text-xl font-bold ${c}">${v}</div></div>`;
     $("payCards").innerHTML = card("Pago bruto del periodo", fmt(t.gross_pay)) + card("Carga patronal", fmt(t.employer_burden)) + card("Provisiones (aguinaldo + prima)", fmt(t.provisions)) + card("Costo total empresa", fmt(t.employer_cost), "text-violet-300");
-    $("payBody").innerHTML = p.rows.map((r) => `<tr><td><b>${esc(r.name)}</b><div class="text-[10px] text-slate-500">${esc(r.position)}</div></td><td>${esc(r.area)}</td><td>${fmt(r.base_period)}</td>
+    $("payBody").innerHTML = p.rows.map((r) => `<tr><td><b>${esc(r.name)}</b><div class="text-[10px] text-zinc-500">${esc(r.position)}</div></td><td>${esc(r.area)}</td><td>${fmt(r.base_period)}</td>
       <td>${r.faltas_dias ? `${r.faltas_dias} d (−${fmt(r.descuento_faltas)})` : "—"}</td><td>${fmt(r.bonos + r.horas_extra)}</td><td>${fmt(r.deducciones)}</td>
       <td>${fmt(r.gross_pay)}</td><td>${fmt(r.employer_burden)}</td><td>${fmt(r.provisions)}</td><td><b>${fmt(r.employer_cost)}</b></td></tr>`).join("") ||
-      '<tr><td colspan="10" class="text-center text-slate-500">Sin empleados en el periodo.</td></tr>';
+      '<tr><td colspan="10" class="text-center text-zinc-500">Sin empleados en el periodo.</td></tr>';
     $("payNote").textContent = `${p.start} a ${p.end}. ${p.disclaimer}`;
     $("areaCostBody").innerHTML = p.by_area.map((a) => `<tr><td>${esc(a.area)}</td><td>${a.headcount}</td><td>${fmt(a.gross_pay)}</td><td>${fmt(a.employer_cost)}</td></tr>`).join("");
     $("laborBox").innerHTML = `<div>Plantilla activa: <b>${labor.headcount}</b> · Sueldos: <b>${fmt(labor.monthly_base_salaries)}</b> · Carga patronal: <b>${fmt(labor.monthly_employer_burden)}</b> · Provisiones: <b>${fmt(labor.monthly_provisions)}</b></div>
@@ -160,7 +160,7 @@
     const r = await api("/audit?" + q);
     const cur = val("bAction");
     $("bAction").innerHTML = '<option value="">Todas</option>' + r.actions.map((a) => `<option ${a === cur ? "selected" : ""}>${esc(a)}</option>`).join("");
-    $("auditBody").innerHTML = r.items.map((a) => `<tr><td class="whitespace-nowrap">${esc(a.created_at)}</td><td>${esc(a.user_name)}</td><td><span class="pill bg-slate-700">${esc(a.action)}</span></td><td>${esc(a.detail)}</td></tr>`).join("");
+    $("auditBody").innerHTML = r.items.map((a) => `<tr><td class="whitespace-nowrap">${esc(a.created_at)}</td><td>${esc(a.user_name)}</td><td><span class="pill bg-zinc-700">${esc(a.action)}</span></td><td>${esc(a.detail)}</td></tr>`).join("");
   }
 
   // ---------- Eventos
