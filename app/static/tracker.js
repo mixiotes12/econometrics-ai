@@ -84,7 +84,7 @@ document.addEventListener("DOMContentLoaded", () => {
       statTotalRevenue.textContent = "$0";
       statTotalShrinkage.textContent = "$0";
       statTotalExpenses.textContent = "$0";
-      analysisInsights.innerHTML = `<p class="text-slate-400 italic text-xs">Selecciona un proyecto y agrega registros para ver el análisis de desviaciones.</p>`;
+      analysisInsights.innerHTML = `<p class="text-zinc-400 italic text-xs">Selecciona un proyecto y agrega registros para ver el análisis de desviaciones.</p>`;
       return;
     }
     
@@ -105,7 +105,7 @@ document.addEventListener("DOMContentLoaded", () => {
       sumExp += r.expenses;
       
       const tr = document.createElement("tr");
-      tr.className = "hover:bg-slate-800/30 transition";
+      tr.className = "hover:bg-zinc-800/30 transition";
       tr.innerHTML = `
         <td class="px-4 py-2">${r.date}</td>
         <td class="px-4 py-2 text-right font-mono">${r.units}</td>
@@ -120,7 +120,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     
     if(records.length === 0) {
-      recordsTableBody.innerHTML = `<tr><td colspan="6" class="px-4 py-4 text-center text-slate-500">No hay registros para este proyecto.</td></tr>`;
+      recordsTableBody.innerHTML = `<tr><td colspan="6" class="px-4 py-4 text-center text-zinc-500">No hay registros para este proyecto.</td></tr>`;
     }
     
     statTotalUnits.textContent = sumUnits;
@@ -133,7 +133,7 @@ document.addEventListener("DOMContentLoaded", () => {
   
   function generateInsights(projectId, records, sumUnits, sumRev, sumShrink, sumExp) {
     if(records.length === 0) {
-       analysisInsights.innerHTML = `<p class="text-slate-400 italic text-xs">Agrega registros para ver el análisis de desviaciones.</p>`;
+       analysisInsights.innerHTML = `<p class="text-zinc-400 italic text-xs">Agrega registros para ver el análisis de desviaciones.</p>`;
        return;
     }
     
@@ -168,14 +168,14 @@ document.addEventListener("DOMContentLoaded", () => {
        
     analysisInsights.innerHTML = `
       <ul class="space-y-3">
-        <li class="p-3 bg-slate-950 rounded border border-slate-800">
+        <li class="p-3 bg-zinc-950 rounded border border-zinc-800">
           <strong>Rendimiento de Ventas:</strong> ${salesStatus}<br>
-          <span class="text-xs text-slate-400 mt-1 block">Precio prom real: ${formatMoney(realPrice)} (Proyectado: ${formatMoney(fin.monthly_price)})</span>
+          <span class="text-xs text-zinc-400 mt-1 block">Precio prom real: ${formatMoney(realPrice)} (Proyectado: ${formatMoney(fin.monthly_price)})</span>
         </li>
-        <li class="p-3 bg-slate-950 rounded border border-slate-800">
+        <li class="p-3 bg-zinc-950 rounded border border-zinc-800">
           <strong>Control de Mermas/Robos:</strong> ${shrinkStatus}
         </li>
-        <li class="p-3 bg-slate-950 rounded border border-slate-800">
+        <li class="p-3 bg-zinc-950 rounded border border-zinc-800">
           <strong>Eficiencia de Costos:</strong> ${expStatus}
         </li>
       </ul>

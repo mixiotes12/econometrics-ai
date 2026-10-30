@@ -10,14 +10,53 @@
       darkMode: 'class',
       theme: {
         extend: {
+          fontFamily: {
+            sans: ['"Outfit"', 'sans-serif'],
+            mono: ['"Space Mono"', 'monospace'],
+          },
           colors: {
-            brand: {
-              50: '#eef2ff',
-              100: '#e0e7ff',
-              500: '#6366f1',
-              600: '#4f46e5',
-              700: '#4338ca',
-              900: '#312e81',
+            slate: {
+              50: '#fafafa',
+              100: '#f4f4f5',
+              200: '#e4e4e7',
+              300: '#d4d4d8',
+              400: '#a1a1aa',
+              500: '#71717a',
+              600: '#52525b',
+              700: '#3f3f46',
+              800: '#27272a',
+              900: '#18181b',
+              950: '#09090b',
+            },
+            indigo: {
+              400: '#9f7aea',
+              500: '#805ad5',
+              600: '#6b46c1',
+            },
+            emerald: {
+              400: '#68d391',
+              500: '#48bb78',
+              600: '#38a169',
+            },
+            amber: {
+              400: '#f6ad55',
+              500: '#ed8936',
+              600: '#dd6b20',
+            },
+            blue: {
+              400: '#63b3ed',
+              500: '#4299e1',
+              600: '#3182ce',
+            },
+            rose: {
+              400: '#fc8181',
+              500: '#f56565',
+              600: '#e53e3e',
+            },
+            cyan: {
+              400: '#0bc5ea',
+              500: '#00b5d8',
+              600: '#00a3c4',
             }
           }
         }
@@ -28,9 +67,9 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-slate-950 text-slate-100 flex flex-col min-h-screen">
+<body class="bg-zinc-950 text-zinc-100 flex flex-col min-h-screen">
   <!-- TOP HEADER -->
-  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+  <header class="border-b border-zinc-800 bg-zinc-900/80 backdrop-blur sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 via-teal-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-emerald-500/30">
@@ -38,14 +77,14 @@
         </div>
         <div>
           <div class="flex items-center gap-2">
-            <span class="font-bold text-lg tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">Control Operativo</span>
+            <span class="font-bold text-lg tracking-tight bg-gradient-to-r from-zinc-100 via-purple-200 to-zinc-400 bg-clip-text text-transparent">Control Operativo</span>
             <span class="text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Tracker</span>
           </div>
-          <p class="text-xs text-slate-400 hidden sm:block">Registro Diario y Comparativa con EconoMetrics</p>
+          <p class="text-xs text-zinc-400 hidden sm:block">Registro Diario y Comparativa con EconoMetrics</p>
         </div>
       </div>
       <div class="flex items-center gap-3">
-        <a href="index.html" class="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs px-3 py-2 rounded-lg transition font-medium">
+        <a href="index.html" class="flex items-center gap-1.5 bg-zinc-800 hover:bg-slate-700 text-zinc-300 border border-zinc-700 text-xs px-3 py-2 rounded-xl transition-all duration-300 ease-in-out font-medium">
           <i class="fa-solid fa-arrow-left"></i>
           <span>Volver a EconoMetrics</span>
         </a>
@@ -56,35 +95,35 @@
   <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
     
     <!-- SELECCIÓN DE PROYECTO -->
-    <div class="glass-panel p-6 rounded-2xl border border-slate-800/80">
+    <div class="glass-panel p-6 rounded-[20px] border border-zinc-800/80">
       <div class="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h2 class="text-base font-bold text-white flex items-center gap-2">
-            <i class="fa-solid fa-link text-indigo-400"></i> Vincular Proyecto
+            <i class="fa-solid fa-link text-purple-400"></i> Vincular Proyecto
           </h2>
-          <p class="text-xs text-slate-400">Selecciona un proyecto previamente guardado en EconoMetrics para cargar sus metas mensuales.</p>
+          <p class="text-xs text-zinc-400">Selecciona un proyecto previamente guardado en EconoMetrics para cargar sus metas mensuales.</p>
         </div>
-        <select id="projectSelect" class="w-full max-w-sm bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+        <select id="projectSelect" class="w-full max-w-sm bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500">
           <option value="">-- Selecciona un proyecto guardado --</option>
         </select>
       </div>
       
       <!-- METAS PROYECTADAS (Solo visible si hay proyecto seleccionado) -->
-      <div id="projectGoals" class="mt-4 pt-4 border-t border-slate-800 hidden grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div id="projectGoals" class="mt-4 pt-4 border-t border-zinc-800 hidden grid grid-cols-2 md:grid-cols-4 gap-4">
         <div>
-          <div class="text-[10px] text-slate-400 uppercase tracking-wider">Meta Ventas (Mes)</div>
-          <div id="goalUnits" class="text-lg font-bold text-indigo-400 font-mono">0 uds</div>
+          <div class="text-[10px] text-zinc-400 uppercase tracking-wider">Meta Ventas (Mes)</div>
+          <div id="goalUnits" class="text-lg font-bold text-purple-400 font-mono">0 uds</div>
         </div>
         <div>
-          <div class="text-[10px] text-slate-400 uppercase tracking-wider">Precio / Ud</div>
-          <div id="goalPrice" class="text-lg font-bold text-slate-200 font-mono">$0</div>
+          <div class="text-[10px] text-zinc-400 uppercase tracking-wider">Precio / Ud</div>
+          <div id="goalPrice" class="text-lg font-bold text-zinc-200 font-mono">$0</div>
         </div>
         <div>
-          <div class="text-[10px] text-slate-400 uppercase tracking-wider">Presupuesto Riesgos (Mes)</div>
+          <div class="text-[10px] text-zinc-400 uppercase tracking-wider">Presupuesto Riesgos (Mes)</div>
           <div id="goalShrinkage" class="text-lg font-bold text-rose-400 font-mono">$0</div>
         </div>
         <div>
-          <div class="text-[10px] text-slate-400 uppercase tracking-wider">Costo Variable Esperado</div>
+          <div class="text-[10px] text-zinc-400 uppercase tracking-wider">Costo Variable Esperado</div>
           <div id="goalVariableCost" class="text-lg font-bold text-amber-400 font-mono">$0 / ud</div>
         </div>
       </div>
@@ -92,45 +131,45 @@
 
     
       <!-- Import Key Section -->
-      <div class="glass-panel p-4 rounded-xl border border-slate-800 mb-6 bg-slate-900/50">
-        <h3 class="text-xs font-bold text-slate-300 mb-2">Importar Proyecto desde Clave</h3>
+      <div class="glass-panel p-4 rounded-xl border border-zinc-800 mb-6 bg-zinc-900/50">
+        <h3 class="text-xs font-bold text-zinc-300 mb-2">Importar Proyecto desde Clave</h3>
         <div class="flex gap-2">
-            <input type="text" id="importKeyInput" placeholder="Pega aquí la clave generada en EconoMetrics" class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 font-mono focus:outline-none focus:ring-2 focus:ring-teal-500">
-            <button id="importKeyBtn" class="bg-teal-600 hover:bg-teal-500 text-white px-4 py-2 rounded-lg text-xs font-semibold whitespace-nowrap"><i class="fa-solid fa-download"></i> Importar</button>
+            <input type="text" id="importKeyInput" placeholder="Pega aquí la clave generada en EconoMetrics" class="flex-1 bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:ring-2 focus:ring-teal-500">
+            <button id="importKeyBtn" class="bg-teal-600 hover:bg-teal-500 text-white px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"><i class="fa-solid fa-download"></i> Importar</button>
         </div>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       
       <!-- FORMULARIO DE REGISTRO DIARIO -->
-      <div class="glass-panel p-6 rounded-2xl border border-slate-800/80 lg:col-span-1">
+      <div class="glass-panel p-6 rounded-[20px] border border-zinc-800/80 lg:col-span-1">
         <h2 class="text-base font-bold text-white mb-4 flex items-center gap-2">
           <i class="fa-solid fa-plus-circle text-emerald-400"></i> Nuevo Registro
         </h2>
         <form id="recordForm" class="space-y-4">
           <div>
-            <label class="block text-xs font-semibold text-slate-300 mb-1">Fecha</label>
-            <input type="date" id="recordDate" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            <label class="block text-xs font-semibold text-zinc-300 mb-1">Fecha</label>
+            <input type="date" id="recordDate" required class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500">
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-300 mb-1">Unidades Vendidas Reales</label>
-            <input type="number" id="recordUnits" min="0" step="1" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            <label class="block text-xs font-semibold text-zinc-300 mb-1">Unidades Vendidas Reales</label>
+            <input type="number" id="recordUnits" min="0" step="1" required class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500">
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-300 mb-1">Ingresos Totales (MXN)</label>
-            <input type="number" id="recordRevenue" min="0" step="0.1" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            <label class="block text-xs font-semibold text-zinc-300 mb-1">Ingresos Totales (MXN)</label>
+            <input type="number" id="recordRevenue" min="0" step="0.1" required class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500">
           </div>
-          <hr class="border-slate-800">
+          <hr class="border-zinc-800">
           <div>
             <label class="block text-xs font-semibold text-rose-300 mb-1">Pérdidas por Robos/Mermas (MXN)</label>
-            <input type="number" id="recordShrinkage" value="0" min="0" step="0.1" class="w-full bg-slate-900 border border-rose-500/50 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-rose-500">
+            <input type="number" id="recordShrinkage" value="0" min="0" step="0.1" class="w-full bg-zinc-900 border border-rose-500/50 rounded-xl px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-rose-500">
           </div>
           <div>
             <label class="block text-xs font-semibold text-amber-300 mb-1">Gastos Operativos (Compras, Viajes, etc) (MXN)</label>
-            <input type="number" id="recordExpenses" value="0" min="0" step="0.1" class="w-full bg-slate-900 border border-amber-500/50 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500">
+            <input type="number" id="recordExpenses" value="0" min="0" step="0.1" class="w-full bg-zinc-900 border border-amber-500/50 rounded-xl px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500">
           </div>
           
-          <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-lg transition mt-4">
+          <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-xl transition-all duration-300 ease-in-out mt-4">
             Guardar Registro
           </button>
         </form>
@@ -141,43 +180,43 @@
         
         <!-- RESUMEN MENSUAL -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div class="glass-panel p-4 rounded-xl border border-slate-800">
-            <div class="text-[11px] font-medium text-slate-400 uppercase mb-1">Ventas Reales Acum.</div>
-            <div id="statTotalUnits" class="text-xl font-black text-indigo-400 font-mono">0</div>
+          <div class="glass-panel p-4 rounded-xl border border-zinc-800">
+            <div class="text-[11px] font-medium text-zinc-400 uppercase mb-1">Ventas Reales Acum.</div>
+            <div id="statTotalUnits" class="text-xl font-black text-purple-400 font-mono">0</div>
           </div>
-          <div class="glass-panel p-4 rounded-xl border border-slate-800">
-            <div class="text-[11px] font-medium text-slate-400 uppercase mb-1">Ingresos Acum.</div>
+          <div class="glass-panel p-4 rounded-xl border border-zinc-800">
+            <div class="text-[11px] font-medium text-zinc-400 uppercase mb-1">Ingresos Acum.</div>
             <div id="statTotalRevenue" class="text-xl font-black text-emerald-400 font-mono">$0</div>
           </div>
-          <div class="glass-panel p-4 rounded-xl border border-slate-800">
-            <div class="text-[11px] font-medium text-slate-400 uppercase mb-1">Total Mermas/Robos</div>
+          <div class="glass-panel p-4 rounded-xl border border-zinc-800">
+            <div class="text-[11px] font-medium text-zinc-400 uppercase mb-1">Total Mermas/Robos</div>
             <div id="statTotalShrinkage" class="text-xl font-black text-rose-400 font-mono">$0</div>
           </div>
-          <div class="glass-panel p-4 rounded-xl border border-slate-800">
-            <div class="text-[11px] font-medium text-slate-400 uppercase mb-1">Gastos Variables</div>
+          <div class="glass-panel p-4 rounded-xl border border-zinc-800">
+            <div class="text-[11px] font-medium text-zinc-400 uppercase mb-1">Gastos Variables</div>
             <div id="statTotalExpenses" class="text-xl font-black text-amber-400 font-mono">$0</div>
           </div>
         </div>
 
         <!-- ANÁLISIS Y DIAGNÓSTICO ESTADÍSTICO -->
-        <div class="glass-panel p-5 rounded-xl border border-slate-800 bg-slate-900/50">
+        <div class="glass-panel p-5 rounded-xl border border-zinc-800 bg-zinc-900/50">
           <h3 class="text-sm font-bold text-white mb-3 flex items-center gap-2">
             <i class="fa-solid fa-chart-pie text-cyan-400"></i> Análisis vs Proyección
           </h3>
-          <div id="analysisInsights" class="space-y-2 text-sm text-slate-300">
-            <p class="text-slate-400 italic text-xs">Selecciona un proyecto y agrega registros para ver el análisis de desviaciones.</p>
+          <div id="analysisInsights" class="space-y-2 text-sm text-zinc-300">
+            <p class="text-zinc-400 italic text-xs">Selecciona un proyecto y agrega registros para ver el análisis de desviaciones.</p>
           </div>
         </div>
 
         <!-- TABLA DE REGISTROS -->
-        <div class="glass-panel p-0 rounded-2xl border border-slate-800/80 overflow-hidden">
-          <div class="p-4 border-b border-slate-800 flex justify-between items-center">
+        <div class="glass-panel p-0 rounded-[20px] border border-zinc-800/80 overflow-hidden">
+          <div class="p-4 border-b border-zinc-800 flex justify-between items-center">
             <h3 class="text-sm font-bold text-white">Historial de Operaciones</h3>
             <button id="clearDataBtn" class="text-xs text-rose-400 hover:text-rose-300 underline">Borrar Datos</button>
           </div>
           <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs text-slate-300">
-              <thead class="bg-slate-900 border-b border-slate-800">
+            <table class="w-full text-left text-xs text-zinc-300">
+              <thead class="bg-zinc-900 border-b border-zinc-800">
                 <tr>
                   <th class="px-4 py-3 font-semibold">Fecha</th>
                   <th class="px-4 py-3 font-semibold text-right">Unidades</th>

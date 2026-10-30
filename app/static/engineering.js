@@ -15,8 +15,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const div = document.createElement("div");
     div.className = "flex gap-2 equipment-item mt-2";
     div.innerHTML = `
-      <input type="text" placeholder="Ej: Equipo" class="eq-name w-1/3 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
-      <input type="text" placeholder="Especificaciones" class="eq-desc flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+      <input type="text" placeholder="Ej: Equipo" class="eq-name w-1/3 bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+      <input type="text" placeholder="Especificaciones" class="eq-desc flex-1 bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
       <button type="button" class="text-rose-400 hover:text-rose-300 px-2" onclick="this.parentElement.remove()"><i class="fa-solid fa-xmark"></i></button>
     `;
     equipmentList.appendChild(div);
@@ -67,16 +67,16 @@ document.addEventListener("DOMContentLoaded", () => {
     
     data.budgets.forEach(b => {
       let icon = "fa-star";
-      let color = "text-indigo-400";
+      let color = "text-purple-400";
       if(b.budget_type.toLowerCase().includes("econ")) { icon = "fa-piggy-bank"; color = "text-emerald-400"; }
       if(b.budget_type.toLowerCase().includes("prem") || b.budget_type.toLowerCase().includes("alt")) { icon = "fa-gem"; color = "text-amber-400"; }
 
-      const detailsHtml = b.details.map(d => `<li class="text-[10px] text-slate-300 mb-1 border-b border-slate-800 pb-1">${d}</li>`).join('');
+      const detailsHtml = b.details.map(d => `<li class="text-[10px] text-zinc-300 mb-1 border-b border-zinc-800 pb-1">${d}</li>`).join('');
 
       const card = document.createElement("div");
-      card.className = "bg-slate-900 rounded-xl border border-slate-800 p-4 relative cursor-pointer hover:border-emerald-500 transition group";
+      card.className = "bg-zinc-900 rounded-xl border border-zinc-800 p-4 relative cursor-pointer hover:border-emerald-500 transition group";
       card.innerHTML = `
-        <div class="text-xs font-bold text-slate-300 uppercase mb-2 flex items-center gap-1.5 ${color}">
+        <div class="text-xs font-bold text-zinc-300 uppercase mb-2 flex items-center gap-1.5 ${color}">
           <i class="fa-solid ${icon}"></i> ${b.budget_type}
         </div>
         <div class="text-lg font-black text-white font-mono mb-3">$${b.total_cost.toLocaleString('es-MX')}</div>
@@ -166,10 +166,10 @@ document.addEventListener("DOMContentLoaded", () => {
     data.activities.forEach(a => {
       activitiesTable.innerHTML += `
         <tr>
-          <td class="p-2 text-center text-slate-400 font-bold">${a.step_number}</td>
+          <td class="p-2 text-center text-zinc-400 font-bold">${a.step_number}</td>
           <td class="p-2">
-            <div class="font-medium text-slate-200">${a.activity}</div>
-            <div class="text-[10px] text-slate-500">${a.movements}</div>
+            <div class="font-medium text-zinc-200">${a.activity}</div>
+            <div class="text-[10px] text-zinc-500">${a.movements}</div>
           </td>
           <td class="p-2 font-mono text-cyan-400">${a.time_estimate}</td>
         </tr>
@@ -181,7 +181,7 @@ document.addEventListener("DOMContentLoaded", () => {
     data.energy_table.forEach(e => {
       energyTable.innerHTML += `
         <tr>
-          <td class="p-2 font-medium text-slate-200">${e.equipment}</td>
+          <td class="p-2 font-medium text-zinc-200">${e.equipment}</td>
           <td class="p-2 text-right font-mono">${e.kw_h.toFixed(1)}</td>
           <td class="p-2 text-right font-mono text-amber-300">$${e.monthly_cost_estimate.toLocaleString('es-MX')}</td>
         </tr>

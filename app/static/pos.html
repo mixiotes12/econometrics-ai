@@ -5,13 +5,70 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Punto de Venta - EconoMetrics</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script>tailwind.config = { darkMode: 'class' }</script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Outfit"', 'sans-serif'],
+            mono: ['"Space Mono"', 'monospace'],
+          },
+          colors: {
+            slate: {
+              50: '#fafafa',
+              100: '#f4f4f5',
+              200: '#e4e4e7',
+              300: '#d4d4d8',
+              400: '#a1a1aa',
+              500: '#71717a',
+              600: '#52525b',
+              700: '#3f3f46',
+              800: '#27272a',
+              900: '#18181b',
+              950: '#09090b',
+            },
+            indigo: {
+              400: '#9f7aea',
+              500: '#805ad5',
+              600: '#6b46c1',
+            },
+            emerald: {
+              400: '#68d391',
+              500: '#48bb78',
+              600: '#38a169',
+            },
+            amber: {
+              400: '#f6ad55',
+              500: '#ed8936',
+              600: '#dd6b20',
+            },
+            blue: {
+              400: '#63b3ed',
+              500: '#4299e1',
+              600: '#3182ce',
+            },
+            rose: {
+              400: '#fc8181',
+              500: '#f56565',
+              600: '#e53e3e',
+            },
+            cyan: {
+              400: '#0bc5ea',
+              500: '#00b5d8',
+              600: '#00a3c4',
+            }
+          }
+        }
+      }
+    }
+  </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="style.css">
   <style>
     .inp { background:#0f172a; border:1px solid #334155; border-radius:.5rem; padding:.5rem .75rem; width:100%; font-size:.875rem; color:#f1f5f9; }
     .inp:focus { outline:none; border-color:#f59e0b; }
-    .btn { padding:.5rem .9rem; border-radius:.5rem; font-size:.8rem; font-weight:600; transition:.15s; }
+    .btn { padding:.5rem .9rem; border-radius:.5rem; font-size:.8rem; font-weight:600; transition: all .15s ease-in-out; }
     .btn-pri { background:#d97706; color:#fff; } .btn-pri:hover { background:#f59e0b; }
     .btn-sec { background:#334155; color:#e2e8f0; } .btn-sec:hover { background:#475569; }
     .btn-red { background:#b91c1c; color:#fff; } .btn-red:hover { background:#dc2626; }
@@ -22,30 +79,30 @@
     label.l { display:block; font-size:.7rem; color:#94a3b8; margin-bottom:.2rem; }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen">
+<body class="bg-zinc-950 text-zinc-100 min-h-screen">
 
   <!-- LOGIN -->
-  <div id="loginOverlay" class="fixed inset-0 z-[100] bg-slate-950 flex items-center justify-center">
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-8 w-full max-w-sm space-y-4">
+  <div id="loginOverlay" class="fixed inset-0 z-[100] bg-zinc-950 flex items-center justify-center">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-[20px] p-8 w-full max-w-sm space-y-4">
       <div class="text-center">
         <i class="fa-solid fa-cash-register text-amber-400 text-4xl"></i>
         <h1 class="text-xl font-bold mt-2">Punto de Venta</h1>
-        <p class="text-xs text-slate-400">Selecciona tu usuario e ingresa tu PIN</p>
+        <p class="text-xs text-zinc-400">Selecciona tu usuario e ingresa tu PIN</p>
       </div>
       <div><label class="l">Cajero</label><select id="loginCashier" class="inp"></select></div>
       <div><label class="l">PIN</label><input id="loginPin" type="password" inputmode="numeric" maxlength="8" class="inp" autocomplete="off"></div>
       <div id="loginError" class="text-red-400 text-xs hidden"></div>
       <button id="loginBtn" class="btn btn-pri w-full">Entrar</button>
       <p class="text-[11px] text-slate-500 text-center">Primer uso: Administrador / PIN 1234 (el sistema te pedirá cambiarlo).</p>
-      <a href="index.html" class="block text-center text-xs text-slate-400 hover:text-white">&larr; Volver a EconoMetrics</a>
+      <a href="index.html" class="block text-center text-xs text-zinc-400 hover:text-white">&larr; Volver a EconoMetrics</a>
     </div>
   </div>
 
   <!-- HEADER -->
-  <header class="border-b border-slate-800 bg-slate-900/80 sticky top-0 z-50">
+  <header class="border-b border-zinc-800 bg-zinc-900/80 sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <a href="index.html" class="text-slate-400 hover:text-white text-sm"><i class="fa-solid fa-arrow-left"></i></a>
+        <a href="index.html" class="text-zinc-400 hover:text-white text-sm"><i class="fa-solid fa-arrow-left"></i></a>
         <i class="fa-solid fa-cash-register text-amber-400"></i>
         <span class="font-bold">Punto de Venta</span>
         <span id="shiftBadge" class="text-[11px] px-2 py-0.5 rounded-full bg-slate-700">Sin turno</span>
@@ -53,7 +110,7 @@
       <div class="flex items-center gap-3 text-xs">
         <a href="personal.html" class="btn btn-sec"><i class="fa-solid fa-user-shield mr-1"></i>Personal</a>
         <a href="inventario.html" class="btn btn-sec"><i class="fa-solid fa-boxes-stacked mr-1"></i>Inventarios</a>
-        <span id="whoami" class="text-slate-300"></span>
+        <span id="whoami" class="text-zinc-300"></span>
         <button id="logoutBtn" class="btn btn-sec">Salir</button>
       </div>
     </div>
@@ -72,7 +129,7 @@
     <!-- VENTA -->
     <section id="tab-venta" class="tab-panel grid lg:grid-cols-3 gap-5">
       <div class="lg:col-span-2 space-y-3">
-        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
           <label class="l">Código de barras / SKU / nombre (Enter para agregar)</label>
           <div class="flex gap-2">
             <input id="scanInput" class="inp text-base" placeholder="Escanea o escribe..." autocomplete="off">
@@ -80,7 +137,7 @@
           </div>
           <div id="searchResults" class="mt-2 grid sm:grid-cols-2 gap-2"></div>
         </div>
-        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 overflow-x-auto">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 overflow-x-auto">
           <table class="w-full">
             <thead><tr><th>Producto</th><th>Precio</th><th>Cant.</th><th class="text-right">Importe</th><th></th></tr></thead>
             <tbody id="cartBody"></tbody>
@@ -88,7 +145,7 @@
           <p id="cartEmpty" class="text-slate-500 text-xs text-center py-6">Carrito vacío. Escanea un producto.</p>
         </div>
       </div>
-      <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3 h-fit">
+      <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3 h-fit">
         <h2 class="font-bold text-sm">Resumen</h2>
         <div id="totals" class="text-sm space-y-1"></div>
         <div>
@@ -112,13 +169,13 @@
 
     <!-- CAJA -->
     <section id="tab-caja" class="tab-panel hidden space-y-4">
-      <div id="shiftOpenBox" class="bg-slate-900 border border-slate-800 rounded-xl p-4 max-w-md space-y-3 hidden">
+      <div id="shiftOpenBox" class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 max-w-md space-y-3 hidden">
         <h2 class="font-bold">Abrir turno</h2>
         <div><label class="l">Fondo inicial de caja</label><input id="openFloat" type="number" min="0" step="0.01" value="0" class="inp"></div>
         <button id="openShiftBtn" class="btn btn-pri">Abrir turno</button>
       </div>
       <div id="shiftActiveBox" class="hidden grid lg:grid-cols-2 gap-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
           <div class="flex justify-between items-center mb-2">
             <h2 class="font-bold">Corte X (parcial)</h2>
             <button id="refreshReportBtn" class="btn btn-sec">Actualizar</button>
@@ -126,7 +183,7 @@
           <div id="shiftReport" class="text-sm space-y-1"></div>
         </div>
         <div class="space-y-4">
-          <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-2">
+          <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-2">
             <h2 class="font-bold">Entrada / Retiro de efectivo</h2>
             <div class="grid grid-cols-3 gap-2">
               <select id="mvType" class="inp"><option value="entrada">Entrada</option><option value="salida">Retiro</option></select>
@@ -135,7 +192,7 @@
             </div>
             <button id="mvBtn" class="btn btn-sec">Registrar movimiento</button>
           </div>
-          <div class="bg-slate-900 border border-red-900/50 rounded-xl p-4 space-y-2">
+          <div class="bg-zinc-900 border border-red-900/50 rounded-xl p-4 space-y-2">
             <h2 class="font-bold">Corte Z (cerrar turno)</h2>
             <div><label class="l">Efectivo contado en caja (arqueo)</label><input id="countedCash" type="number" min="0" step="0.01" class="inp"></div>
             <div><label class="l">Notas</label><input id="closeNotes" class="inp"></div>
@@ -143,7 +200,7 @@
           </div>
         </div>
       </div>
-      <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 overflow-x-auto">
+      <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 overflow-x-auto">
         <h2 class="font-bold mb-2">Historial de turnos</h2>
         <table class="w-full"><thead><tr><th>#</th><th>Cajero</th><th>Apertura</th><th>Cierre</th><th>Fondo</th><th>Esperado</th><th>Contado</th><th>Diferencia</th><th>Estado</th></tr></thead><tbody id="shiftsBody"></tbody></table>
       </div>
@@ -151,14 +208,14 @@
 
     <!-- VENTAS Y FACTURAS -->
     <section id="tab-ventas" class="tab-panel hidden space-y-4">
-      <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 overflow-x-auto">
+      <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 overflow-x-auto">
         <div class="flex justify-between items-center mb-2">
           <h2 class="font-bold">Ventas recientes</h2>
           <input id="salesDate" type="date" class="inp !w-auto">
         </div>
         <table class="w-full"><thead><tr><th>Folio</th><th>Fecha</th><th>Cajero</th><th>Pago</th><th>Total</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="salesBody"></tbody></table>
       </div>
-      <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 overflow-x-auto">
+      <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 overflow-x-auto">
         <h2 class="font-bold mb-1">Facturas (CFDI 4.0)</h2>
         <p class="text-[11px] text-amber-400/80 mb-2">El XML se genera sin sello ni timbre. Para validez fiscal se requiere conectar un PAC y el CSD del emisor.</p>
         <table class="w-full"><thead><tr><th>Serie-Folio</th><th>Venta</th><th>RFC</th><th>Razón social</th><th>Total</th><th>Estado</th><th></th></tr></thead><tbody id="invoicesBody"></tbody></table>
@@ -167,7 +224,7 @@
 
     <!-- PRODUCTOS -->
     <section id="tab-productos" class="tab-panel hidden space-y-4">
-      <form id="productForm" class="bg-slate-900 border border-slate-800 rounded-xl p-4 grid sm:grid-cols-4 gap-3">
+      <form id="productForm" class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 grid sm:grid-cols-4 gap-3">
         <input type="hidden" id="pId">
         <div class="sm:col-span-2"><label class="l">Nombre *</label><input id="pName" class="inp" required></div>
         <div><label class="l">SKU</label><input id="pSku" class="inp"></div>
@@ -184,7 +241,7 @@
         </div>
         <div class="flex items-end gap-2"><button class="btn btn-pri" type="submit">Guardar</button><button type="button" id="pReset" class="btn btn-sec">Nuevo</button></div>
       </form>
-      <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 overflow-x-auto">
+      <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 overflow-x-auto">
         <input id="pSearch" class="inp mb-2" placeholder="Buscar producto...">
         <table class="w-full"><thead><tr><th>Nombre</th><th>SKU</th><th>Código</th><th>Precio</th><th>Costo</th><th>IVA</th><th>Stock</th><th></th></tr></thead><tbody id="productsBody"></tbody></table>
       </div>
@@ -192,21 +249,21 @@
 
     <!-- CAJEROS -->
     <section id="tab-cajeros" class="tab-panel hidden space-y-4">
-      <form id="cashierForm" class="bg-slate-900 border border-slate-800 rounded-xl p-4 grid sm:grid-cols-5 gap-3">
+      <form id="cashierForm" class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 grid sm:grid-cols-5 gap-3">
         <input type="hidden" id="cId">
         <div class="sm:col-span-2"><label class="l">Nombre *</label><input id="cName" class="inp" required></div>
         <div><label class="l">PIN (4-8 dígitos)</label><input id="cPin" type="password" inputmode="numeric" maxlength="8" class="inp" placeholder="Vacío = sin cambio"></div>
         <div class="flex items-end gap-3 text-xs"><label><input type="checkbox" id="cAdmin"> Admin</label><label><input type="checkbox" id="cActive" checked> Activo</label></div>
         <div class="flex items-end gap-2"><button class="btn btn-pri" type="submit">Guardar</button><button type="button" id="cReset" class="btn btn-sec">Nuevo</button></div>
       </form>
-      <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 overflow-x-auto">
+      <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 overflow-x-auto">
         <table class="w-full"><thead><tr><th>Nombre</th><th>Nivel</th><th>Estado</th><th>Alta</th><th></th></tr></thead><tbody id="cashiersBody"></tbody></table>
       </div>
     </section>
 
     <!-- CONFIG -->
     <section id="tab-config" class="tab-panel hidden">
-      <form id="settingsForm" class="bg-slate-900 border border-slate-800 rounded-xl p-4 grid sm:grid-cols-3 gap-3 max-w-4xl">
+      <form id="settingsForm" class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 grid sm:grid-cols-3 gap-3 max-w-4xl">
         <div><label class="l">Nombre comercial</label><input id="s_business_name" class="inp"></div>
         <div><label class="l">Razón social (emisor)</label><input id="s_legal_name" class="inp"></div>
         <div><label class="l">RFC emisor</label><input id="s_rfc" class="inp uppercase"></div>
@@ -224,7 +281,7 @@
 
   <!-- MODAL FACTURA -->
   <div id="invoiceModal" class="fixed inset-0 z-[90] bg-black/70 hidden items-center justify-center p-4">
-    <form id="invoiceForm" class="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-lg grid grid-cols-2 gap-3">
+    <form id="invoiceForm" class="bg-zinc-900 border border-zinc-700 rounded-[20px] p-6 w-full max-w-lg grid grid-cols-2 gap-3">
       <h2 class="col-span-2 font-bold">Facturar venta <span id="invSaleFolio" class="text-amber-400"></span></h2>
       <div><label class="l">RFC receptor *</label><input id="iRfc" class="inp uppercase" required></div>
       <div><label class="l">Razón social *</label><input id="iName" class="inp" required></div>

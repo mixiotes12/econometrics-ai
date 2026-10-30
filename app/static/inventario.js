@@ -5,7 +5,7 @@
   const fmt = (n) => "$" + Number(n || 0).toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const num = (n, d = 2) => Number(n || 0).toLocaleString("es-MX", { maximumFractionDigits: d });
   const IVA = { iva16: 0.16, iva0: 0, exento: 0 };
-  const PLACEHOLDER = "data:image/svg+xml;utf8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect width="80" height="80" fill="#1e293b"/><text x="40" y="48" font-size="28" text-anchor="middle" fill="#475569">📦</text></svg>');
+  const PLACEHOLDER = "data:image/svg+xml;utf8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect width="80" height="80" fill="#18181b"/><text x="40" y="48" font-size="28" text-anchor="middle" fill="#475569">📦</text></svg>');
 
   let token = sessionStorage.getItem("pos_token") || "";
   let me = JSON.parse(sessionStorage.getItem("pos_me") || "null");
@@ -35,7 +35,7 @@
     ok: '<span class="pill bg-emerald-900 text-emerald-300">En stock</span>',
     reorden: '<span class="pill bg-amber-900 text-amber-300">Reordenar</span>',
     agotado: '<span class="pill bg-red-900 text-red-300">Agotado</span>',
-    sin_control: '<span class="pill bg-slate-700 text-slate-300">Sin control</span>',
+    sin_control: '<span class="pill bg-zinc-700 text-zinc-300">Sin control</span>',
   }[s]);
   const marginColor = (m) => (m < 15 ? "text-red-400" : m < 30 ? "text-amber-300" : "text-emerald-400");
 
@@ -59,7 +59,7 @@
     $("catalogEmpty").classList.toggle("hidden", products.length > 0);
     $("catalogBody").innerHTML = products.map((x) => `<tr class="${x.active ? "" : "opacity-50"}">
       <td><img class="thumb" src="${esc(x.image || PLACEHOLDER)}" alt=""></td>
-      <td><b>${esc(x.name)}</b><div class="text-[10px] text-slate-500">${esc(x.sku || "")} ${x.barcode ? "· " + esc(x.barcode) : ""}</div></td>
+      <td><b>${esc(x.name)}</b><div class="text-[10px] text-zinc-500">${esc(x.sku || "")} ${x.barcode ? "· " + esc(x.barcode) : ""}</div></td>
       <td>${esc(x.category || "—")}</td>
       <td>${fmt(x.cost)}${x.is_imported ? `<div class="text-[10px] text-sky-400">${num(x.foreign_cost, 4)} ${x.currency} @ ${num(x.exchange_rate, 4)}</div>` : ""}</td>
       <td>${fmt(x.price)}</td>
@@ -199,7 +199,7 @@
     const a = await api("/alerts");
     $("alertCards").innerHTML = [
       ["Productos por reordenar", a.count, "text-amber-300"], ["Agotados", a.out_of_stock, "text-red-400"], ["Inversión estimada de reposición", fmt(a.estimated_cost), "text-sky-300"],
-    ].map(([l, v, c]) => `<div class="card"><div class="text-[11px] text-slate-400">${l}</div><div class="text-2xl font-bold ${c}">${v}</div></div>`).join("");
+    ].map(([l, v, c]) => `<div class="card"><div class="text-[11px] text-zinc-400">${l}</div><div class="text-2xl font-bold ${c}">${v}</div></div>`).join("");
     $("alertsEmpty").classList.toggle("hidden", a.count > 0);
     $("alertsBody").innerHTML = a.items.map((x) => `<tr><td><img class="thumb" src="${esc(x.image || PLACEHOLDER)}" alt=""></td><td><b>${esc(x.name)}</b></td><td>${esc(x.supplier || "—")}</td>
       <td>${num(x.stock)}</td><td>${num(x.min_stock)}</td><td>${statusPill(x.stock_status)}</td><td><b>${num(x.reorder_suggest)}</b></td><td>${fmt(x.reorder_cost)}</td>
@@ -215,7 +215,7 @@
     const list = await api("/movements?" + p);
     $("kardexBody").innerHTML = list.map((m) => `<tr><td>${esc(m.created_at)}</td><td>${esc(m.product_name)}</td>
       <td>${esc(m.type)}</td><td class="${m.delta < 0 ? "text-red-400" : "text-emerald-400"}">${m.delta > 0 ? "+" : ""}${num(m.delta)}</td>
-      <td>${fmt(m.unit_cost)}</td><td>${num(m.stock_after)}</td><td>${esc(m.reason)} ${m.ref ? `<span class="text-slate-500">${esc(m.ref)}</span>` : ""}</td><td>${esc(m.cashier_name || "")}</td></tr>`).join("");
+      <td>${fmt(m.unit_cost)}</td><td>${num(m.stock_after)}</td><td>${esc(m.reason)} ${m.ref ? `<span class="text-zinc-500">${esc(m.ref)}</span>` : ""}</td><td>${esc(m.cashier_name || "")}</td></tr>`).join("");
   }
   async function openMoveModal(productId) {
     if (!products.length) products = await api("/products");
@@ -248,7 +248,7 @@
   async function loadAnalysis() {
     const a = await api("/analysis?days=" + $("aDays").value);
     const s = a.summary;
-    const card = (l, v, c = "") => `<div class="card"><div class="text-[11px] text-slate-400">${l}</div><div class="text-xl font-bold ${c}">${v}</div></div>`;
+    const card = (l, v, c = "") => `<div class="card"><div class="text-[11px] text-zinc-400">${l}</div><div class="text-xl font-bold ${c}">${v}</div></div>`;
     $("aCards").innerHTML = card("Valor del inventario (costo)", fmt(s.inventory_value_cost), "text-sky-300") + card("Valor a precio de venta", fmt(s.inventory_value_sale)) +
       card("Utilidad potencial", fmt(s.potential_profit), "text-emerald-400") + card("Unidades en existencia", num(s.units_in_stock)) +
       card(`Ventas netas (${a.period_days} d)`, fmt(s.revenue_period)) + card("Costo de lo vendido", fmt(s.cogs_period)) +
@@ -256,12 +256,12 @@
       card("Días de inventario", s.avg_days_inventory == null ? "—" : s.avg_days_inventory + " d") +
       card("Productos por reordenar", s.low_stock_count, s.low_stock_count ? "text-amber-300" : "") +
       card("Mermas (costo)", fmt(s.merma_value), s.merma_value ? "text-red-400" : "") + card("Mermas % del costo vendido", s.merma_pct_of_cogs + "%") + card("Productos activos", s.products);
-    $("aBody").innerHTML = a.products.map((r) => `<tr><td><span class="pill ${{ A: "bg-emerald-800", B: "bg-sky-800", C: "bg-slate-700" }[r.abc]}">${r.abc}</span></td><td>${esc(r.name)}</td>
+    $("aBody").innerHTML = a.products.map((r) => `<tr><td><span class="pill ${{ A: "bg-emerald-800", B: "bg-sky-800", C: "bg-zinc-700" }[r.abc]}">${r.abc}</span></td><td>${esc(r.name)}</td>
       <td>${num(r.units_sold)}</td><td>${fmt(r.revenue)}</td><td class="${r.profit < 0 ? "text-red-400" : ""}">${fmt(r.profit)}</td><td>${num(r.stock)}</td><td>${fmt(r.stock_value_cost)}</td>
       <td>${r.days_cover == null ? "—" : r.days_cover}</td></tr>`).join("");
     $("slowBody").innerHTML = a.slow_movers.map((r) => `<tr><td>${esc(r.name)}</td><td>${num(r.stock)}</td><td>${fmt(r.stock_value_cost)}</td><td>${num(r.units_sold)}</td><td>${r.days_cover == null ? "Sin ventas" : r.days_cover}</td></tr>`).join("") ||
-      '<tr><td colspan="5" class="text-slate-500 text-center">Sin productos de baja rotación.</td></tr>';
-    $("mermaList").innerHTML = a.merma_by_reason.map((m) => `<div class="flex justify-between"><span>${esc(m.reason || "Sin motivo")}</span><b>${fmt(m.value)}</b></div>`).join("") || '<p class="text-slate-500 text-xs">Sin mermas registradas.</p>';
+      '<tr><td colspan="5" class="text-zinc-500 text-center">Sin productos de baja rotación.</td></tr>';
+    $("mermaList").innerHTML = a.merma_by_reason.map((m) => `<div class="flex justify-between"><span>${esc(m.reason || "Sin motivo")}</span><b>${fmt(m.value)}</b></div>`).join("") || '<p class="text-zinc-500 text-xs">Sin mermas registradas.</p>';
     drawChart("abcChart", "doughnut", ["A (≈80% ingresos)", "B", "C"], Object.values(a.abc_counts), ["#10b981", "#0ea5e9", "#64748b"]);
     drawChart("catChart", "bar", a.value_by_category.map((c) => c.category), a.value_by_category.map((c) => c.value), "#38bdf8");
   }
@@ -269,7 +269,7 @@
     if (charts[id]) charts[id].destroy();
     charts[id] = new Chart($(id), { type, data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 0 }] },
       options: { plugins: { legend: { display: type === "doughnut", labels: { color: "#cbd5e1" } } },
-        scales: type === "bar" ? { x: { ticks: { color: "#94a3b8" } }, y: { ticks: { color: "#94a3b8" } } } : {} } });
+        scales: type === "bar" ? { x: { ticks: { color: "#a1a1aa" } }, y: { ticks: { color: "#a1a1aa" } } } : {} } });
   }
 
   const can = (perm) => !!me && (me.is_admin || (me.permissions || []).includes(perm));
@@ -314,7 +314,7 @@
       try {
         const r = await api("/rates/apply", { method: "POST" });
         $("applyResult").innerHTML = `<span class="text-emerald-400">${r.updated} producto(s) importado(s) recalculado(s).</span>` +
-          r.items.map((i) => `<div class="text-slate-400">${esc(i.name)}: ${fmt(i.old_cost)} → ${fmt(i.new_cost)}</div>`).join("");
+          r.items.map((i) => `<div class="text-zinc-400">${esc(i.name)}: ${fmt(i.old_cost)} → ${fmt(i.new_cost)}</div>`).join("");
       } catch (er) { $("applyResult").innerHTML = `<span class="text-red-400">${esc(er.message)}</span>`; }
     };
     $("aRefresh").onclick = () => loadAnalysis().catch((e) => alert(e.message));
