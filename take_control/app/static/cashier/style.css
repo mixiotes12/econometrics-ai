@@ -1,0 +1,282 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap');
+
+:root {
+  --primary: #805ad5;
+  --primary-hover: #6b46c1;
+  --primary-light: #faf5ff;
+  --secondary: #0ea5e9;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --bg-main: #09090b;
+  --card-bg: #18181b;
+  --border-color: #27272a;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+}
+
+body {
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: #09090b; background-image: radial-gradient(circle at 50% 0%, #18181b 0%, #09090b 70%); background-attachment: fixed;
+  color: #f1f5f9;
+  min-height: 100vh;
+}
+
+code, pre, .font-mono {
+  font-family: 'Space Mono', monospace;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #09090b;
+}
+::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
+}
+
+/* Glass & Card styles */
+.glass-panel {
+  background: rgba(30, 41, 59, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glow-primary {
+  box-shadow: 0 0 25px -5px rgba(79, 70, 229, 0.3);
+}
+
+.glow-emerald {
+  box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.3);
+}
+
+.glow-amber {
+  box-shadow: 0 0 25px -5px rgba(245, 158, 11, 0.3);
+}
+
+/* Print Styling for PDF Export */
+@media print {
+  body {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .glass-panel {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #0f172a !important;
+    box-shadow: none !important;
+  }
+  .text-slate-400, .text-slate-300, .text-slate-200 {
+    color: #475569 !important;
+  }
+  .bg-slate-900, .bg-slate-800, .bg-slate-800\/50, .bg-slate-950 {
+    background-color: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+  }
+  .print-break-inside-avoid {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .chart-container {
+    max-height: 280px !important;
+  }
+}
+
+/* Tab Active Transitions */
+.tab-btn.active {
+  background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+  color: #ffffff;
+  font-weight: 600;
+  border-color: transparent;
+  box-shadow: 0 4px 14px 0 rgba(79, 70, 229, 0.35);
+}
+
+/* Animations */
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Machinery cards adapt to narrow screens. */
+#equipmentList .equipment-item {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) minmax(150px, 1.3fr) minmax(180px, 2fr) auto;
+  padding: 16px;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  background: rgb(15 23 42 / 60%);
+}
+#equipmentList .equipment-item input,
+#equipmentList .equipment-item select { width: 100%; min-width: 0; }
+@media (max-width: 640px) {
+  #equipmentList .equipment-item { grid-template-columns: 1fr; }
+  #equipmentList .equipment-item button { justify-self: end; }
+}
+
+
+/* Add some unique styling characteristics to make it look less generic AI */
+
+.glass-panel {
+  background: rgba(24, 24, 27, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+}
+
+.glass-panel::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+}
+
+button {
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600 !important;
+  border-radius: 12px !important;
+}
+
+input, select, textarea {
+  border-radius: 12px !important;
+  background-color: rgba(9, 9, 11, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  transition: all 0.3s ease;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: rgba(139, 92, 246, 0.5) !important;
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.25) !important;
+}
+
+.tab-btn {
+  border-radius: 14px !important;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 0.7rem !important;
+}
+
+.tab-btn.active {
+  background: linear-gradient(135deg, #805ad5 0%, #6b46c1 100%) !important;
+  box-shadow: 0 4px 15px rgba(107, 70, 193, 0.4) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+}
+
+.tab-btn.active span:first-child {
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: white !important;
+}
+
+header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  background: rgba(9, 9, 11, 0.8) !important;
+}
+
+/* Gradients for text */
+.text-gradient-primary {
+  background: linear-gradient(to right, #9f7aea, #68d391);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Additional unique styling */
+.glow-primary {
+  box-shadow: 0 0 25px -5px rgba(128, 90, 213, 0.4);
+}
+
+.glass-panel:hover {
+  border-color: rgba(128, 90, 213, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 20px rgba(128, 90, 213, 0.1);
+}
+
+/* Custom Checkboxes/Radios */
+input[type="checkbox"], input[type="radio"] {
+  accent-color: #805ad5;
+}
+
+/* Fancy hover effects on buttons */
+button:hover {
+  transform: translateY(-1px);
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+/* Make inputs look more modern */
+input:focus, select:focus, textarea:focus {
+  background-color: rgba(24, 24, 27, 0.9) !important;
+}
+
+/* Ambient Background Animation */
+body::before {
+  content: "";
+  position: fixed;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at 50% 50%, rgba(128, 90, 213, 0.05) 0%, transparent 50%),
+              radial-gradient(circle at 80% 20%, rgba(14, 165, 233, 0.05) 0%, transparent 40%);
+  z-index: -1;
+  animation: ambientBg 30s ease-in-out infinite alternate;
+}
+
+@keyframes ambientBg {
+  0% { transform: rotate(0deg) scale(1); }
+  100% { transform: rotate(15deg) scale(1.1); }
+}
+
+/* Custom Scrollbar Enhancements */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #09090b;
+}
+::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #805ad5;
+}
+
+/* Neumorphic/Glassmorphic inputs */
+input, select, textarea {
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.2) !important;
+}
+
+/* Table styling for a less generic look */
+table {
+  border-spacing: 0;
+  border-collapse: separate;
+}
+th {
+  background: rgba(39, 39, 42, 0.5) !important;
+  backdrop-filter: blur(4px);
+}
+tr:hover td {
+  background: rgba(128, 90, 213, 0.05);
+}

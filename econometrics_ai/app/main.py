@@ -298,17 +298,6 @@ async def api_generate_flowchart(req: ProcessRequest, x_gemini_api_key: str = He
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al generar diagrama de flujo: {str(e)}")
 
-# Módulo POS & Ventas (Fase 1)
-from .pos import router as pos_router, init_pos_db
-init_pos_db()
-app.include_router(pos_router)
-
-from .inventory import router as inventory_router
-app.include_router(inventory_router)
-
-from .hr import router as hr_router
-app.include_router(hr_router)
-
 # Módulo de Geolocalización y Sugerencias de Adquisición (Fase 4)
 from .geo_service import router as geo_router
 app.include_router(geo_router)
