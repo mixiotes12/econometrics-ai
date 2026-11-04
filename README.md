@@ -110,6 +110,19 @@ flowchart TD
   - **Exportar Dictamen PDF:** Vista ejecutiva formateada con estilos `@media print`.
   - **Exportar Modelo Excel / CSV:** Descarga con formato UTF-8 BOM estructurado en 6 secciones (Identidad, Parámetros, VAN/TIR, Pro-Forma a 5 Años, Ratios 360° y Sensibilidades).
 
+### 6. Control Diario y Operativo (`/tracker.html`)
+* **Seguimiento Continuo:** Registro y visualización del desempeño operativo y financiero del día a día.
+* **Métricas Clave en Vivo:** Ingresos diarios, gastos, balance y cumplimiento de metas del negocio.
+
+### 7. Ingeniería de Proyectos & Plantillas (`/engineering.html`)
+* **Generación de Fichas de Ingeniería:** Plantillas técnicas predefinidas para estructuración de proyectos de inversión.
+* **Asistencia con IA:** Formulación paramétrica y técnica impulsada por Gemini.
+
+### 8. Experiencia Visual & Diseño de Interfaz Moderno
+* **Identidad Visual Renovada:** Paleta de colores contemporánea (`zinc`/`purple`) alejándose de interfaces genéricas.
+* **Tipografías Especializadas:** Integración de fuentes Google Fonts (*Outfit* para títulos y textos, *Space Mono* para cifras e indicadores numéricos).
+* **Efectos Glassmorphism & Ambient Glow:** Fondos con gradientes dinámicos, navegación moderna y microinteracciones fluidas.
+
 ---
 
 ## ⚡ Instalación y Ejecución Rápida
@@ -147,6 +160,11 @@ bash run.sh
 ## 🔑 Credenciales de Acceso por Defecto
 
 * **URL Principal:** `http://127.0.0.1:8000`
+* **Punto de Venta (POS):** `http://127.0.0.1:8000/pos.html`
+* **Inventarios y Kardex:** `http://127.0.0.1:8000/inventario.html`
+* **Personal y Nómina:** `http://127.0.0.1:8000/personal.html`
+* **Control Operativo Diario:** `http://127.0.0.1:8000/tracker.html`
+* **Ingeniería de Proyectos:** `http://127.0.0.1:8000/engineering.html`
 * **Usuario:** `Administrador`
 * **PIN de Acceso:** `1234`
 
@@ -167,10 +185,9 @@ El sistema incluye una suite de pruebas end-to-end que valida el 100% de los flu
 
 ---
 
-## 📚 Documentación para Evaluadores
+## 📚 Documentación y Colaboración
 
-Consulta el manual exhaustivo de evaluación con el desglose metodológico y el recorrido paso a paso:
-👉 **[Manual de Evaluación y Rúbrica 100%](file:///C:/Users/MIGUEL%20C/.gemini/antigravity/brain/f4c95eac-4f40-4420-94e3-d7e141978c7a/MANUAL_EVALUACION_SISTEMA_INTEGRAL.md)**
+* Guía de colaboración y sincronización entre equipos: [`COLABORACION.md`](COLABORACION.md)
 
 ---
 
