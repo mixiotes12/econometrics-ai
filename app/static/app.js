@@ -8,9 +8,51 @@ document.addEventListener("DOMContentLoaded", async () => {
   await initApiKey();
   initEventListeners();
   initEngineeringAndTrackerListeners();
+  initMultiProductCatalog();
   initProjectPersistence();
   await initTemplatesAndSavedProjects();
   restoreSavedStateOrDraft();
+  initOpsBridgeListeners();
+
+  // Si viene de regreso desde el Portal del Dueño (/owner.html) con datos reales actualizados
+  const liveRecalcStr = localStorage.getItem("econometrics_live_recalc_payload");
+  if (liveRecalcStr) {
+    try {
+      const payload = JSON.parse(liveRecalcStr);
+      localStorage.removeItem("econometrics_live_recalc_payload");
+      if (payload && payload.financials) {
+        const f = payload.financials;
+        const setVal = (id, val) => {
+          const el = document.getElementById(id);
+          if (el && val !== undefined && val !== null) el.value = val;
+        };
+        if (payload.project_name) setVal("businessName", payload.project_name);
+        if (payload.business_type) setVal("businessType", payload.business_type);
+        setVal("initialInvestment", f.initial_investment);
+        setVal("discountRate", f.discount_rate_pct);
+        setVal("bankRiskFreeRate", f.bank_risk_free_rate_pct);
+        setVal("shrinkageLossPct", f.shrinkage_risk_loss_pct);
+        setVal("projectionYears", f.projection_years);
+        setVal("monthlyPrice", f.monthly_price);
+        setVal("monthlyUnits", f.monthly_units);
+        setVal("unitVariableCost", f.unit_variable_cost);
+        setVal("monthlyFixedCosts", f.monthly_fixed_costs);
+        setVal("monthlyMaintenanceCost", f.monthly_maintenance_cost);
+        setVal("annualGrowth", f.annual_sales_growth_pct);
+        setVal("annualInflation", f.annual_inflation_pct);
+        setVal("taxRate", f.tax_rate_pct);
+        setVal("depreciationYears", f.depreciation_years);
+        updateSuggestedReserveHelper();
+        updateBankAndShrinkageHelpers();
+        scheduleAutoSave();
+        switchTab(4);
+        await runQuickCalculation();
+        showToast("Parámetros reales del establecimiento importados desde el Portal del Dueño.", true);
+      }
+    } catch (e) {
+      console.warn("Error al importar datos de operación:", e);
+    }
+  }
   
   const transferredInvestment = localStorage.getItem("econometrics_transfer_investment");
   if(transferredInvestment) {
@@ -430,6 +472,16 @@ function applyFormData(data) {
   setVal("depreciationYears", f.depreciation_years);
   if (typeof updateSuggestedReserveHelper === "function") updateSuggestedReserveHelper();
   if (typeof updateBankAndShrinkageHelpers === "function") updateBankAndShrinkageHelpers();
+
+  // Cargar Catálogo Multiproducto si viene en los datos o generar ejemplo para la plantilla
+  if (data.product_catalog && Array.isArray(data.product_catalog) && data.product_catalog.length > 0) {
+    if (typeof applyMultiProductCatalogData === "function") {
+      applyMultiProductCatalogData(data.product_catalog, data.catalog_mode || "multi");
+    }
+  } else if (typeof applyDefaultMultiProductForTemplate === "function") {
+    applyDefaultMultiProductForTemplate(data.id || b.name, f.monthly_price, f.unit_variable_cost, f.monthly_units);
+  }
+
   if (data.engineering && typeof window.applyEngineeringData === "function") {
     window.applyEngineeringData(data.engineering);
   }
@@ -690,8 +742,10 @@ function getFormData() {
   };
 
   const engineering = typeof window.getEngineeringData === "function" ? window.getEngineeringData() : null;
+  const product_catalog = typeof getMultiProductCatalogData === "function" ? getMultiProductCatalogData() : [];
+  const catalog_mode = typeof getCatalogInputMode === "function" ? getCatalogInputMode() : "multi";
 
-  return { business, financials, engineering };
+  return { business, financials, engineering, product_catalog, catalog_mode };
 }
 
 // ----------------- QUICK FINANCIAL CALCULATION -----------------
@@ -1948,6 +2002,23 @@ function exportFinancialReportToCsv() {
   rows.push(["Años de Depreciación de Activos", f.depreciation_years]);
   rows.push([]);
 
+  // Catálogo Multiproducto y Precios Mixtos
+  const catalog = typeof getMultiProductCatalogData === "function" ? getMultiProductCatalogData() : [];
+  if (Array.isArray(catalog) && catalog.length > 0) {
+    rows.push(["2.1 CATÁLOGO DE PRODUCTOS / SERVICIOS (MEZCLA DE VENTAS)"]);
+    rows.push(["Producto / Servicio", "Precio Venta (MXN)", "Costo Directo (MXN)", "Demanda Mes (Uds)", "Margen Unitario ($)", "Margen Unitario (%)", "Facturación Mensual (MXN)"]);
+    catalog.forEach(item => {
+      const p = parseFloat(item.price || 0);
+      const c = parseFloat(item.cost || 0);
+      const u = parseFloat(item.units || 0);
+      const m = p - c;
+      const mPct = p > 0 ? (m / p * 100).toFixed(1) + "%" : "0.0%";
+      const sub = p * u;
+      rows.push([item.name || "Sin nombre", p, c, u, m, mPct, sub]);
+    });
+    rows.push([]);
+  }
+
   rows.push(["3. MÉTRICAS DE RENTABILIDAD Y EVALUACIÓN DE INVERSIÓN"]);
   rows.push(["Métrica", "Valor", "Unidad", "Veredicto"]);
   rows.push(["Valor Actual Neto (VAN / NPV)", r.npv, "MXN", r.npv >= 0 ? "Viable (Crea Valor Económico)" : "Inviable (Destruye Valor)"]);
@@ -2042,4 +2113,506 @@ function exportFinancialReportToCsv() {
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
   showToast("Modelo Financiero exportado a Excel / CSV exitosamente.", true);
+}
+
+// ----------------- PUENTE CON EL PORTAL DEL DUEÑO (OPS / ERP) -----------------
+function initOpsBridgeListeners() {
+  const publishBtn = document.getElementById("publishBaselineBtn");
+  if (!publishBtn) return;
+
+  publishBtn.addEventListener("click", async () => {
+    const data = getFormData();
+    const b = data.business || {};
+    const f = data.financials || {};
+    const eng = data.engineering || {};
+
+    // Extraer maquinaria presupuestada si existe en la pestaña 1
+    let assetsToExport = [];
+    if (Array.isArray(eng.equipment_items) && eng.equipment_items.length > 0) {
+      assetsToExport = eng.equipment_items.map(it => ({
+        name: `${it.name || "Equipo"} (x${it.qty || 1})`,
+        category: "Maquinaria Presupuestada",
+        purchase_cost: (parseFloat(it.price_standard || 0) * parseFloat(it.qty || 1)) || 0,
+        useful_life_years: f.depreciation_years || 5,
+        monthly_maintenance: 0
+      })).filter(a => a.purchase_cost > 0);
+    }
+
+    const replaceAssets = assetsToExport.length > 0 && confirm(
+      `¿Deseas publicar "${b.name || 'Mi Proyecto'}" como el Plan Base oficial en el Portal del Dueño?\n\nPulsa Aceptar para actualizar también el inventario de maquinaria con las ${assetsToExport.length} partidas presupuestadas, o Cancelar para actualizar únicamente las metas financieras.`
+    );
+
+    try {
+      const res = await fetch("/api/ops/baseline", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          project_name: b.name || "Mi Negocio",
+          business_type: b.business_type || "Comercio / Servicios",
+          financials: f,
+          replace_assets: replaceAssets,
+          assets: replaceAssets ? assetsToExport : null
+        })
+      });
+      if (!res.ok) throw new Error("No se pudo publicar el Plan Base al ERP.");
+      showToast("Plan Base publicado en el Portal del Dueño exitosamente.", true);
+    } catch (e) {
+      showToast(e.message || "Error al conectar con el Portal del Dueño", false);
+    }
+  });
+}
+
+// ----------------- CATÁLOGO MULTIPRODUCTO & MEZCLA DE PRECIOS -----------------
+let currentProductCatalog = [
+  { name: "Producto Entrada (Económico)", price: 30, cost: 10, units: 500 },
+  { name: "Producto Estándar / Servicio", price: 150, cost: 50, units: 200 },
+  { name: "Producto Premium / Especial", price: 500, cost: 210, units: 40 }
+];
+let catalogInputMode = "multi"; // "multi" | "simple"
+
+function initMultiProductCatalog() {
+  const multiBtn = document.getElementById("catalogModeMultiBtn");
+  const simpleBtn = document.getElementById("catalogModeSimpleBtn");
+  const addBtn = document.getElementById("addProductRowBtn");
+  const exampleBtn = document.getElementById("loadExampleProductsBtn");
+  const inventoryBtn = document.getElementById("importFromInventoryBtn");
+
+  if (multiBtn) {
+    multiBtn.addEventListener("click", () => setCatalogInputMode("multi"));
+  }
+  if (simpleBtn) {
+    simpleBtn.addEventListener("click", () => setCatalogInputMode("simple"));
+  }
+  if (addBtn) {
+    addBtn.addEventListener("click", () => addProductCatalogRow());
+  }
+  if (exampleBtn) {
+    exampleBtn.addEventListener("click", () => loadMultiProductExample());
+  }
+  if (inventoryBtn) {
+    inventoryBtn.addEventListener("click", () => importProductsFromInventory());
+  }
+
+  // Render inicial
+  renderProductCatalogTable();
+  setCatalogInputMode(catalogInputMode);
+}
+
+function setCatalogInputMode(mode) {
+  catalogInputMode = mode;
+  const multiBtn = document.getElementById("catalogModeMultiBtn");
+  const simpleBtn = document.getElementById("catalogModeSimpleBtn");
+  const simpleContainer = document.getElementById("simplePriceInputsContainer");
+  const multiContainer = document.getElementById("multiProductContainer");
+
+  const monthlyPrice = document.getElementById("monthlyPrice");
+  const monthlyUnits = document.getElementById("monthlyUnits");
+  const unitVariableCost = document.getElementById("unitVariableCost");
+  const priceBadge = document.getElementById("priceModeBadge");
+  const unitsBadge = document.getElementById("unitsModeBadge");
+  const costBadge = document.getElementById("costModeBadge");
+  const priceHelper = document.getElementById("monthlyPriceHelper");
+  const unitsHelper = document.getElementById("monthlyUnitsHelper");
+  const costHelper = document.getElementById("unitVariableCostHelper");
+
+  if (mode === "multi") {
+    if (multiBtn) {
+      multiBtn.className = "px-3 py-1.5 rounded-lg font-medium transition-all bg-[#c5a059] text-zinc-950 shadow-sm flex items-center gap-1.5 cursor-pointer";
+    }
+    if (simpleBtn) {
+      simpleBtn.className = "px-3 py-1.5 rounded-lg font-medium transition-all text-zinc-400 hover:text-white flex items-center gap-1.5 cursor-pointer";
+    }
+    if (simpleContainer) simpleContainer.classList.add("hidden");
+    if (multiContainer) multiContainer.classList.remove("opacity-60");
+
+    if (monthlyPrice) {
+      monthlyPrice.readOnly = true;
+      monthlyPrice.classList.add("bg-zinc-800/60", "cursor-not-allowed", "text-[#d4b26f]");
+    }
+    if (monthlyUnits) {
+      monthlyUnits.readOnly = true;
+      monthlyUnits.classList.add("bg-zinc-800/60", "cursor-not-allowed", "text-emerald-400");
+    }
+    if (unitVariableCost) {
+      unitVariableCost.readOnly = true;
+      unitVariableCost.classList.add("bg-zinc-800/60", "cursor-not-allowed", "text-rose-400");
+    }
+
+    if (priceBadge) {
+      priceBadge.textContent = "Ponderado Catálogo";
+      priceBadge.className = "text-[10px] font-mono text-[#d4b26f] bg-[#c5a059]/15 border border-[#c5a059]/40 px-1.5 py-0.5 rounded";
+    }
+    if (unitsBadge) {
+      unitsBadge.textContent = "Suma Catálogo";
+      unitsBadge.className = "text-[10px] font-mono text-emerald-400 bg-emerald-500/15 border border-emerald-500/40 px-1.5 py-0.5 rounded";
+    }
+    if (costBadge) {
+      costBadge.textContent = "Ponderado Catálogo";
+      costBadge.className = "text-[10px] font-mono text-rose-400 bg-rose-500/15 border border-rose-500/40 px-1.5 py-0.5 rounded";
+    }
+
+    if (priceHelper) priceHelper.textContent = "Ticket promedio ponderado calculado en tiempo real desde tu catálogo de productos.";
+    if (unitsHelper) unitsHelper.textContent = "Suma acumulada de unidades vendidas al mes de todos tus productos.";
+    if (costHelper) costHelper.textContent = "Costo unitario directo promedio ponderado de tu mezcla de ventas.";
+
+    recalculateMultiProductTotals();
+  } else {
+    if (multiBtn) {
+      multiBtn.className = "px-3 py-1.5 rounded-lg font-medium transition-all text-zinc-400 hover:text-white flex items-center gap-1.5 cursor-pointer";
+    }
+    if (simpleBtn) {
+      simpleBtn.className = "px-3 py-1.5 rounded-lg font-medium transition-all bg-[#c5a059] text-zinc-950 shadow-sm flex items-center gap-1.5 cursor-pointer";
+    }
+    if (simpleContainer) simpleContainer.classList.remove("hidden");
+    if (multiContainer) multiContainer.classList.add("opacity-60");
+
+    if (monthlyPrice) {
+      monthlyPrice.readOnly = false;
+      monthlyPrice.classList.remove("bg-zinc-800/60", "cursor-not-allowed", "text-[#d4b26f]");
+    }
+    if (monthlyUnits) {
+      monthlyUnits.readOnly = false;
+      monthlyUnits.classList.remove("bg-zinc-800/60", "cursor-not-allowed", "text-emerald-400");
+    }
+    if (unitVariableCost) {
+      unitVariableCost.readOnly = false;
+      unitVariableCost.classList.remove("bg-zinc-800/60", "cursor-not-allowed", "text-rose-400");
+    }
+
+    if (priceBadge) {
+      priceBadge.textContent = "Manual Global";
+      priceBadge.className = "text-[10px] font-mono text-zinc-400 bg-zinc-800 border border-zinc-700 px-1.5 py-0.5 rounded";
+    }
+    if (unitsBadge) {
+      unitsBadge.textContent = "Manual Global";
+      unitsBadge.className = "text-[10px] font-mono text-zinc-400 bg-zinc-800 border border-zinc-700 px-1.5 py-0.5 rounded";
+    }
+    if (costBadge) {
+      costBadge.textContent = "Manual Global";
+      costBadge.className = "text-[10px] font-mono text-zinc-400 bg-zinc-800 border border-zinc-700 px-1.5 py-0.5 rounded";
+    }
+
+    if (priceHelper) priceHelper.textContent = "Ticket promedio global por cliente atendido o producto vendido.";
+    if (unitsHelper) unitsHelper.textContent = "Volumen estimado mensual único de unidades o transacciones.";
+    if (costHelper) costHelper.textContent = "Costo variable promedio unitario de tu operación.";
+
+    runQuickCalculation();
+  }
+}
+
+function renderProductCatalogTable() {
+  const tbody = document.getElementById("productCatalogTableBody");
+  if (!tbody) return;
+
+  tbody.innerHTML = "";
+
+  if (!currentProductCatalog || currentProductCatalog.length === 0) {
+    currentProductCatalog = [{ name: "Producto Principal", price: 100, cost: 30, units: 100 }];
+  }
+
+  currentProductCatalog.forEach((item, index) => {
+    const tr = document.createElement("tr");
+    tr.className = "hover:bg-zinc-900/50 transition-colors group";
+
+    const price = parseFloat(item.price || 0);
+    const cost = parseFloat(item.cost || 0);
+    const units = parseFloat(item.units || 0);
+    const margin = price - cost;
+    const marginPct = price > 0 ? (margin / price * 100) : 0;
+    const subtotal = price * units;
+
+    const marginColor = margin >= 0 ? "text-emerald-400" : "text-rose-400";
+    const marginBadgeClass = margin >= 0 ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/20" : "bg-rose-500/10 text-rose-300 border-rose-500/20";
+
+    tr.innerHTML = `
+      <td class="py-2.5 px-3.5">
+        <input type="text" value="${escapeHtml(item.name || '')}" placeholder="ej. Café Espresso, Playera, Combo..." 
+          data-index="${index}" data-field="name"
+          class="mp-input mp-name w-full bg-zinc-900/90 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-zinc-100 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-[#c5a059] focus:border-[#c5a059]">
+      </td>
+      <td class="py-2.5 px-3.5">
+        <div class="relative">
+          <span class="absolute left-2.5 top-1.5 text-zinc-500 text-[10px] font-mono">$</span>
+          <input type="number" step="0.5" min="0" value="${price}" 
+            data-index="${index}" data-field="price"
+            class="mp-input mp-price w-full bg-zinc-900/90 border border-zinc-800 rounded-lg pl-6 pr-2 py-1.5 text-xs text-zinc-100 font-mono focus:outline-none focus:ring-1 focus:ring-[#c5a059] focus:border-[#c5a059]">
+        </div>
+      </td>
+      <td class="py-2.5 px-3.5">
+        <div class="relative">
+          <span class="absolute left-2.5 top-1.5 text-zinc-500 text-[10px] font-mono">$</span>
+          <input type="number" step="0.5" min="0" value="${cost}" 
+            data-index="${index}" data-field="cost"
+            class="mp-input mp-cost w-full bg-zinc-900/90 border border-zinc-800 rounded-lg pl-6 pr-2 py-1.5 text-xs text-zinc-100 font-mono focus:outline-none focus:ring-1 focus:ring-[#c5a059] focus:border-[#c5a059]">
+        </div>
+      </td>
+      <td class="py-2.5 px-3.5">
+        <input type="number" step="1" min="0" value="${units}" 
+          data-index="${index}" data-field="units"
+          class="mp-input mp-units w-full bg-zinc-900/90 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-zinc-100 font-mono focus:outline-none focus:ring-1 focus:ring-[#c5a059] focus:border-[#c5a059]">
+      </td>
+      <td class="py-2.5 px-3.5 text-center">
+        <div class="inline-flex flex-col items-center">
+          <span class="text-xs font-mono font-bold ${marginColor} mp-row-margin-val">${margin >= 0 ? '+' : ''}$${margin.toFixed(2)}</span>
+          <span class="text-[10px] font-mono px-1.5 py-0.2 rounded-full border ${marginBadgeClass} mp-row-margin-pct">${marginPct.toFixed(1)}%</span>
+        </div>
+      </td>
+      <td class="py-2.5 px-3.5 text-right font-mono text-xs font-bold text-[#d4b26f] mp-row-subtotal">
+        $${Math.round(subtotal).toLocaleString()}
+      </td>
+      <td class="py-2.5 px-2 text-center">
+        <button type="button" data-index="${index}" class="mp-delete-btn p-1.5 rounded-lg text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer" title="Eliminar producto">
+          <i class="fa-solid fa-trash-can text-xs"></i>
+        </button>
+      </td>
+    `;
+
+    tbody.appendChild(tr);
+  });
+
+  // Listeners de los inputs dentro de la tabla
+  tbody.querySelectorAll(".mp-input").forEach(input => {
+    input.addEventListener("input", onProductInput);
+  });
+
+  tbody.querySelectorAll(".mp-delete-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const idx = parseInt(btn.getAttribute("data-index"), 10);
+      deleteProductCatalogRow(idx);
+    });
+  });
+}
+
+function onProductInput(e) {
+  const input = e.target;
+  const idx = parseInt(input.getAttribute("data-index"), 10);
+  const field = input.getAttribute("data-field");
+  if (isNaN(idx) || !currentProductCatalog[idx]) return;
+
+  if (field === "name") {
+    currentProductCatalog[idx].name = input.value;
+  } else {
+    currentProductCatalog[idx][field] = Math.max(0, parseFloat(input.value) || 0);
+  }
+
+  // Actualizar margen y subtotal de la fila inmediatamente
+  const row = input.closest("tr");
+  if (row) {
+    const item = currentProductCatalog[idx];
+    const price = item.price || 0;
+    const cost = item.cost || 0;
+    const units = item.units || 0;
+    const margin = price - cost;
+    const marginPct = price > 0 ? (margin / price * 100) : 0;
+    const subtotal = price * units;
+
+    const marginVal = row.querySelector(".mp-row-margin-val");
+    const marginBadge = row.querySelector(".mp-row-margin-pct");
+    const subtotalEl = row.querySelector(".mp-row-subtotal");
+
+    if (marginVal) {
+      marginVal.textContent = (margin >= 0 ? '+' : '') + "$" + margin.toFixed(2);
+      marginVal.className = `text-xs font-mono font-bold ${margin >= 0 ? "text-emerald-400" : "text-rose-400"} mp-row-margin-val`;
+    }
+    if (marginBadge) {
+      marginBadge.textContent = marginPct.toFixed(1) + "%";
+      marginBadge.className = `text-[10px] font-mono px-1.5 py-0.2 rounded-full border ${margin >= 0 ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/20" : "bg-rose-500/10 text-rose-300 border-rose-500/20"} mp-row-margin-pct`;
+    }
+    if (subtotalEl) {
+      subtotalEl.textContent = "$" + Math.round(subtotal).toLocaleString();
+    }
+  }
+
+  recalculateMultiProductTotals();
+}
+
+function recalculateMultiProductTotals() {
+  let totalUnits = 0;
+  let totalRevenue = 0;
+  let totalCost = 0;
+  const count = currentProductCatalog.length;
+
+  currentProductCatalog.forEach(item => {
+    const p = Math.max(0, parseFloat(item.price) || 0);
+    const c = Math.max(0, parseFloat(item.cost) || 0);
+    const u = Math.max(0, parseFloat(item.units) || 0);
+
+    totalUnits += u;
+    totalRevenue += (p * u);
+    totalCost += (c * u);
+  });
+
+  const weightedPrice = totalUnits > 0 ? (totalRevenue / totalUnits) : 0;
+  const weightedCost = totalUnits > 0 ? (totalCost / totalUnits) : 0;
+  const grossMarginPct = totalRevenue > 0 ? ((totalRevenue - totalCost) / totalRevenue * 100) : 0;
+
+  // Actualizar barra de resumen
+  const countEl = document.getElementById("mpSummaryCount");
+  const unitsEl = document.getElementById("mpSummaryUnits");
+  const revEl = document.getElementById("mpSummaryRevenue");
+  const costEl = document.getElementById("mpSummaryCost");
+  const avgPriceEl = document.getElementById("mpSummaryAvgPrice");
+  const marginPctEl = document.getElementById("mpSummaryMarginPct");
+
+  if (countEl) countEl.textContent = count;
+  if (unitsEl) unitsEl.textContent = Math.round(totalUnits).toLocaleString();
+  if (revEl) revEl.textContent = "$" + Math.round(totalRevenue).toLocaleString();
+  if (costEl) costEl.textContent = "$" + Math.round(totalCost).toLocaleString();
+  if (avgPriceEl) avgPriceEl.textContent = "$" + weightedPrice.toFixed(2);
+  if (marginPctEl) marginPctEl.textContent = grossMarginPct.toFixed(1) + "%";
+
+  // Si está en modo multiproducto, sincronizar a los inputs de la máquina financiera
+  if (catalogInputMode === "multi") {
+    const monthlyPrice = document.getElementById("monthlyPrice");
+    const monthlyUnits = document.getElementById("monthlyUnits");
+    const unitVariableCost = document.getElementById("unitVariableCost");
+
+    if (monthlyPrice) monthlyPrice.value = weightedPrice.toFixed(2);
+    if (monthlyUnits) monthlyUnits.value = Math.round(totalUnits);
+    if (unitVariableCost) unitVariableCost.value = weightedCost.toFixed(2);
+
+    updateBankAndShrinkageHelpers();
+    runQuickCalculation();
+    scheduleAutoSave();
+  }
+}
+
+function addProductCatalogRow(item = null) {
+  const prod = item || {
+    name: `Producto ${currentProductCatalog.length + 1}`,
+    price: 120,
+    cost: 40,
+    units: 50
+  };
+  currentProductCatalog.push(prod);
+  renderProductCatalogTable();
+  recalculateMultiProductTotals();
+}
+
+function deleteProductCatalogRow(index) {
+  if (currentProductCatalog.length <= 1) {
+    showToast("Debes conservar al menos 1 producto en el catálogo.", false);
+    return;
+  }
+  currentProductCatalog.splice(index, 1);
+  renderProductCatalogTable();
+  recalculateMultiProductTotals();
+}
+
+function loadMultiProductExample() {
+  currentProductCatalog = [
+    { name: "Producto Entrada (Económico)", price: 30, cost: 10, units: 500 },
+    { name: "Producto Estándar / Servicio", price: 150, cost: 50, units: 200 },
+    { name: "Producto Premium / Especial", price: 500, cost: 210, units: 40 }
+  ];
+  setCatalogInputMode("multi");
+  renderProductCatalogTable();
+  recalculateMultiProductTotals();
+  showToast("Ejemplo con productos de $30, $150 y $500 cargado exitosamente.", true);
+}
+
+async function importProductsFromInventory() {
+  try {
+    const token = sessionStorage.getItem("pos_token");
+    const headers = token ? { "X-POS-Token": token } : {};
+    let res = await fetch("/api/pos/products", { headers });
+    if (!res.ok) {
+      res = await fetch("/api/inv/products", { headers });
+    }
+    if (!res.ok) throw new Error("No se pudo conectar con el catálogo de inventario.");
+
+    const items = await res.json();
+    if (!Array.isArray(items) || items.length === 0) {
+      alert("No hay productos dados de alta en el inventario todavía. Puedes capturarlos directamente aquí en el catálogo multiproducto.");
+      return;
+    }
+
+    currentProductCatalog = items.map(it => {
+      const p = parseFloat(it.price || it.retail_price || 100);
+      const c = parseFloat(it.cost_price || it.cost || (p * 0.45));
+      return {
+        name: it.name || it.description || "Producto",
+        price: p,
+        cost: c,
+        units: 100
+      };
+    });
+
+    setCatalogInputMode("multi");
+    renderProductCatalogTable();
+    recalculateMultiProductTotals();
+    showToast(`¡${items.length} productos importados desde tu Inventario / POS!`, true);
+  } catch (err) {
+    alert("No se pudo importar del inventario: " + err.message);
+  }
+}
+
+function getMultiProductCatalogData() {
+  return currentProductCatalog;
+}
+
+function getCatalogInputMode() {
+  return catalogInputMode;
+}
+
+function applyMultiProductCatalogData(catalog, mode = "multi") {
+  if (Array.isArray(catalog) && catalog.length > 0) {
+    currentProductCatalog = JSON.parse(JSON.stringify(catalog));
+    renderProductCatalogTable();
+    setCatalogInputMode(mode);
+  }
+}
+
+function applyDefaultMultiProductForTemplate(tmplId, avgPrice = 95, avgCost = 28, totalUnits = 2800) {
+  const str = String(tmplId || "").toLowerCase();
+
+  if (str.includes("cafe") || str.includes("cafetería") || str.includes("brunch")) {
+    currentProductCatalog = [
+      { name: "Café Americano / Espresso", price: 45, cost: 10, units: 1200 },
+      { name: "Bebida Especial / Latte de Autor", price: 85, cost: 24, units: 900 },
+      { name: "Repostería / Panadería Artesanal", price: 65, cost: 20, units: 500 },
+      { name: "Bolsa Café de Especialidad (250g)", price: 250, cost: 95, units: 200 }
+    ];
+  } else if (str.includes("ecommerce") || str.includes("skincare") || str.includes("cosmetica")) {
+    currentProductCatalog = [
+      { name: "Limpiador Facial Suave", price: 280, cost: 75, units: 220 },
+      { name: "Sérum Hidratante Anti-edad", price: 490, cost: 120, units: 180 },
+      { name: "Kit Rutina Completa 3 Pasos", price: 890, cost: 260, units: 80 }
+    ];
+  } else if (str.includes("fitness") || str.includes("gym") || str.includes("pilates")) {
+    currentProductCatalog = [
+      { name: "Pase por Clase Individual", price: 250, cost: 30, units: 60 },
+      { name: "Paquete 10 Clases Mensual", price: 1800, cost: 150, units: 80 },
+      { name: "Membresía Ilimitada VIP", price: 2800, cost: 200, units: 20 }
+    ];
+  } else {
+    // Escenario genérico mixto representativo de productos económicos y altos
+    const p = Math.max(10, parseFloat(avgPrice) || 100);
+    const c = Math.max(5, parseFloat(avgCost) || (p * 0.35));
+    const u = Math.max(10, parseFloat(totalUnits) || 500);
+
+    const uLow = Math.round(u * 0.55);
+    const uMid = Math.round(u * 0.35);
+    const uHigh = Math.max(1, u - uLow - uMid);
+
+    currentProductCatalog = [
+      { name: "Línea Básica / Accesorio", price: Math.round(p * 0.4), cost: Math.round(c * 0.4), units: uLow },
+      { name: "Línea Estándar / Servicio", price: Math.round(p * 1.0), cost: Math.round(c * 1.0), units: uMid },
+      { name: "Línea Premium / Especial", price: Math.round(p * 2.8), cost: Math.round(c * 2.5), units: uHigh }
+    ];
+  }
+
+  setCatalogInputMode("multi");
+  renderProductCatalogTable();
+  recalculateMultiProductTotals();
+}
+
+function escapeHtml(str) {
+  if (!str) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }

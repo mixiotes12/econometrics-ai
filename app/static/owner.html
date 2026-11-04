@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal del Dueño - Control Integral & Recálculo Dinámico</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Outfit"', 'sans-serif'],
+            mono: ['"Space Mono"', 'monospace'],
+          },
+          colors: {
+            slate: {
+              50: '#fafafa', 100: '#f4f4f5', 200: '#e4e4e7', 300: '#d4d4d8',
+              400: '#a1a1aa', 500: '#71717a', 600: '#52525b', 700: '#3f3f46',
+              800: '#27272a', 900: '#18181b', 950: '#09090b',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .inp { background:#09090b; border:1px solid #27272a; border-radius:.65rem; padding:.5rem .75rem; width:100%; font-size:.83rem; color:#f4f4f5; transition: border-color .15s; }
+    .inp:focus { outline:none; border-color:#c5a059; }
+    .btn { padding:.5rem .95rem; border-radius:.65rem; font-size:.78rem; font-weight:600; transition: all .15s ease-in-out; display:inline-flex; align-items:center; gap:.45rem; }
+    .btn-pri { background:#c5a059; color:#09090b; border:1px solid rgba(197,160,89,.6); font-weight:700; } .btn-pri:hover { background:#d4b26f; }
+    .btn-purple { background:#fafafa; color:#09090b; border:1px solid #e4e4e7; font-weight:700; } .btn-purple:hover { background:#e4e4e7; }
+    .btn-sec { background:#18181b; color:#e4e4e7; border:1px solid #27272a; } .btn-sec:hover { background:#27272a; border-color:rgba(197,160,89,.4); }
+    .btn-red { background:#991b1b; color:#fff; } .btn-red:hover { background:#dc2626; }
+    .tab-btn { padding:.7rem 1.1rem; font-size:.82rem; font-weight:600; border-bottom:2px solid transparent; color:#a1a1aa; white-space:nowrap; transition:all .15s; }
+    .tab-btn.active { color:#d4b26f; border-color:#c5a059; background:rgba(197,160,89,.08); }
+    th { text-align:left; font-weight:600; color:#a1a1aa; font-size:.68rem; text-transform:uppercase; letter-spacing:.04em; padding:.55rem .65rem; }
+    td { padding:.55rem .65rem; font-size:.82rem; border-top:1px solid #1f2937; vertical-align:middle; }
+    label.l { display:block; font-size:.7rem; color:#a1a1aa; margin-bottom:.2rem; font-weight:500; }
+    .card { background:rgba(20,20,23,.92); border:1px solid #27272a; border-radius:1rem; padding:1.25rem; }
+    .pill { font-size:.65rem; padding:.15rem .55rem; border-radius:9999px; font-weight:700; }
+  </style>
+</head>
+<body class="bg-[#0a0a0b] text-zinc-100 min-h-screen flex flex-col">
+
+  <!-- LOGIN OVERLAY (SI NO HAY SESIÓN DE DUEÑO/GERENTE) -->
+  <div id="loginOverlay" class="fixed inset-0 z-[100] bg-zinc-950/95 backdrop-blur-md flex items-center justify-center p-4 hidden">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-[22px] p-8 w-full max-w-sm space-y-4 shadow-2xl">
+      <div class="text-center">
+        <div class="w-12 h-12 rounded-2xl bg-[#c5a059]/15 border border-[#c5a059]/40 flex items-center justify-center mx-auto mb-2">
+          <i class="fa-solid fa-building-shield text-[#d4b26f] text-2xl"></i>
+        </div>
+        <h1 class="text-xl font-bold">Portal del Dueño</h1>
+        <p class="text-xs text-zinc-400 mt-1">Acceso exclusivo para Propietario, Administrador o Gerencia</p>
+      </div>
+      <div>
+        <label class="l">Usuario Autorizado</label>
+        <select id="loginCashier" class="inp"></select>
+      </div>
+      <div>
+        <label class="l">PIN de Seguridad</label>
+        <input id="loginPin" type="password" inputmode="numeric" maxlength="8" class="inp" placeholder="••••" autocomplete="off">
+      </div>
+      <div id="loginError" class="text-rose-400 text-xs hidden"></div>
+      <button id="loginBtn" class="btn btn-pri w-full justify-center py-2.5">Entrar al Centro de Mando</button>
+      <p class="text-[11px] text-zinc-500 text-center">Primer acceso por defecto: Administrador / PIN 1234</p>
+      <div class="pt-2 border-t border-zinc-800 flex justify-between text-xs text-zinc-400">
+        <a href="hub.html" class="hover:text-white"><i class="fa-solid fa-table-cells-large mr-1"></i>Hub Propietario</a>
+        <a href="pos.html" class="hover:text-[#d4b26f]"><i class="fa-solid fa-cash-register mr-1"></i>Terminal POS</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOP ECOSYSTEM BAR (NON-STICKY, BLACK/WHITE/GOLD) -->
+  <header class="border-b border-zinc-800/90 bg-[#0d0d0f]">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4 flex-wrap">
+      <div class="flex items-center gap-3.5">
+        <a href="hub.html" title="Volver al Hub del Propietario" class="w-10 h-10 rounded-xl bg-zinc-900 border border-[#c5a059]/50 flex items-center justify-center shadow-sm hover:border-[#c5a059] transition-all">
+          <i class="fa-solid fa-building-user text-[#d4b26f] text-base"></i>
+        </a>
+        <div>
+          <div class="flex items-center gap-2.5">
+            <span class="font-bold text-base sm:text-lg tracking-tight text-white leading-normal pt-0.5 pb-0.5 inline-block">Portal del Dueño</span>
+            <span class="text-[10px] font-mono uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#c5a059]/15 text-[#d4b26f] border border-[#c5a059]/30">Producto II · Control ERP</span>
+          </div>
+          <p class="text-xs text-zinc-400 hidden sm:block">Gestión del Establecimiento, Costos Reales, Maquinaria y Recálculo Dinámico</p>
+        </div>
+      </div>
+
+      <!-- Navegación rápida del ecosistema -->
+      <div class="flex items-center gap-2 flex-wrap">
+        <a href="hub.html" class="btn btn-sec" title="Ir al Hub de Selección de Productos del Propietario">
+          <i class="fa-solid fa-table-cells-large text-[#d4b26f]"></i>
+          <span>Hub Propietario</span>
+        </a>
+        <a href="studio.html" class="btn btn-sec" title="Ir al Producto I: EconoMetrics Studio">
+          <i class="fa-solid fa-compass-drafting text-[#d4b26f]"></i>
+          <span class="hidden md:inline">EconoMetrics Studio</span>
+        </a>
+        <a href="inventario.html" class="btn btn-sec" title="Catálogo, Precios, Costos de Proveedores y Kardex">
+          <i class="fa-solid fa-boxes-stacked text-zinc-300"></i>
+          <span class="hidden sm:inline">Inventarios y Costos</span>
+        </a>
+        <a href="personal.html" class="btn btn-sec" title="Empleados, Nómina, Asistencia y Roles">
+          <i class="fa-solid fa-user-shield text-zinc-300"></i>
+          <span class="hidden sm:inline">Personal y Nómina</span>
+        </a>
+        <a href="pos.html" class="btn btn-sec" title="Abrir la Terminal de Punto de Venta">
+          <i class="fa-solid fa-cash-register text-[#d4b26f]"></i>
+          <span class="hidden sm:inline">Terminal POS</span>
+        </a>
+        <span id="whoamiBadge" class="text-xs text-zinc-400 hidden lg:inline pl-2 border-l border-zinc-800"></span>
+      </div>
+    </div>
+
+    <!-- SUB-TABS DEL PORTAL DEL DUEÑO -->
+    <nav id="ownerTabs" class="max-w-7xl mx-auto px-4 sm:px-6 flex gap-1 overflow-x-auto border-t border-zinc-800/60">
+      <button class="tab-btn active" data-tab="recalculo">
+        <i class="fa-solid fa-arrows-rotate mr-1.5"></i>1. Diagnóstico & Recálculo Dinámico
+      </button>
+      <button class="tab-btn" data-tab="maquinaria">
+        <i class="fa-solid fa-gears mr-1.5"></i>2. Maquinaria y Activos Reales
+      </button>
+      <button class="tab-btn" data-tab="gastos">
+        <i class="fa-solid fa-file-invoice-dollar mr-1.5"></i>3. Gastos Fijos y Nómina Real
+      </button>
+      <button class="tab-btn" data-tab="simulador">
+        <i class="fa-solid fa-sliders mr-1.5"></i>4. Ajustar Parámetros y Enviar a Studio
+      </button>
+    </nav>
+  </header>
+
+  <!-- MAIN CONTENT -->
+  <main class="max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 space-y-6 flex-1">
+
+    <!-- BANNER EXPLICATIVO DEL FLUJO CERRADO -->
+    <div class="bg-[#111114] border border-[#c5a059]/35 rounded-2xl p-4 sm:p-5 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+      <div class="space-y-1">
+        <div class="flex items-center gap-2">
+          <span class="pill bg-[#c5a059]/15 text-[#d4b26f] border border-[#c5a059]/40">Bucle Operativo Activo</span>
+          <h2 class="font-bold text-sm sm:text-base text-white" id="bannerProjectTitle">Proyecto: Cargando...</h2>
+        </div>
+        <p class="text-xs text-zinc-300 max-w-3xl">
+          Cuando cambias precios o costos de insumos en <b>Inventarios</b>, contratas personal en <b>Nómina</b> o agregas <b>Maquinaria</b> aquí, este portal detecta la desviación contra tu estudio inicial de <b>EconoMetrics Studio</b> y recalcula tu verdadero Punto de Equilibrio, VAN y TIR.
+        </p>
+      </div>
+      <div class="flex items-center gap-2 flex-wrap shrink-0">
+        <select id="daysWindowSelect" class="inp !w-auto text-xs">
+          <option value="30">Ventana operativa: 30 días</option>
+          <option value="60">Ventana operativa: 60 días</option>
+          <option value="90">Ventana operativa: 90 días</option>
+        </select>
+        <button id="refreshRecalcBtn" class="btn btn-pri">
+          <i class="fa-solid fa-rotate"></i>
+          <span>Recalcular Ahora</span>
+        </button>
+        <button id="sendToStudioBtn" class="btn btn-purple" title="Abrir EconoMetrics Studio con los costos, precios y maquinaria reales de hoy">
+          <i class="fa-solid fa-rocket"></i>
+          <span>Enviar Realidad a Studio (IA)</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         TAB 1: DIAGNÓSTICO Y RECÁLCULO DINÁMICO
+         ========================================== -->
+    <section id="tab-recalculo" class="tab-panel space-y-6">
+
+      <!-- KPIs EN TIEMPO REAL DEL ESTABLECIMIENTO -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="card">
+          <div class="flex items-center justify-between text-xs text-zinc-400">
+            <span>Capital Activo (Maquinaria + Stock)</span>
+            <i class="fa-solid fa-industry text-cyan-400"></i>
+          </div>
+          <div class="text-xl font-bold mt-1 font-mono" id="kpiCapital">$0.00</div>
+          <div class="text-[11px] text-zinc-400 mt-1" id="kpiCapitalSub">Plan inicial: $0.00</div>
+        </div>
+
+        <div class="card">
+          <div class="flex items-center justify-between text-xs text-zinc-400">
+            <span>Precio Neto / Costo Unitario Catálogo</span>
+            <i class="fa-solid fa-tags text-amber-400"></i>
+          </div>
+          <div class="text-xl font-bold mt-1 font-mono" id="kpiPriceCost">$0 / $0</div>
+          <div class="text-[11px] text-emerald-400 mt-1" id="kpiMarginSub">Margen bruto catálogo: 0%</div>
+        </div>
+
+        <div class="card">
+          <div class="flex items-center justify-between text-xs text-zinc-400">
+            <span>Costos Fijos Reales / Mes</span>
+            <i class="fa-solid fa-building-columns text-violet-400"></i>
+          </div>
+          <div class="text-xl font-bold mt-1 font-mono" id="kpiFixedReal">$0.00</div>
+          <div class="text-[11px] text-zinc-400 mt-1" id="kpiFixedSub">Nómina + Renta y Servicios</div>
+        </div>
+
+        <div class="card">
+          <div class="flex items-center justify-between text-xs text-zinc-400">
+            <span>Nuevo Punto de Equilibrio</span>
+            <i class="fa-solid fa-scale-balanced text-emerald-400"></i>
+          </div>
+          <div class="text-xl font-bold mt-1 font-mono" id="kpiNewBreakeven">0 uds/mes</div>
+          <div class="text-[11px] text-zinc-400 mt-1" id="kpiNewBreakevenRev">$0.00 / mes requeridos</div>
+        </div>
+      </div>
+
+      <!-- ALERTAS Y PRESCRIPCIONES AUTOMÁTICAS -->
+      <div class="card space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-sm flex items-center gap-2">
+            <i class="fa-solid fa-triangle-exclamation text-amber-400"></i>
+            <span>Diagnóstico de Desviaciones Operativas vs. Estudio Inicial</span>
+          </h3>
+          <span class="text-xs text-zinc-400" id="recalcTimestamp"></span>
+        </div>
+        <div id="alertsContainer" class="grid md:grid-cols-2 gap-3"></div>
+      </div>
+
+      <!-- TABLA COMPARATIVA LADO A LADO: ESTUDIO INICIAL VS REALIDAD ACTUAL -->
+      <div class="card overflow-x-auto space-y-3">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h3 class="font-bold text-sm">Comparativa Rigurosa: EconoMetrics Inicial vs. Operación Real Vigente</h3>
+            <p class="text-xs text-zinc-400">Muestra cómo los cambios en precios, proveedores, nómina y maquinaria afectan los indicadores financieros clave.</p>
+          </div>
+          <label class="flex items-center gap-2 text-xs text-zinc-300 cursor-pointer bg-zinc-900 px-3 py-1.5 rounded-lg border border-zinc-800">
+            <input type="checkbox" id="useRealSalesVolumeChk" class="rounded">
+            <span>Usar volumen de ventas del POS (en vez de meta de unidades)</span>
+          </label>
+        </div>
+
+        <table class="w-full">
+          <thead>
+            <tr>
+              <th>Parámetro / Indicador Financiero</th>
+              <th class="text-right">Plan Inicial (Baseline)</th>
+              <th class="text-right">Realidad Actual (ERP)</th>
+              <th class="text-right">Diferencia (Delta)</th>
+              <th class="text-right">Variación %</th>
+              <th class="text-center">Impacto</th>
+            </tr>
+          </thead>
+          <tbody id="comparisonTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         TAB 2: MAQUINARIA Y ACTIVOS FIJOS REALES
+         ========================================== -->
+    <section id="tab-maquinaria" class="tab-panel hidden space-y-6">
+      <div class="grid lg:grid-cols-3 gap-6">
+        <!-- Formulario Alta / Edición de Maquinaria -->
+        <form id="assetForm" class="card space-y-3 h-fit">
+          <h3 class="font-bold text-sm flex items-center gap-2">
+            <i class="fa-solid fa-plus-circle text-emerald-400"></i>
+            <span id="assetFormTitle">Registrar Maquinaria / Activo Fijo</span>
+          </h3>
+          <p class="text-xs text-zinc-400">Si adquiriste una máquina nueva, cambiaste un equipo o subió su mantenimiento, regístralo aquí para actualizar la inversión y depreciación real.</p>
+          <input type="hidden" id="assetId">
+          <div>
+            <label class="l">Nombre del Equipo / Maquinaria *</label>
+            <input id="assetName" class="inp" required placeholder="Ej. Horno Convector / Cafetera 3 Grupos">
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="l">Categoría</label>
+              <input id="assetCategory" class="inp" value="Maquinaria Principal">
+            </div>
+            <div>
+              <label class="l">Estado</label>
+              <select id="assetStatus" class="inp">
+                <option value="activo">Activo en planta</option>
+                <option value="en_reparacion">En reparación</option>
+                <option value="baja">Dado de baja</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="l">Costo de Adquisición (MXN) *</label>
+              <input id="assetCost" type="number" min="0" step="0.01" class="inp" required value="0">
+            </div>
+            <div>
+              <label class="l">Vida Útil (Años Deprec.)</label>
+              <input id="assetLife" type="number" min="1" max="50" class="inp" required value="5">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="l">Mantenimiento Mensual (MXN)</label>
+              <input id="assetMaint" type="number" min="0" step="0.01" class="inp" value="0">
+            </div>
+            <div>
+              <label class="l">Fecha de Compra</label>
+              <input id="assetDate" type="date" class="inp">
+            </div>
+          </div>
+          <div>
+            <label class="l">Notas / Proveedor / Serie</label>
+            <input id="assetNotes" class="inp" placeholder="Opcional">
+          </div>
+          <div class="flex gap-2 pt-2">
+            <button type="submit" class="btn btn-pri flex-1 justify-center">Guardar Activo</button>
+            <button type="button" id="assetResetBtn" class="btn btn-sec">Limpiar</button>
+          </div>
+        </form>
+
+        <!-- Tabla de Maquinaria y Equipo -->
+        <div class="lg:col-span-2 card overflow-x-auto space-y-3">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <h3 class="font-bold text-sm">Inventario de Maquinaria, Equipo e Instalaciones en Planta</h3>
+              <p class="text-xs text-zinc-400" id="assetsSummaryText">Cargando activos...</p>
+            </div>
+          </div>
+          <table class="w-full">
+            <thead>
+              <tr>
+                <th>Equipo / Activo</th>
+                <th>Categoría</th>
+                <th class="text-right">Costo Compra</th>
+                <th class="text-right">Deprec./Mes</th>
+                <th class="text-right">Mant./Mes</th>
+                <th>Estado</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="assetsTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         TAB 3: GASTOS FIJOS Y NÓMINA REAL
+         ========================================== -->
+    <section id="tab-gastos" class="tab-panel hidden space-y-6">
+      <div class="grid lg:grid-cols-3 gap-6">
+        <!-- Formulario Gastos Fijos -->
+        <form id="expenseForm" class="card space-y-3 h-fit">
+          <h3 class="font-bold text-sm flex items-center gap-2">
+            <i class="fa-solid fa-receipt text-violet-400"></i>
+            <span id="expenseFormTitle">Agregar / Ajustar Gasto Fijo Mensual</span>
+          </h3>
+          <p class="text-xs text-zinc-400">Registra renta, luz, agua, gas, internet, publicidad, etc. La <b>Nómina</b> se suma automáticamente desde el módulo de Personal.</p>
+          <input type="hidden" id="expId">
+          <div>
+            <label class="l">Concepto del Gasto Fijo *</label>
+            <input id="expConcept" class="inp" required placeholder="Ej. Renta del Local / CFE Luz">
+          </div>
+          <div>
+            <label class="l">Categoría</label>
+            <input id="expCategory" class="inp" value="Servicios / Local">
+          </div>
+          <div>
+            <label class="l">Monto Mensual (MXN) *</label>
+            <input id="expAmount" type="number" min="0" step="0.01" class="inp" required value="0">
+          </div>
+          <div>
+            <label class="l">Notas</label>
+            <input id="expNotes" class="inp" placeholder="Opcional">
+          </div>
+          <label class="flex items-center gap-2 text-xs text-zinc-300">
+            <input type="checkbox" id="expActive" checked>
+            <span>Gasto fijo vigente / activo</span>
+          </label>
+          <div class="flex gap-2 pt-2">
+            <button type="submit" class="btn btn-pri flex-1 justify-center">Guardar Gasto</button>
+            <button type="button" id="expResetBtn" class="btn btn-sec">Limpiar</button>
+          </div>
+        </form>
+
+        <!-- Desglose de Costos Fijos + Nómina -->
+        <div class="lg:col-span-2 space-y-4">
+          <div class="card bg-violet-950/20 border-violet-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <span class="pill bg-violet-500/20 text-violet-300 border border-violet-500/40">Enlace Automático con RRHH</span>
+              <h4 class="font-bold text-sm mt-1">Costo Laboral / Nómina Mensual Activa: <span id="payrollTotalBadge" class="text-violet-300 font-mono">$0.00</span></h4>
+              <p class="text-xs text-zinc-400" id="payrollDetailText">Calculado desde la plantilla activa de empleados (sueldo base + carga patronal + provisiones).</p>
+            </div>
+            <a href="personal.html" class="btn btn-sec shrink-0">
+              <i class="fa-solid fa-users-gear text-violet-400"></i>
+              <span>Administrar Empleados</span>
+            </a>
+          </div>
+
+          <div class="card overflow-x-auto space-y-3">
+            <div class="flex items-center justify-between">
+              <h3 class="font-bold text-sm">Gastos Fijos Operativos (No Laborales)</h3>
+              <span class="text-xs font-mono text-emerald-400 font-bold" id="expensesTotalBadge">Total: $0.00 / mes</span>
+            </div>
+            <table class="w-full">
+              <thead>
+                <tr>
+                  <th>Concepto</th>
+                  <th>Categoría</th>
+                  <th class="text-right">Monto Mensual</th>
+                  <th>Estado</th>
+                  <th>Notas</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="expensesTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         TAB 4: SIMULADOR MANUAL Y ENVÍO A STUDIO
+         ========================================== -->
+    <section id="tab-simulador" class="tab-panel hidden space-y-6">
+      <div class="card space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-800 pb-4">
+          <div>
+            <h3 class="font-bold text-base">Laboratorio de Re-Calibración de Parámetros del Negocio</h3>
+            <p class="text-xs text-zinc-400">Aquí están cargados los números reales actuales de tu negocio. Puedes ajustar cualquier valor para probar qué pasa si subes precios o reduces costos antes de enviarlo a <b>EconoMetrics Studio</b>.</p>
+          </div>
+          <div class="flex gap-2">
+            <button id="loadLiveToSimBtn" class="btn btn-sec">
+              <i class="fa-solid fa-download"></i>
+              <span>Recargar Datos Reales del ERP</span>
+            </button>
+            <button id="runCustomSimBtn" class="btn btn-pri">
+              <i class="fa-solid fa-calculator"></i>
+              <span>Probar Recálculo Aquí</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div>
+            <label class="l">Inversión / Capital en Activos (MXN)</label>
+            <input id="simInvestment" type="number" step="100" class="inp font-mono">
+          </div>
+          <div>
+            <label class="l">Precio Venta Promedio Neto (MXN)</label>
+            <input id="simPrice" type="number" step="0.5" class="inp font-mono">
+          </div>
+          <div>
+            <label class="l">Volumen Mensual (Unidades / Clientes)</label>
+            <input id="simUnits" type="number" step="10" class="inp font-mono">
+          </div>
+          <div>
+            <label class="l">Costo Variable Unitario (MXN)</label>
+            <input id="simVarCost" type="number" step="0.5" class="inp font-mono">
+          </div>
+          <div>
+            <label class="l">Costos Fijos Mensuales Totales (MXN)</label>
+            <input id="simFixedCosts" type="number" step="100" class="inp font-mono">
+          </div>
+          <div>
+            <label class="l">Mantenimiento Mensual Equipo (MXN)</label>
+            <input id="simMaintCost" type="number" step="50" class="inp font-mono">
+          </div>
+          <div>
+            <label class="l">Merma / Riesgo Operativo (%)</label>
+            <input id="simShrinkage" type="number" step="0.1" class="inp font-mono">
+          </div>
+          <div>
+            <label class="l">Años Depreciación Maquinaria</label>
+            <input id="simDepYears" type="number" step="1" min="1" max="50" class="inp font-mono">
+          </div>
+        </div>
+
+        <div class="pt-4 border-t border-zinc-800 flex flex-wrap items-center justify-between gap-3">
+          <p class="text-xs text-zinc-400">
+            ¿Quieres que estos nuevos números sean tu nuevo Plan Base oficial o analizarlos con Inteligencia Artificial en las 5 pestañas de Studio?
+          </p>
+          <div class="flex gap-2 flex-wrap">
+            <button id="saveSimAsBaselineBtn" class="btn btn-sec border-emerald-500/40 text-emerald-300">
+              <i class="fa-solid fa-bookmark"></i>
+              <span>Guardar como Nuevo Plan Base (Baseline)</span>
+            </button>
+            <button id="exportSimToStudioBtn" class="btn btn-purple">
+              <i class="fa-solid fa-arrow-up-right-from-square"></i>
+              <span>Abrir en EconoMetrics Studio con estos Parámetros</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="owner.js"></script>
+</body>
+</html>

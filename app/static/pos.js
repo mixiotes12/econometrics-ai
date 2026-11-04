@@ -49,13 +49,23 @@
   function logoutLocal() {
     token = ""; me = null; cart = [];
     sessionStorage.removeItem("pos_token"); sessionStorage.removeItem("pos_me");
-    $("loginOverlay").classList.remove("hidden");
-    loadLogin();
+    window.location.href = "index.html";
   }
   async function startApp() {
     $("loginOverlay").classList.add("hidden");
+    const branchObj = JSON.parse(sessionStorage.getItem("pos_branch") || "null");
+    if ($("posBranchBadge") && branchObj && branchObj.name) {
+      $("posBranchBadge").textContent = `${branchObj.business_name ? branchObj.business_name + " · " : ""}${branchObj.name}`;
+    }
     $("whoami").textContent = `${me.name} · ${me.role_label || (me.is_admin ? "Administrador" : "Cajero")}`;
-    document.querySelectorAll("[data-perm]").forEach((b) => b.classList.toggle("hidden", !can(b.dataset.perm)));
+    const isEmpOnly = sessionStorage.getItem("econometrics_emp_only") === "1";
+    document.querySelectorAll("[data-perm]").forEach((b) => {
+      if (isEmpOnly && (b.id === "posBackToOwner" || b.id === "posHubLink" || b.id === "posOwnerLink")) {
+        b.classList.add("hidden");
+      } else {
+        b.classList.toggle("hidden", !can(b.dataset.perm));
+      }
+    });
     document.querySelectorAll(".admin-only").forEach((b) => b.classList.toggle("hidden", !can("settings.manage")));
     if (me.must_change_pin) await forcePinChange();
     settings = await api("/settings");

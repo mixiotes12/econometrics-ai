@@ -1,0 +1,1365 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EconoMetrics Studio · Ingeniería y Viabilidad Financiera</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Outfit"', 'sans-serif'],
+            mono: ['"Space Mono"', 'monospace'],
+          },
+          colors: {
+            slate: {
+              50: '#fafafa',
+              100: '#f4f4f5',
+              200: '#e4e4e7',
+              300: '#d4d4d8',
+              400: '#a1a1aa',
+              500: '#71717a',
+              600: '#52525b',
+              700: '#3f3f46',
+              800: '#27272a',
+              900: '#18181b',
+              950: '#09090b',
+            },
+            gold: {
+              300: '#e3c88d',
+              400: '#d4b26f',
+              500: '#c5a059',
+              600: '#a3803f',
+              950: '#241c0d',
+            },
+            indigo: {
+              400: '#d4b26f',
+              500: '#c5a059',
+              600: '#a3803f',
+            },
+            purple: {
+              300: '#e3c88d',
+              400: '#d4b26f',
+              500: '#c5a059',
+              600: '#a3803f',
+            },
+            emerald: {
+              400: '#68d391',
+              500: '#48bb78',
+              600: '#38a169',
+            },
+            amber: {
+              400: '#d4b26f',
+              500: '#c5a059',
+              600: '#a3803f',
+            },
+            blue: {
+              400: '#d4d4d8',
+              500: '#a1a1aa',
+              600: '#71717a',
+            },
+            rose: {
+              400: '#fc8181',
+              500: '#f56565',
+              600: '#e53e3e',
+            },
+            cyan: {
+              400: '#d4b26f',
+              500: '#c5a059',
+              600: '#a3803f',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Font Awesome & Chart.js -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-[#0a0a0b] text-zinc-100 flex flex-col min-h-screen">
+
+  <!-- TOP HEADER / NAV (Non-sticky, Black/White/Discreet Gold) -->
+  <header class="border-b border-zinc-800/90 bg-[#0d0d0f] no-print">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 min-h-[4.25rem] flex items-center justify-between gap-4 flex-wrap">
+      <div class="flex items-center gap-3.5">
+        <a href="hub.html" title="Volver al Hub del Propietario" class="w-10 h-10 shrink-0 rounded-xl bg-zinc-900 border border-[#c5a059]/40 flex items-center justify-center shadow-sm hover:border-[#c5a059] transition-all">
+          <i class="fa-solid fa-compass-drafting text-[#d4b26f] text-base"></i>
+        </a>
+        <div class="flex flex-col justify-center">
+          <div class="flex items-center gap-2.5">
+            <span class="font-bold text-lg tracking-tight text-white leading-normal pt-0.5 pb-0.5 inline-block">EconoMetrics</span>
+            <span class="text-xs font-mono uppercase tracking-[0.2em] text-[#d4b26f] font-semibold">STUDIO</span>
+            <span class="text-[10px] uppercase font-medium px-2 py-0.5 rounded-full bg-[#c5a059]/10 text-[#d4b26f] border border-[#c5a059]/30">Producto I · Planeación</span>
+          </div>
+          <p class="text-xs text-zinc-400 hidden sm:block">Arquitectura Financiera, Ingeniería de Planta y Viabilidad Estratégica</p>
+        </div>
+      </div>
+
+      <!-- Quick Template & Controls -->
+      <div class="flex items-center gap-2 sm:gap-2.5 flex-wrap">
+        <a href="hub.html" title="Ir al Hub de Selección de Productos del Propietario" class="flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 text-xs px-3 py-2 rounded-xl transition-all font-medium">
+          <i class="fa-solid fa-table-cells-large text-[#d4b26f]"></i>
+          <span>Hub Propietario</span>
+        </a>
+
+        <!-- Template & Project Select -->
+        <div class="relative hidden sm:block">
+          <select id="templateSelect" class="bg-zinc-900 border border-zinc-800 text-xs text-zinc-200 rounded-xl px-3 py-2 pr-8 focus:outline-none focus:border-[#c5a059]">
+            <option value="">-- Cargar Proyecto o Plantilla --</option>
+          </select>
+        </div>
+
+        <!-- Botón Guardar Configuración -->
+        <button id="saveProjectBtn" title="Guardar esta configuración para no perderla" class="flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-white border border-zinc-700 text-xs px-3 py-2 rounded-xl transition-all font-medium">
+          <i class="fa-solid fa-floppy-disk text-[#d4b26f]"></i>
+          <span>Guardar</span>
+        </button>
+
+        <!-- Botón Nuevo Proyecto / Limpiar -->
+        <button id="newProjectBtn" title="Crear nuevo proyecto limpio" class="flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 text-xs px-2.5 py-2 rounded-xl transition-all font-medium">
+          <i class="fa-solid fa-plus"></i>
+          <span class="hidden md:inline">Nuevo</span>
+        </button>
+
+        <button id="publishBaselineBtn" type="button" title="Publicar este estudio como el Plan Base oficial en el Portal del Dueño (ERP)" class="flex items-center gap-1.5 bg-[#c5a059] hover:bg-[#d4b26f] text-zinc-950 text-xs px-3.5 py-2 rounded-xl transition-all font-bold shadow-sm">
+          <i class="fa-solid fa-cloud-arrow-up"></i>
+          <span class="hidden lg:inline">Publicar Plan al ERP</span>
+        </button>
+
+        <div class="h-5 w-px bg-zinc-800 hidden sm:block"></div>
+
+        <a href="owner.html" title="Producto II: Control Integral del Establecimiento (Inventarios, Nómina, Maquinaria y Recálculo)" class="flex items-center gap-1.5 bg-white hover:bg-zinc-200 text-zinc-950 text-xs px-3 py-2 rounded-xl transition-all font-bold shadow-sm">
+          <i class="fa-solid fa-building-user"></i>
+          <span>Control Establecimiento</span>
+        </a>
+
+        <!-- API Key modal trigger / status -->
+        <button id="apiKeyBtn" class="flex items-center gap-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs px-3 py-2 rounded-xl transition-all">
+          <i class="fa-solid fa-key text-[#d4b26f]"></i>
+          <span id="apiKeyStatusLabel">API Key</span>
+        </button>
+
+        <button id="exportPdfBtn" class="hidden flex items-center gap-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs px-3 py-2 rounded-xl transition-all text-zinc-300 cursor-pointer">
+          <i class="fa-solid fa-print"></i>
+          <span class="hidden sm:inline">Imprimir / PDF</span>
+        </button>
+
+        <button id="exportCsvBtn" class="hidden flex items-center gap-2 bg-zinc-900 hover:bg-zinc-800 border border-[#c5a059]/40 text-xs px-3 py-2 rounded-xl transition-all text-[#d4b26f] font-medium cursor-pointer">
+          <i class="fa-solid fa-file-excel"></i>
+          <span class="hidden sm:inline">Exportar CSV</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- API KEY MODAL -->
+  <div id="apiKeyModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-[20px] max-w-md w-full p-6 shadow-2xl">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-key text-[#d4b26f]"></i> Configuración de Gemini API
+        </h3>
+        <button id="closeApiKeyModal" class="text-zinc-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <p class="text-xs text-zinc-400 mb-4">
+        Ingresa tu API Key de Google Gemini para habilitar el análisis cualitativo y estratégico de IA. Si no tienes una, obtenla en <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-[#d4b26f] underline">Google AI Studio</a>.
+      </p>
+      <div class="mb-4">
+        <label class="block text-xs font-medium text-zinc-300 mb-1">Gemini API Key</label>
+        <div class="relative">
+          <input type="password" id="geminiApiKeyInput" placeholder="AIzaSy..." class="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059] pr-10">
+          <button type="button" id="toggleApiKeyVisibility" class="absolute right-3 top-2.5 text-zinc-400 hover:text-zinc-200 text-xs">
+            <i class="fa-solid fa-eye"></i>
+          </button>
+        </div>
+      </div>
+      <div class="mb-5">
+        <label class="block text-xs font-medium text-zinc-300 mb-1">Modelo de Gemini</label>
+        <select id="geminiModelSelect" class="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059]">
+          <option value="gemini-3.5-flash" selected>gemini-3.5-flash (Recomendado • Alta Disponibilidad)</option>
+          <option value="gemini-3.5-flash-lite">gemini-3.5-flash-lite (Ultra Rápido)</option>
+          <option value="gemini-3.6-flash">gemini-3.6-flash</option>
+          <option value="gemini-3.8-flash">gemini-3.8-flash (Preview)</option>
+          <option value="gemini-3.7-flash">gemini-3.7-flash</option>
+        </select>
+      </div>
+      <div class="flex justify-end gap-2">
+        <button id="saveApiKeyBtn" class="bg-[#c5a059] hover:bg-[#d4b26f] text-zinc-950 text-xs font-bold px-4 py-2 rounded-xl transition-all">Guardar Configuración</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SAVE PROJECT MODAL -->
+  <div id="saveProjectModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-[20px] max-w-sm w-full p-6 shadow-2xl">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-floppy-disk text-[#d4b26f]"></i> Guardar Proyecto
+        </h3>
+        <button id="closeSaveProjectModal" class="text-zinc-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <p class="text-xs text-zinc-400 mb-4">
+        Guarda todos los datos del negocio y parámetros económicos para conservar tu evaluación.
+      </p>
+      <div class="mb-4">
+        <label class="block text-xs font-semibold text-zinc-300 mb-1">Nombre para este proyecto</label>
+        <input type="text" id="saveProjectNameInput" placeholder="Ej. Sucursal Roma 2026..." class="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059]">
+      </div>
+      <div class="flex justify-end gap-2">
+        <button type="button" id="cancelSaveProjectBtn" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs px-3.5 py-2 rounded-xl transition-all font-medium">Cancelar</button>
+        <button type="button" id="confirmSaveProjectBtn" class="bg-[#c5a059] hover:bg-[#d4b26f] text-zinc-950 text-xs font-bold px-4 py-2 rounded-xl transition-all flex items-center gap-1.5">
+          <i class="fa-solid fa-check"></i>
+          <span>Guardar Proyecto</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="notificationToast" class="fixed bottom-6 right-6 z-50 bg-zinc-900 border border-[#c5a059]/40 text-zinc-100 text-xs font-medium px-4 py-3 rounded-xl shadow-2xl hidden flex items-center gap-2.5 transition-all duration-300">
+    <i id="toastIcon" class="fa-solid fa-circle-check text-[#d4b26f] text-sm"></i>
+    <span id="toastMessage">Configuración guardada exitosamente</span>
+  </div>
+
+  <!-- MAIN CONTAINER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- STEPPER / TABS (NO-PRINT) -->
+    <div class="flex items-center justify-between mb-6 border-b border-zinc-800 pb-4 no-print gap-2 overflow-x-auto">
+      
+      <div class="flex gap-2 min-w-max">
+        <button type="button" id="tabBtn1" class="tab-btn active px-4 py-2 rounded-xl text-xs font-medium border border-zinc-800 bg-zinc-900 text-zinc-300 hover:text-white transition-all flex items-center gap-2" onclick="switchTab(1)">
+          <span class="w-5 h-5 rounded-full bg-zinc-800 text-[#d4b26f] border border-[#c5a059]/30 flex items-center justify-center text-[10px] font-bold">1</span>
+          <span>Perfil de negocios</span>
+        </button>
+        <button type="button" id="tabBtn2" class="tab-btn px-4 py-2 rounded-xl text-xs font-medium border border-zinc-800 bg-zinc-900 text-zinc-300 hover:text-white transition-all flex items-center gap-2" onclick="switchTab(2)">
+          <span class="w-5 h-5 rounded-full bg-zinc-800 text-[#d4b26f] border border-[#c5a059]/30 flex items-center justify-center text-[10px] font-bold">2</span>
+          <span>Procesos</span>
+        </button>
+        <button type="button" id="tabBtn3" class="tab-btn px-4 py-2 rounded-xl text-xs font-medium border border-zinc-800 bg-zinc-900 text-zinc-300 hover:text-white transition-all flex items-center gap-2" onclick="switchTab(3)">
+          <span class="w-5 h-5 rounded-full bg-zinc-800 text-[#d4b26f] border border-[#c5a059]/30 flex items-center justify-center text-[10px] font-bold">3</span>
+          <span>Maquinaria</span>
+        </button>
+        <button type="button" id="tabBtn4" class="tab-btn px-4 py-2 rounded-xl text-xs font-medium border border-zinc-800 bg-zinc-900 text-zinc-300 hover:text-white transition-all flex items-center gap-2" onclick="switchTab(4)">
+          <span class="w-5 h-5 rounded-full bg-zinc-800 text-[#d4b26f] border border-[#c5a059]/30 flex items-center justify-center text-[10px] font-bold">4</span>
+          <span>Presupuesto</span>
+        </button>
+        <button type="button" id="tabBtn5" class="tab-btn px-4 py-2 rounded-xl text-xs font-medium border border-zinc-800 bg-zinc-900 text-zinc-300 hover:text-white transition-all flex items-center gap-2" onclick="switchTab(5)">
+          <span class="w-5 h-5 rounded-full bg-zinc-800 text-[#d4b26f] border border-[#c5a059]/30 flex items-center justify-center text-[10px] font-bold">5</span>
+          <span>Parámetros económicos</span>
+        </button>
+        <button type="button" id="tabBtn6" class="tab-btn px-4 py-2 rounded-xl text-xs font-medium border border-zinc-800 bg-zinc-900 text-zinc-300 hover:text-white transition-all flex items-center gap-2" onclick="switchTab(6)">
+          <span class="w-5 h-5 rounded-full bg-zinc-800 text-[#d4b26f] border border-[#c5a059]/30 flex items-center justify-center text-[10px] font-bold">6</span>
+          <span>Diagnóstico y reporte</span>
+        </button>
+      </div>
+
+      <div class="flex items-center gap-2 min-w-max">
+        <button type="button" id="quickCalcBtn" class="bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 text-xs px-3.5 py-2 rounded-xl transition-all font-medium flex items-center gap-1.5">
+          <i class="fa-solid fa-calculator text-[#d4b26f]"></i>
+          <span>Cálculo Rápido</span>
+        </button>
+        <button type="button" id="runFullAnalysisBtn" class="bg-white hover:bg-zinc-200 text-zinc-950 font-bold text-xs px-4 py-2 rounded-xl transition-all shadow-sm flex items-center gap-2">
+          <i class="fa-solid fa-wand-magic-sparkles text-[#a3803f]"></i>
+          <span>Dictamen Estratégico IA</span>
+        </button>
+      </div>
+    </div>
+
+  <section id="tab4" class="space-y-6 hidden">
+<!-- 1. SOLICITUD DE INVERSIÓN (PRESUPUESTOS) -->
+    <section class="glass-panel p-6 rounded-[20px] border border-zinc-800/80">
+      <div class="flex items-center gap-3 mb-6 pb-4 border-b border-zinc-800">
+        <div class="w-8 h-8 rounded-xl bg-[#c5a059]/15 text-[#d4b26f] flex items-center justify-center">
+          <i class="fa-solid fa-money-check-dollar"></i>
+        </div>
+        <div>
+          <h2 class="text-base font-bold text-white">Presupuesto de inversión</h2>
+          <p class="text-xs text-zinc-400">Genera y compara las opciones Económica, Estándar y Premium; después aplica la inversión al modelo financiero.</p>
+        </div>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Input Form -->
+        <div class="space-y-4">
+          <p class="text-sm text-zinc-300">Compara tres alternativas de inversión a partir de los equipos, servicios y personal registrados en Maquinaria.</p>
+          <button type="button" onclick="switchTab(3)" class="text-sm text-[#d4b26f] underline">Revisar maquinaria y requerimientos</button>
+          <div class="flex gap-2">
+            <button id="genBudgetsBtn" type="button" class="text-xs bg-[#c5a059] hover:bg-[#d4b26f] text-zinc-950 font-bold px-4 py-2 rounded-xl transition-all flex items-center gap-2">
+              <i class="fa-solid fa-robot"></i> Generar 3 Presupuestos
+            </button>
+          </div>
+        </div>
+
+        <!-- Output Budgets -->
+        <div id="budgetsOutput" class="hidden">
+           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4" id="budgetsGrid">
+              <!-- Cards here -->
+           </div>
+           <div id="budgetsSummary" class="mt-4 p-3 bg-zinc-900 rounded-xl border border-zinc-800 text-xs text-zinc-300"></div>
+           <div class="mt-3 flex justify-end">
+               <button id="useInvestmentBtn" class="text-xs bg-white hover:bg-zinc-200 text-zinc-950 font-bold px-4 py-2 rounded-xl transition-all hidden">
+                  Transferir Inversión a EconoMetrics
+               </button>
+           </div>
+        </div>
+        <div id="budgetsLoader" class="hidden flex-col items-center justify-center text-[#d4b26f] p-8 border border-zinc-800 rounded-xl bg-zinc-900/50">
+           <i class="fa-solid fa-circle-notch animate-spin text-3xl mb-3"></i>
+           <p class="text-sm font-bold">Investigando mercado y estructurando presupuestos...</p>
+        </div>
+      </div>
+    </section>
+<div class="mt-6 flex justify-between gap-3"><button type="button" class="bg-zinc-800 text-zinc-300 px-4 py-2.5 rounded-xl text-xs" onclick="switchTab(3)">Anterior</button><button type="button" class="bg-[#c5a059] hover:bg-[#d4b26f] text-zinc-950 font-bold px-5 py-2.5 rounded-xl text-xs" onclick="switchTab(5)">Siguiente: Parámetros económicos</button></div>
+</section>
+<section id="tab3" class="space-y-6 hidden">
+  <div class="glass-panel p-6 rounded-[20px] border border-[#c5a059]/30">
+    <div class="mb-6 pb-4 border-b border-zinc-800">
+      <p class="text-xs font-semibold text-[#d4b26f] uppercase mb-2">Equipamiento del negocio</p>
+      <h2 class="text-xl font-bold text-white">Maquinaria y requerimientos</h2>
+      <p class="text-sm text-zinc-400 mt-2">Define qué necesitas para ejecutar tus procesos. Registra cada equipo con su capacidad, características y cantidad en las especificaciones.</p>
+    </div>
+    <div class="bg-zinc-900/60 border border-zinc-800 rounded-xl p-4 mb-5 text-sm text-zinc-300">Incluye los servicios y el personal necesarios para la puesta en marcha. Estos requerimientos se utilizarán al generar tu presupuesto.</div>
+          <div id="equipmentList" class="space-y-3">
+            <div class="flex gap-2 equipment-item">
+              <select class="eq-category w-1/4 bg-zinc-900 border border-zinc-700 rounded-xl px-2 py-2 text-sm focus:ring-2 focus:ring-[#c5a059] outline-none"><option value="Maquinaria">Maquinaria</option><option value="Servicios">Servicios</option><option value="Empleados">Empleados</option></select><input type="text" placeholder="Ej: Máquina Espresso" class="eq-name w-1/3 bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-[#c5a059] outline-none">
+              <input type="text" placeholder="Ej: 2 grupos, caldera 10L, semi-automática" class="eq-desc flex-1 bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-[#c5a059] outline-none">
+              <button type="button" class="text-rose-400 hover:text-rose-300 px-2" onclick="this.parentElement.remove(); scheduleAutoSave();"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+          </div>
+          
+            <button id="addEqBtn" type="button" class="mt-3 text-xs bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 px-3 py-2 rounded-xl transition-all font-medium flex items-center gap-1">
+              <i class="fa-solid fa-plus"></i> Añadir Equipo
+            </button>  </div>
+<div class="mt-6 flex justify-between gap-3"><button type="button" class="bg-zinc-800 text-zinc-300 px-4 py-2.5 rounded-xl text-xs" onclick="switchTab(2)">Anterior</button><button type="button" class="bg-[#c5a059] hover:bg-[#d4b26f] text-zinc-950 font-bold px-5 py-2.5 rounded-xl text-xs" onclick="switchTab(4)">Siguiente: Presupuesto</button></div>
+</section>
+<section id="tab2" class="space-y-6 hidden">
+<!-- 2. DIAGRAMA DE FLUJO Y ENERGÍA -->
+    <section class="glass-panel p-6 rounded-[20px] border border-zinc-800/80">
+      <div class="flex items-center gap-3 mb-6 pb-4 border-b border-zinc-800">
+        <div class="w-8 h-8 rounded-xl bg-[#c5a059]/15 text-[#d4b26f] flex items-center justify-center">
+          <i class="fa-solid fa-project-diagram"></i>
+        </div>
+        <div>
+          <h2 class="text-base font-bold text-white">Diseño de Producción: Flujograma y Consumo Eléctrico</h2>
+          <p class="text-xs text-zinc-400">Describe tu proceso paso a paso. El sistema diseñará un diagrama de flujo y una estimación de consumo energético (Kw/h).</p>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <textarea id="processDesc" rows="3" placeholder="Ej: 1. Recepción de materia prima. 2. Horneado por 45 min a 200°C en Horno Industrial. 3. Enfriamiento y Empaque..." class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059]"></textarea>
+        
+        <button id="genFlowchartBtn" type="button" class="text-xs bg-[#c5a059] hover:bg-[#d4b26f] text-zinc-950 font-bold px-4 py-2 rounded-xl transition-all flex items-center gap-2">
+          <i class="fa-solid fa-bolt"></i> Diseñar Proceso y Tabla de Kw/h
+        </button>
+      </div>
+
+      <div id="flowLoader" class="hidden mt-6 flex-col items-center justify-center text-[#d4b26f] p-8 border border-zinc-800 rounded-xl bg-zinc-900/50">
+         <i class="fa-solid fa-circle-notch animate-spin text-3xl mb-3"></i>
+         <p class="text-sm font-bold">Analizando tiempos, movimientos y consumo energético...</p>
+      </div>
+
+      <div id="flowOutput" class="hidden mt-6 space-y-6">
+         <!-- Diagrama -->
+         <div class="p-4 bg-zinc-950 rounded-xl border border-zinc-800 overflow-x-auto">
+            <h3 class="text-xs font-bold text-zinc-300 uppercase mb-3">Diagrama de Flujo (Simbología)</h3>
+            <div id="mermaidContainer" class="w-full"></div>
+         </div>
+
+         <!-- Tabla de Actividades -->
+         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+             <div class="overflow-x-auto bg-zinc-900/50 rounded-xl border border-zinc-800">
+               <h3 class="text-xs font-bold text-zinc-300 uppercase p-3 border-b border-zinc-800">Tiempos y Movimientos</h3>
+               <table class="w-full text-left text-xs text-zinc-300">
+                 <thead class="bg-zinc-800/50">
+                   <tr>
+                     <th class="p-2 font-semibold text-center w-10">Paso</th>
+                     <th class="p-2 font-semibold">Actividad / Movimiento</th>
+                     <th class="p-2 font-semibold w-24">Tiempo</th>
+                   </tr>
+                 </thead>
+                 <tbody id="activitiesTable" class="divide-y divide-slate-800/50"></tbody>
+               </table>
+             </div>
+
+             <!-- Tabla Energética -->
+             <div class="overflow-x-auto bg-zinc-900/50 rounded-xl border border-zinc-800">
+               <h3 class="text-xs font-bold text-zinc-300 uppercase p-3 border-b border-zinc-800">Consumo Mensual (Energía y Consumibles)</h3>
+               <table class="w-full text-left text-xs text-zinc-300">
+                 <thead class="bg-zinc-800/50">
+                   <tr>
+                     <th class="p-2 font-semibold">Consumible / Equipo</th>
+                     <th class="p-2 font-semibold text-right">Cantidad</th>
+                     <th class="p-2 font-semibold text-right">Costo Estimado (MXN)</th>
+                   </tr>
+                 </thead>
+                 <tbody id="consumablesTable" class="divide-y divide-slate-800/50"></tbody>
+                 <tfoot class="bg-zinc-800/80">
+                   <tr>
+                     <th class="p-2 font-bold text-right" colspan="2">TOTAL MENSUAL CONSUMIBLES:</th>
+                     <th class="p-2 font-bold text-[#d4b26f] text-right font-mono" id="totalConsumablesCost">$0.00</th>
+                   </tr>
+                 </tfoot>
+               </table>
+             </div>
+         </div>
+      </div>
+
+    </section>
+<div class="mt-6 flex justify-between gap-3"><button type="button" class="bg-zinc-800 text-zinc-300 px-4 py-2.5 rounded-xl text-xs" onclick="switchTab(1)">Anterior</button><button type="button" class="bg-[#c5a059] hover:bg-[#d4b26f] text-zinc-950 font-bold px-5 py-2.5 rounded-xl text-xs" onclick="switchTab(3)">Siguiente: Maquinaria</button></div>
+</section>
+<!-- TAB 1: PERFIL DEL NEGOCIO -->
+    <section id="tab1" class="space-y-6">
+      <div class="glass-panel p-6 rounded-[20px] border border-zinc-800/80">
+        <div class="flex items-center gap-3 mb-6 pb-4 border-b border-zinc-800">
+          <div class="w-8 h-8 rounded-xl bg-[#c5a059]/15 text-[#d4b26f] flex items-center justify-center">
+            <i class="fa-solid fa-briefcase"></i>
+          </div>
+          <div>
+            <h2 class="text-base font-bold text-white">Identidad del Proyecto y Propuesta de Valor</h2>
+            <p class="text-xs text-zinc-400">Define las características estratégicas del negocio para contextualizar el análisis financiero.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label class="block text-xs font-semibold text-zinc-300 mb-1.5">Nombre del Proyecto / Negocio *</label>
+            <input type="text" id="businessName" value="Aura Café & Roastery" placeholder="Ej. Cafetería Aroma, SaaS MedFlow..." class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059]">
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-zinc-300 mb-1.5">Sector Económico *</label>
+            <select id="sectorSelect" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059]">
+              <option value="Comercio al por menor (Retail)">Comercio al por menor (Retail / Tienda)</option>
+              <option value="Alimentos y Bebidas (Hospitality)" selected>Alimentos y Bebidas (Restaurantes, Cafeterías, Bares)</option>
+              <option value="Servicios Profesionales y Personales">Servicios Profesionales y Personales (Gimnasios, Clínicas, Talleres)</option>
+              <option value="Comercio Electrónico y Tecnología (Digital)">Comercio Electrónico y Tecnología (E-commerce D2C, SaaS)</option>
+              <option value="Manufactura e Industria Ligera">Manufactura e Industria Ligera (Textil, Empaque, Alimentos)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-zinc-300 mb-1.5">Giro Comercial Específico *</label>
+            <input type="text" id="businessType" value="Cafetería de Especialidad y Panadería Artesanal" placeholder="Ej. Restaurante, E-commerce, Software B2B, Gimnasio..." class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059]">
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-zinc-300 mb-1.5">Actividad Económica / Especialidad</label>
+            <input type="text" id="economicActivity" value="Preparación de café de especialidad, bebidas de autor y repostería artesanal" placeholder="Ej. Venta al por menor de productos textiles, Servicios dentales..." class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059]">
+          </div>
+
+          <div class="md:col-span-2">
+            <label class="block text-xs font-semibold text-zinc-300 mb-1.5">Descripción de Productos / Servicios & Propuesta de Valor *</label>
+            <textarea id="businessDescription" rows="2" placeholder="Detalla qué vendes, cómo solucionas el problema de tus clientes..." class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059]">Venta de café de origen, bebidas de autor, métodos de extracción y repostería artesanal con área de coworking ligera y terraza.</textarea>
+          </div>
+
+          <div class="md:col-span-2">
+            <label class="block text-xs font-semibold text-zinc-300 mb-1.5">Público Objetivo / Segmento de Clientes *</label>
+            <input type="text" id="targetMarket" value="Profesionistas jóvenes de 22 a 45 años, nómadas digitales, estudiantes y amantes del café de calidad." placeholder="Ej. Médicos especialistas independientes, Familias jóvenes clase media-alta..." class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059]">
+          </div>
+        </div>
+      </div>
+
+      <!-- UBICACIÓN, GEOLOCALIZACIÓN Y ENTORNO -->
+      <div class="glass-panel p-6 rounded-[20px] border border-zinc-800/80">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-4 border-b border-zinc-800">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-xl bg-zinc-800 text-[#d4b26f] flex items-center justify-center">
+              <i class="fa-solid fa-location-dot"></i>
+            </div>
+            <div>
+              <h2 class="text-base font-bold text-white">Geolocalización, Entorno y Competencia</h2>
+              <p class="text-xs text-zinc-400">Entidad federativa, tipo de zona comercial y análisis territorial de compras.</p>
+            </div>
+          </div>
+
+          <button type="button" id="btnOpenGeoModal" class="bg-zinc-900 hover:bg-zinc-800 border border-[#c5a059]/40 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition-all flex items-center gap-2 self-start sm:self-auto cursor-pointer">
+            <i class="fa-solid fa-compass text-[#d4b26f]"></i>
+            <span>Sugerencias de Adquisición por Ubicación</span>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div>
+            <label class="block text-xs font-semibold text-zinc-300 mb-1.5">Estado / Entidad Federativa (México) *</label>
+            <select id="geoState" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059]">
+              <option value="Ciudad de México" selected>Ciudad de México (Centro / CEDA)</option>
+              <option value="Estado de México">Estado de México (Hub 3PL / Logística)</option>
+              <option value="Jalisco">Jalisco (Occidente / Tech / GDL)</option>
+              <option value="Nuevo León">Nuevo León (Norte / Industrial MTY)</option>
+              <option value="Puebla">Puebla (Centro-Oriente / Textil / Auto)</option>
+              <option value="Querétaro">Querétaro (Bajío / Aeroespacial)</option>
+              <option value="Guanajuato">Guanajuato (Bajío / Puerto Interior)</option>
+              <option value="Baja California">Baja California (Frontera Tijuana / Ensenada)</option>
+              <option value="Quintana Roo">Quintana Roo (Cancún / Riviera Maya)</option>
+              <option value="Yucatán">Yucatán (Mérida / Progreso)</option>
+              <option value="Veracruz">Veracruz (Puerto del Atlántico)</option>
+              <option value="Chihuahua">Chihuahua (Frontera Juárez)</option>
+              <option value="Coahuila">Coahuila (Saltillo / Frontera)</option>
+              <option value="Sonora">Sonora (Frontera Nogales)</option>
+              <option value="Aguascalientes">Aguascalientes (Bajío)</option>
+              <option value="San Luis Potosí">San Luis Potosí (Eje Carretero 57)</option>
+              <option value="Sinaloa">Sinaloa (Agrícola / Culiacán / Mazatlán)</option>
+              <option value="Tamaulipas">Tamaulipas (Nuevo Laredo / Altamira)</option>
+              <option value="Otras entidades">Otras entidades federativas...</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-zinc-300 mb-1.5">Municipio / Alcaldía / Ciudad</label>
+            <input type="text" id="geoMunicipality" value="Cuauhtémoc (Roma / Condesa)" placeholder="Ej. Guadalajara, Monterrey, Zapopan, Benito Juárez..." class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059]">
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-zinc-300 mb-1.5">Tipo de Zona Comercial *</label>
+            <select id="geoZoneType" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059]">
+              <option value="Corredor comercial de alto flujo peatonal" selected>Corredor comercial de alto flujo peatonal</option>
+              <option value="Plaza o Centro Comercial (Mall)">Plaza o Centro Comercial (Mall)</option>
+              <option value="Centro Histórico o Zona Turística">Centro Histórico o Zona Turística</option>
+              <option value="Zona Residencial de nivel socioeconómico medio-alto (A/B/C+)">Zona Residencial medio-alto (A/B/C+)</option>
+              <option value="Zona Residencial de nivel medio/popular (C/D+)">Zona Residencial medio/popular (C/D+)</option>
+              <option value="Parque Industrial o Corredor Logístico">Parque Industrial o Corredor Logístico</option>
+              <option value="Zona Corporativa / Complejos de Oficinas">Zona Corporativa / Oficinas</option>
+              <option value="Zona Universitaria / Escolar">Zona Universitaria / Escolar</option>
+              <option value="100% Digital / Envíos a Domicilio">100% Digital / Envíos a Domicilio</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label class="block text-xs font-semibold text-zinc-300 mb-1.5">Ubicación Geográfica / Dirección Detallada *</label>
+            <input type="text" id="location" value="Avenida comercial de alto flujo en colonia de nivel socioeconómico medio-alto (C+/B/A)." placeholder="Ej. Plaza comercial zona poniente, Local a pie de calle, 100% digital..." class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059]">
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-zinc-300 mb-1.5">Nivel de Competencia en la Zona *</label>
+            <select id="competitionLevel" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059]">
+              <option value="Baja">Baja (Pocos competidores o muy dispersos)</option>
+              <option value="Media">Media (Competidores establecidos pero con nichos libres)</option>
+              <option value="Alta" selected>Alta (Múltiples opciones directas en la misma zona)</option>
+              <option value="Saturada">Saturada (Mercado maduro con guerra de precios)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-zinc-300 mb-1.5">Detalles del Entorno (Tráfico, Accesibilidad, Renta)</label>
+            <textarea id="locationDetails" rows="2" placeholder="Ej. Paso peatonal de ~4,000 personas/día, cercanía con oficinas o universidades, estacionamiento..." class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059]">Cerca de corporativos y zona residencial, paso peatonal de ~4,000 personas al día, visibilidad frontal con ventanal.</textarea>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-zinc-300 mb-1.5">Competidores Principales y Diferenciadores</label>
+            <textarea id="competitionDetails" rows="2" placeholder="Ej. Starbucks a 300m, cafetería de especialidad a 5 cuadras..." class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059]">3 cafeterías comerciales (Starbucks, Oxxo café) a 300m y 1 cafetería local independiente.</textarea>
+          </div>
+
+          <div class="md:col-span-2">
+            <label class="block text-xs font-semibold text-zinc-300 mb-1.5">Ventaja Competitiva (¿Por qué te elegirán a ti y no a otros?)</label>
+            <input type="text" id="competitiveAdvantage" value="Tueste propio en vivo, granos con trazabilidad directa con productores, atmósfera estética y café de calidad 86+ SCA." placeholder="Ej. Receta única, buena ubicación, atención más rápida..." class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059]">
+          </div>
+        </div>
+
+        <div class="mt-6 flex justify-end">
+          <button type="button" class="bg-[#c5a059] hover:bg-[#d4b26f] text-zinc-950 text-xs font-bold px-5 py-2.5 rounded-xl transition-all flex items-center gap-2" onclick="switchTab(2)">
+            <span>Siguiente: Procesos</span>
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+      </div>
+
+</section>
+<!-- TAB 5: PARÁMETROS ECONÓMICOS & FÓRMULAS -->
+    <section id="tab5" class="space-y-6 hidden">
+      <div class="glass-panel p-6 rounded-[20px] border border-zinc-800/80">
+        <div class="flex items-center gap-3 mb-6 pb-4 border-b border-zinc-800">
+          <div class="w-8 h-8 rounded-xl bg-[#c5a059]/15 text-[#d4b26f] flex items-center justify-center">
+            <i class="fa-solid fa-coins"></i>
+          </div>
+          <div>
+            <h2 class="text-base font-bold text-white">Inversión Inicial y Tasa de Descuento (WACC)</h2>
+            <p class="text-xs text-zinc-400">Capital requerido en el momento $t=0$ y costo de oportunidad del capital.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div title="El total de dinero que pondrás de tu bolsa para arrancar el negocio (equipo, permisos, inventario inicial, etc.).">
+            <label class="block text-xs font-semibold text-zinc-300 mb-1.5 cursor-help border-b border-dashed border-slate-600 inline-block">Dinero para arrancar ($ MXN) *</label>
+            <div class="relative">
+              <span class="absolute left-3 top-2.5 text-zinc-400 text-xs font-mono">MXN $</span>
+              <input type="number" id="initialInvestment" value="350000" min="0" step="1000" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl pl-14 pr-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059] font-mono">
+            </div>
+            <span class="text-[10px] text-zinc-400 mt-1 block leading-tight">Inversión inicial requerida en $t=0$.</span>
+          </div>
+
+          <div title="¿Cuánto ganarías si metes este dinero al banco, pagaré o CETES sin trabajar ni correr ningún riesgo?">
+            <label class="block text-xs font-semibold text-[#d4b26f] mb-1.5 cursor-help border-b border-dashed border-[#c5a059] inline-block">Rendimiento Banco / CETES (%) *</label>
+            <div class="relative">
+              <input type="number" id="bankRiskFreeRate" value="10.5" min="0" step="0.5" class="w-full bg-zinc-900 border border-[#c5a059]/50 rounded-xl px-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059] pr-8 font-mono">
+              <span class="absolute right-3 top-2.5 text-[#d4b26f] text-sm">%</span>
+            </div>
+            <span id="bankPassiveIncomeHint" class="text-[10px] text-[#d4b26f]/90 mt-1 block leading-tight font-mono">Pasivo: $3,063/mes sin riesgo</span>
+          </div>
+
+          <div title="El rendimiento anual mínimo que exiges por arriesgar tu dinero y tu tiempo en este negocio (debe ser mayor al banco).">
+            <label class="block text-xs font-semibold text-zinc-300 mb-1.5 cursor-help border-b border-dashed border-slate-600 inline-block">Ganancia mínima exigida (%) *</label>
+            <div class="relative">
+              <input type="number" id="discountRate" value="14.0" min="0" step="0.5" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059] pr-8 font-mono">
+              <span class="absolute right-3 top-2.5 text-zinc-400 text-sm">%</span>
+            </div>
+            <span class="text-[10px] text-zinc-400 mt-1 block leading-tight">Tasa de descuento / WACC.</span>
+          </div>
+
+          <div title="Normalmente los negocios se evalúan a 3 o 5 años para ver si a futuro valen la pena.">
+            <label class="block text-xs font-semibold text-zinc-300 mb-1.5 cursor-help border-b border-dashed border-slate-600 inline-block">¿A cuántos años calculamos?</label>
+            <select id="projectionYears" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059]">
+              <option value="3">3 Años</option>
+              <option value="5" selected>5 Años (Lo más común)</option>
+              <option value="7">7 Años</option>
+              <option value="10">10 Años</option>
+            </select>
+            <span class="text-[10px] text-zinc-400 mt-1 block leading-tight">Horizonte de evaluación.</span>
+          </div>
+
+          <div title="El tiempo estimado en que el equipo o los muebles que compraste dejarán de servir.">
+            <label class="block text-xs font-semibold text-zinc-300 mb-1.5 cursor-help border-b border-dashed border-slate-600 inline-block">Duración equipo (años)</label>
+            <input type="number" id="depreciationYears" value="5" min="1" max="50" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059] font-mono">
+            <span class="text-[10px] text-zinc-400 mt-1 block leading-tight">Años de vida útil fiscal.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- INGRESOS, CATÁLOGO MULTIPRODUCTO Y VENTAS -->
+      <div class="glass-panel p-6 rounded-[20px] border border-zinc-800/80">
+        <div class="flex items-center justify-between flex-wrap gap-4 mb-6 pb-4 border-b border-zinc-800">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-xl bg-zinc-800 text-[#d4b26f] flex items-center justify-center">
+              <i class="fa-solid fa-layer-group"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2.5">
+                <h2 class="text-base font-bold text-white">Ventas y Catálogo de Productos / Servicios</h2>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#c5a059]/15 text-[#d4b26f] border border-[#c5a059]/30">Multiproducto & Precios Mixtos</span>
+              </div>
+              <p class="text-xs text-zinc-400">Permite registrar productos de distintos precios (ej. de $30 y de $500) para un cálculo financiero exacto.</p>
+            </div>
+          </div>
+
+          <!-- Selector de Modo -->
+          <div class="inline-flex p-1 rounded-xl bg-zinc-950 border border-zinc-800 text-xs">
+            <button type="button" id="catalogModeMultiBtn" class="px-3 py-1.5 rounded-lg font-medium transition-all bg-[#c5a059] text-zinc-950 shadow-sm flex items-center gap-1.5 cursor-pointer">
+              <i class="fa-solid fa-list-check"></i> Catálogo Multiproducto
+            </button>
+            <button type="button" id="catalogModeSimpleBtn" class="px-3 py-1.5 rounded-lg font-medium transition-all text-zinc-400 hover:text-white flex items-center gap-1.5 cursor-pointer">
+              <i class="fa-solid fa-bolt"></i> Modo Rápido (1 Precio Global)
+            </button>
+          </div>
+        </div>
+
+        <!-- MODO MULTIPRODUCTO -->
+        <div id="multiProductContainer" class="space-y-4">
+          <div class="flex items-center justify-between flex-wrap gap-3">
+            <p class="text-xs text-zinc-400">
+              Ingresa los productos o servicios que vendes. Para cada uno indica su precio de venta, su costo directo y cuántas unidades estimas vender al mes:
+            </p>
+            <div class="flex items-center gap-2 flex-wrap">
+              <button type="button" id="loadExampleProductsBtn" class="px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs flex items-center gap-1.5 transition-colors cursor-pointer" title="Cargar productos de prueba con precios de $30, $150 y $500">
+                <i class="fa-solid fa-wand-magic-sparkles text-[#d4b26f]"></i> Cargar Ejemplo ($30, $150, $500)
+              </button>
+              <button type="button" id="importFromInventoryBtn" class="px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs flex items-center gap-1.5 transition-colors cursor-pointer" title="Importar productos del Punto de Venta / Inventario">
+                <i class="fa-solid fa-boxes-stacked text-[#d4b26f]"></i> Desde Inventario
+              </button>
+              <button type="button" id="addProductRowBtn" class="px-3.5 py-1.5 rounded-lg bg-[#c5a059] hover:bg-[#d4b26f] text-zinc-950 font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm cursor-pointer">
+                <i class="fa-solid fa-plus"></i> Agregar Producto
+              </button>
+            </div>
+          </div>
+
+          <!-- Tabla de Productos -->
+          <div class="overflow-x-auto rounded-xl border border-zinc-800 bg-[#0d0d10]">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-zinc-900/90 text-zinc-400 font-mono text-[11px] uppercase border-b border-zinc-800">
+                <tr>
+                  <th class="py-3 px-3.5 font-semibold">Producto / Servicio</th>
+                  <th class="py-3 px-3.5 font-semibold w-36">Precio Venta ($)</th>
+                  <th class="py-3 px-3.5 font-semibold w-36">Costo Directo ($)</th>
+                  <th class="py-3 px-3.5 font-semibold w-32">Venta Mes (Uds)</th>
+                  <th class="py-3 px-3.5 font-semibold w-36 text-center">Margen Unitario</th>
+                  <th class="py-3 px-3.5 font-semibold w-36 text-right">Venta Total / Mes</th>
+                  <th class="py-3 px-2 text-center w-12"></th>
+                </tr>
+              </thead>
+              <tbody id="productCatalogTableBody" class="divide-y divide-zinc-800/60 font-sans">
+                <!-- Filas dinámicas generadas por JS -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Barra de Resumen Métricas Ponderadas -->
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 p-4 rounded-xl bg-zinc-900/60 border border-[#c5a059]/30">
+            <div>
+              <span class="text-[10px] text-zinc-400 font-mono uppercase block">Total Productos</span>
+              <span id="mpSummaryCount" class="text-base font-bold text-white font-mono">0</span>
+            </div>
+            <div>
+              <span class="text-[10px] text-zinc-400 font-mono uppercase block">Unidades al Mes</span>
+              <span id="mpSummaryUnits" class="text-base font-bold text-emerald-400 font-mono">0</span>
+            </div>
+            <div>
+              <span class="text-[10px] text-zinc-400 font-mono uppercase block">Ventas Mensuales</span>
+              <span id="mpSummaryRevenue" class="text-base font-bold text-[#d4b26f] font-mono">$0</span>
+            </div>
+            <div>
+              <span class="text-[10px] text-zinc-400 font-mono uppercase block">Costo Mercancía / Mes</span>
+              <span id="mpSummaryCost" class="text-base font-bold text-rose-400 font-mono">$0</span>
+            </div>
+            <div>
+              <span class="text-[10px] text-zinc-400 font-mono uppercase block">Ticket Promedio (Pond.)</span>
+              <span id="mpSummaryAvgPrice" class="text-base font-bold text-cyan-400 font-mono">$0</span>
+            </div>
+            <div>
+              <span class="text-[10px] text-zinc-400 font-mono uppercase block">Margen Bruto Global</span>
+              <span id="mpSummaryMarginPct" class="text-base font-bold text-emerald-300 font-mono">0.0%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- MODO RÁPIDO / AVISO -->
+        <div id="simplePriceInputsContainer" class="hidden mt-3 p-3 rounded-xl bg-zinc-900/40 border border-zinc-800 text-xs text-zinc-400">
+          <i class="fa-solid fa-bolt text-[#d4b26f] mr-1.5"></i>
+          <strong>Modo Rápido activado:</strong> Puedes escribir directamente un ticket promedio y volumen mensual único en los campos de abajo.
+        </div>
+
+        <!-- ENTRADAS SINCRONIZADAS -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 mt-5 pt-4 border-t border-zinc-800/80">
+          <div title="El precio al que vendes un producto o servicio (o tu ticket promedio por cliente).">
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="block text-xs font-semibold text-zinc-300 cursor-help border-b border-dashed border-slate-600 inline-block">Precio de venta promedio ($) *</label>
+              <span id="priceModeBadge" class="text-[10px] font-mono text-[#d4b26f] bg-[#c5a059]/10 border border-[#c5a059]/30 px-1.5 py-0.5 rounded">Ponderado</span>
+            </div>
+            <div class="relative">
+              <span class="absolute left-3 top-2.5 text-zinc-400 text-xs font-mono">MXN $</span>
+              <input type="number" id="monthlyPrice" value="95" min="0" step="0.5" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl pl-14 pr-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059] font-mono">
+            </div>
+            <span id="monthlyPriceHelper" class="text-[10px] text-zinc-400 mt-1 block leading-tight">Lo que cobras en promedio por cada producto o cliente atendido.</span>
+          </div>
+
+          <div title="La cantidad total de productos que estimas vender al mes (o clientes que atenderás).">
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="block text-xs font-semibold text-zinc-300 cursor-help border-b border-dashed border-slate-600 inline-block">Unidades vendidas al mes *</label>
+              <span id="unitsModeBadge" class="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.5 rounded">Suma Catálogo</span>
+            </div>
+            <input type="number" id="monthlyUnits" value="2800" min="0" step="1" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059] font-mono">
+            <span id="monthlyUnitsHelper" class="text-[10px] text-zinc-400 mt-1 block leading-tight">Cuántos productos vas a vender al mes en total (volumen de clientes).</span>
+          </div>
+
+          <div title="Un negocio sano crece año con año conforme lo van conociendo.">
+            <label class="block text-xs font-semibold text-zinc-300 mb-1.5 cursor-help border-b border-dashed border-slate-600 inline-block">Crecimiento en ventas cada año (%)</label>
+            <div class="relative">
+              <input type="number" id="annualGrowth" value="10.0" min="-100" step="0.5" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059] pr-8 font-mono">
+              <span class="absolute right-3 top-2.5 text-zinc-400 text-sm">%</span>
+            </div>
+            <span class="text-[10px] text-zinc-400 mt-1 block leading-tight">Porcentaje extra de ventas que esperas tener el próximo año.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- COSTOS Y GASTOS -->
+      <div class="glass-panel p-6 rounded-[20px] border border-zinc-800/80">
+        <div class="flex items-center gap-3 mb-6 pb-4 border-b border-zinc-800">
+          <div class="w-8 h-8 rounded-xl bg-rose-500/15 text-rose-400 flex items-center justify-center">
+            <i class="fa-solid fa-file-invoice-dollar"></i>
+          </div>
+          <div>
+            <h2 class="text-base font-bold text-white">Costos, Riesgos y Gastos del Negocio</h2>
+            <p class="text-xs text-zinc-400">Cuánto te cuesta operar, pérdidas estimadas por riesgos/mermas y pagos fijos obligatorios.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div title="Suma solo lo que cuesta hacer o entregar UNA unidad: insumos, bolsa, servilletas, comisión de tarjeta. NO incluyas renta ni luz aquí.">
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="block text-xs font-semibold text-zinc-300 cursor-help border-b border-dashed border-slate-600 inline-block">Costo variable promedio ($) *</label>
+              <span id="costModeBadge" class="text-[10px] font-mono text-[#d4b26f] bg-[#c5a059]/10 border border-[#c5a059]/30 px-1.5 py-0.5 rounded">Ponderado</span>
+            </div>
+            <div class="relative">
+              <span class="absolute left-3 top-2.5 text-zinc-400 text-xs font-mono">MXN $</span>
+              <input type="number" id="unitVariableCost" value="28" min="0" step="0.5" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl pl-14 pr-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059] font-mono">
+            </div>
+            <span id="unitVariableCostHelper" class="text-[10px] text-zinc-400 mt-1 block leading-tight">Gastos directos promedio por unidad vendida (insumos, empaques, costo de adquisición).</span>
+          </div>
+
+          <div title="Los gastos obligatorios que tienes que pagar cada mes a fuerzas, aunque el local esté cerrado.">
+            <label class="block text-xs font-semibold text-zinc-300 mb-1.5 cursor-help border-b border-dashed border-slate-600 inline-block">Tus gastos fijos al mes ($) *</label>
+            <div class="relative">
+              <span class="absolute left-3 top-2.5 text-zinc-400 text-xs font-mono">MXN $</span>
+              <input type="number" id="monthlyFixedCosts" value="75000" min="0" step="100" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl pl-14 pr-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059] font-mono">
+            </div>
+            <span class="text-[10px] text-zinc-400 mt-1 block leading-tight">Renta, sueldos fijos, luz, agua, internet. Gastas esto vendas o no vendas nada.</span>
+            <button type="button" id="importPayrollBtn" class="mt-1.5 text-[11px] text-[#d4b26f] hover:text-[#e3c88d] underline" title="Requiere sesión iniciada">
+              <i class="fa-solid fa-users"></i> Importar costo laboral desde Personal
+            </button>
+            <script>
+              document.getElementById("importPayrollBtn").addEventListener("click", async () => {
+                const token = sessionStorage.getItem("pos_token");
+                if (!token) return alert("Inicia sesión como Propietario o en el Punto de Venta para importar la nómina.");
+                try {
+                  const r = await fetch("/api/hr/labor-cost", { headers: { "X-POS-Token": token } });
+                  const d = await r.json();
+                  if (!r.ok) throw new Error(d.detail || "Sin permiso");
+                  const fmt = (n) => "$" + Number(n).toLocaleString("es-MX", { minimumFractionDigits: 2 });
+                  const input = document.getElementById("monthlyFixedCosts");
+                  const msg = `Costo laboral mensual de ${d.headcount} empleado(s): ${fmt(d.monthly_total_cost)}\n` +
+                    `(sueldos ${fmt(d.monthly_base_salaries)} + carga patronal ${fmt(d.monthly_employer_burden)} + provisiones ${fmt(d.monthly_provisions)})\n\n` +
+                    `Aceptar = SUMARLO a los costos fijos actuales (${fmt(input.value || 0)}).\nCancelar = no cambiar nada.`;
+                  if (confirm(msg)) {
+                    input.value = (parseFloat(input.value || 0) + d.monthly_total_cost).toFixed(2);
+                    input.dispatchEvent(new Event("input", { bubbles: true }));
+                  }
+                } catch (e) { alert("No se pudo importar: " + e.message); }
+              });
+            </script>
+          </div>
+
+          <div title="Fondo mensual para reparar y reemplazar tu equipo cuando venza su vida útil (Inversión / (Años * 12)).">
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="block text-xs font-semibold text-zinc-300 cursor-help border-b border-dashed border-slate-600 inline-block">Mantenimiento y Reserva Equipo ($/mes)</label>
+              <button type="button" id="applySuggestedReserveBtn" title="Hacer clic para usar la reserva mensual sugerida según tu inversión y años de vida útil" class="text-[10px] text-[#d4b26f] hover:text-[#e3c88d] underline font-mono cursor-pointer">
+                Usar sugerido
+              </button>
+            </div>
+            <div class="relative">
+              <span class="absolute left-3 top-2.5 text-zinc-400 text-xs font-mono">MXN $</span>
+              <input type="number" id="monthlyMaintenanceCost" value="3500" min="0" step="100" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl pl-14 pr-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059] font-mono">
+            </div>
+            <span id="suggestedReserveHelper" class="text-[10px] text-emerald-400/90 mt-1 block leading-tight font-medium">Sugerido: $5,833/mes (Inversión / 5 años)</span>
+          </div>
+
+          <div title="Pérdidas estimadas por robo hormiga, descomposición/caducidad de insumos, cancelaciones, contracargos o errores operativos. Se descontará directamente de tus ventas brutas.">
+            <label class="block text-xs font-semibold text-rose-300 mb-1.5 cursor-help border-b border-dashed border-rose-600 inline-block">Mermas, Robos y Riesgos (%)</label>
+            <div class="relative">
+              <input type="number" id="shrinkageLossPct" value="3.0" min="0" max="100" step="0.5" class="w-full bg-zinc-900 border border-rose-500/50 rounded-xl px-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-rose-500 pr-8 font-mono">
+              <span class="absolute right-3 top-2.5 text-rose-400 text-sm">%</span>
+            </div>
+            <span id="shrinkageLossHelper" class="text-[10px] text-rose-400/90 mt-1 block leading-tight font-mono">Descuento: -$7,980/mes</span>
+          </div>
+
+          <div title="Considerar la inflación hace que tu cálculo sea más real, ya que cada año los precios suben un poco.">
+            <label class="block text-xs font-semibold text-zinc-300 mb-1.5 cursor-help border-b border-dashed border-slate-600 inline-block">Inflación Anual (%)</label>
+            <div class="relative">
+              <input type="number" id="annualInflation" value="4.5" min="0" step="0.5" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059] pr-8 font-mono">
+              <span class="absolute right-3 top-2.5 text-zinc-400 text-sm">%</span>
+            </div>
+            <span class="text-[10px] text-zinc-400 mt-1 block leading-tight">Lo que suben las cosas en México cada año (suele ser entre el 4% y 5%).</span>
+          </div>
+
+          <div title="Es importante descontar los impuestos para saber cuánto dinero realmente te quedará limpio a ti.">
+            <label class="block text-xs font-semibold text-zinc-300 mb-1.5 cursor-help border-b border-dashed border-slate-600 inline-block">Impuestos sobre ganancias (%)</label>
+            <div class="relative">
+              <input type="number" id="taxRate" value="30.0" min="0" max="100" step="1" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059] pr-8 font-mono">
+              <span class="absolute right-3 top-2.5 text-zinc-400 text-sm">%</span>
+            </div>
+            <span class="text-[10px] text-zinc-400 mt-1 block leading-tight">El porcentaje que pagas de ISR al gobierno (ronda el 30%).</span>
+          </div>
+        </div>
+
+        <div class="mt-6 flex justify-between">
+          <button type="button" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-semibold px-4 py-2.5 rounded-xl transition-all" onclick="switchTab(4)">
+            <i class="fa-solid fa-arrow-left mr-1"></i> Anterior
+          </button>
+          <button type="button" id="calcAndGoTab5Btn" class="bg-[#c5a059] hover:bg-[#d4b26f] text-zinc-950 text-xs font-bold px-5 py-2.5 rounded-xl transition-all flex items-center gap-2">
+            <span>Calcular y Ver Resultados</span>
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+      </div>
+    </section>
+<!-- TAB 6: DASHBOARD DE RESULTADOS Y DIAGNÓSTICO -->
+    <section id="tab6" class="space-y-6 hidden">
+      
+      <!-- LOADING OVERLAY -->
+      <div id="aiLoadingSpinner" class="hidden glass-panel p-8 rounded-[20px] text-center space-y-4 border border-[#c5a059]/40 glow-primary">
+        <div class="inline-block animate-spin text-4xl text-[#d4b26f]">
+          <i class="fa-solid fa-circle-notch"></i>
+        </div>
+        <div>
+          <h3 class="text-base font-bold text-white">Procesando Dictamen Estratégico...</h3>
+          <p class="text-xs text-zinc-400 max-w-md mx-auto mt-1">Evaluando viabilidad financiera, micro-localización, estructura de costos y generando plan estratégico de mitigación.</p>
+        </div>
+      </div>
+
+      <!-- STATUS BANNER -->
+      <div id="viabilityBanner" class="p-5 rounded-[20px] border flex flex-col sm:flex-row sm:items-center justify-between gap-4 glass-panel">
+        <div class="flex items-center gap-4">
+          <div id="viabilityIconBox" class="w-12 h-12 rounded-xl flex items-center justify-center text-xl shadow-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+            <i class="fa-solid fa-circle-check"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span id="viabilityStatusText" class="font-bold text-base text-white">Proyecto Altamente Viable</span>
+              <span id="viabilityScoreBadge" class="hidden px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#c5a059] text-zinc-950 shadow">Score: 85/100</span>
+            </div>
+            <p id="viabilityVerdictSub" class="text-xs text-zinc-400 mt-0.5">El proyecto supera la tasa de descuento exigida con un retorno saludable.</p>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <button id="tab6ExportCsvBtn" type="button" class="bg-zinc-900 hover:bg-zinc-800 border border-[#c5a059]/40 text-[#d4b26f] text-xs font-semibold px-3.5 py-2 rounded-xl transition-all shadow flex items-center gap-1.5 no-print cursor-pointer">
+            <i class="fa-solid fa-file-excel"></i>
+            <span>Exportar Excel / CSV</span>
+          </button>
+          <button id="reanalyzeBtn" class="bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-bold px-4 py-2 rounded-xl transition-all shadow flex items-center gap-1.5 no-print">
+            <i class="fa-solid fa-brain text-[#a3803f]"></i>
+            <span>Solicitar Dictamen IA</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- COMPARATIVA BANCO / CETES VS NEGOCIO (COSTO DE OPORTUNIDAD) -->
+      <div id="bankComparisonCard" class="glass-panel p-5 sm:p-6 rounded-[20px] border border-zinc-800 relative overflow-hidden">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 mb-4 border-b border-zinc-800/80">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-xl bg-[#c5a059]/15 text-[#d4b26f] flex items-center justify-center text-sm">
+              <i class="fa-solid fa-building-columns"></i>
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                <span>¿Conviene este negocio o meter el dinero al Banco / CETES?</span>
+                <span class="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-[#c5a059]/15 text-[#d4b26f] border border-[#c5a059]/30">Costo de Oportunidad</span>
+              </h3>
+              <p class="text-xs text-zinc-400">Comparativa real entre dejar tu dinero en renta pasiva sin riesgo vs el riesgo y esfuerzo de operar tu negocio.</p>
+            </div>
+          </div>
+          <div id="bankComparisonBadge" class="text-xs font-bold px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5 self-start sm:self-auto">
+            <i id="bankComparisonIcon" class="fa-solid fa-shield-halved"></i>
+            <span id="bankComparisonBadgeText">Negocio Supera al Banco</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- Columna 1: Banco / CETES -->
+          <div class="bg-zinc-900/80 p-4 rounded-xl border border-zinc-800">
+            <div class="flex items-center justify-between text-xs text-[#d4b26f] font-semibold mb-2">
+              <span class="flex items-center gap-1.5"><i class="fa-solid fa-vault"></i> Inversión Pasiva Banco / CETES</span>
+              <span id="bankRateLabel" class="text-[10px] px-1.5 py-0.5 bg-[#c5a059]/15 rounded font-mono">10.5% anual</span>
+            </div>
+            <div class="space-y-1.5 text-xs">
+              <div class="flex justify-between text-zinc-400">
+                <span>Ganancia Anual Pasiva:</span>
+                <span id="bankPassiveAnnual" class="text-zinc-200 font-bold font-mono">$0.00</span>
+              </div>
+              <div class="flex justify-between text-zinc-400">
+                <span>Ganancia Mensual Pasiva:</span>
+                <span id="bankPassiveMonthly" class="text-[#d4b26f] font-bold font-mono">$0.00</span>
+              </div>
+              <div class="text-[10px] text-slate-500 pt-1.5 border-t border-zinc-800/80 flex items-center gap-1">
+                <i class="fa-solid fa-check text-emerald-400"></i>
+                <span>Cero esfuerzo, cero riesgo operativo, liquidez garantizada.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Columna 2: Tu Negocio -->
+          <div class="bg-zinc-900/80 p-4 rounded-xl border border-zinc-800">
+            <div class="flex items-center justify-between text-xs text-white font-semibold mb-2">
+              <span class="flex items-center gap-1.5"><i class="fa-solid fa-store text-[#d4b26f]"></i> Tu Negocio Operativo</span>
+              <span id="businessRoiLabel" class="text-[10px] px-1.5 py-0.5 bg-zinc-800 text-[#d4b26f] rounded font-mono">ROI: 0%</span>
+            </div>
+            <div class="space-y-1.5 text-xs">
+              <div class="flex justify-between text-zinc-400">
+                <span>Utilidad Neta Anual Prom.:</span>
+                <span id="businessAnnualNet" class="text-zinc-200 font-bold font-mono">$0.00</span>
+              </div>
+              <div class="flex justify-between text-zinc-400">
+                <span>Utilidad Neta Mensual Prom.:</span>
+                <span id="businessMonthlyNet" class="text-white font-bold font-mono">$0.00</span>
+              </div>
+              <div class="text-[10px] text-zinc-400 pt-1.5 border-t border-zinc-800/80 flex items-center justify-between">
+                <span>Mermas/Robos deducidos:</span>
+                <span id="shrinkageDeductedMonthly" class="text-rose-400 font-mono font-medium">-$0/mes</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Columna 3: Premio por Riesgo / Veredicto -->
+          <div class="bg-zinc-900/80 p-4 rounded-xl border border-zinc-800 flex flex-col justify-between">
+            <div>
+              <div class="text-xs text-zinc-300 font-semibold mb-1 flex items-center gap-1.5">
+                <i class="fa-solid fa-scale-balanced text-[#d4b26f]"></i> Premio por Riesgo (Spread)
+              </div>
+              <div class="flex items-baseline gap-2 mb-1">
+                <span id="riskSpreadPct" class="text-xl font-black text-emerald-400 font-mono">+0.0%</span>
+                <span id="riskSpreadMonthlyDiff" class="text-xs font-bold text-zinc-300 font-mono">(+$0/mes)</span>
+              </div>
+              <p id="riskSpreadVerdict" class="text-[11px] text-zinc-300 leading-snug">El negocio supera al banco compensando el riesgo de emprender.</p>
+            </div>
+            <div id="riskSpreadWarning" class="text-[10px] text-slate-500 mt-2 pt-1.5 border-t border-zinc-800/80">
+              <span>Si este valor es menor a la tasa del banco, no conviene hacer el negocio.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI METRICS GRID -->
+      <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- VAN -->
+        <div class="glass-panel p-4 rounded-xl border border-zinc-800 relative overflow-hidden">
+          <div class="text-[11px] font-medium text-zinc-400 uppercase tracking-wider mb-1 flex items-center justify-between">
+            <span>VAN (Valor Actual Neto)</span>
+            <i class="fa-solid fa-chart-line text-[#d4b26f]"></i>
+          </div>
+          <div id="kpiNpv" class="text-xl sm:text-2xl font-black text-emerald-400 font-mono">$0.00</div>
+          <div class="text-[10px] text-zinc-400 mt-1">Beneficio neto descontado a WACC</div>
+        </div>
+
+        <!-- TIR -->
+        <div class="glass-panel p-4 rounded-xl border border-zinc-800 relative overflow-hidden">
+          <div class="text-[11px] font-medium text-zinc-400 uppercase tracking-wider mb-1 flex items-center justify-between">
+            <span>TIR (Tasa Interna Retorno)</span>
+            <i class="fa-solid fa-percent text-[#d4b26f]"></i>
+          </div>
+          <div id="kpiIrr" class="text-xl sm:text-2xl font-black text-white font-mono">0.0%</div>
+          <div id="kpiIrrSub" class="text-[10px] text-zinc-400 mt-1">Tasa de corte: 14%</div>
+        </div>
+
+        <!-- PAYBACK -->
+        <div class="glass-panel p-4 rounded-xl border border-zinc-800 relative overflow-hidden">
+          <div class="text-[11px] font-medium text-zinc-400 uppercase tracking-wider mb-1 flex items-center justify-between">
+            <span>Período Payback</span>
+            <i class="fa-solid fa-clock-rotate-left text-[#d4b26f]"></i>
+          </div>
+          <div id="kpiPayback" class="text-xl sm:text-2xl font-black text-[#d4b26f] font-mono">0.0 años</div>
+          <div id="kpiDiscountedPayback" class="text-[10px] text-zinc-400 mt-1">Descontado: 0.0 años</div>
+        </div>
+
+        <!-- PUNTO DE EQUILIBRIO -->
+        <div class="glass-panel p-4 rounded-xl border border-zinc-800 relative overflow-hidden">
+          <div class="text-[11px] font-medium text-zinc-400 uppercase tracking-wider mb-1 flex items-center justify-between">
+            <span>Punto de Equilibrio</span>
+            <i class="fa-solid fa-scale-balanced text-[#d4b26f]"></i>
+          </div>
+          <div id="kpiBreakevenUnits" class="text-xl sm:text-2xl font-black text-white font-mono">0 unidades/mes</div>
+          <div id="kpiBreakevenRevenue" class="text-[10px] text-zinc-400 mt-1">$0.00 MXN / mes</div>
+        </div>
+
+        <!-- MARGEN DE SEGURIDAD -->
+        <div class="glass-panel p-4 rounded-xl border border-zinc-800">
+          <div class="text-[11px] font-medium text-zinc-400 uppercase tracking-wider mb-1">Margen de Seguridad</div>
+          <div id="kpiMarginOfSafety" class="text-lg sm:text-xl font-bold text-zinc-200 font-mono">0.0%</div>
+          <div class="text-[10px] text-zinc-400 mt-1">Colchón contra caída de ventas</div>
+        </div>
+
+        <!-- MARGEN DE CONTRIBUCIÓN -->
+        <div class="glass-panel p-4 rounded-xl border border-zinc-800">
+          <div class="text-[11px] font-medium text-zinc-400 uppercase tracking-wider mb-1">Margen de Contribución</div>
+          <div id="kpiContributionMargin" class="text-lg sm:text-xl font-bold text-zinc-200 font-mono">$0 (0%)</div>
+          <div class="text-[10px] text-zinc-400 mt-1">Aporte unitario para cubrir fijos</div>
+        </div>
+
+        <!-- RATIO BENEFICIO/COSTO -->
+        <div class="glass-panel p-4 rounded-xl border border-zinc-800">
+          <div class="text-[11px] font-medium text-zinc-400 uppercase tracking-wider mb-1">Ratio Beneficio / Costo</div>
+          <div id="kpiBenefitCost" class="text-lg sm:text-xl font-bold text-zinc-200 font-mono">0.0x</div>
+          <div class="text-[10px] text-zinc-400 mt-1">VP Flujos / Inversión Inicial</div>
+        </div>
+
+        <!-- ROI ANUAL PROMEDIO -->
+        <div class="glass-panel p-4 rounded-xl border border-zinc-800">
+          <div class="text-[11px] font-medium text-zinc-400 uppercase tracking-wider mb-1">ROI Anual Promedio</div>
+          <div id="kpiRoiAvg" class="text-lg sm:text-xl font-bold text-emerald-400 font-mono">0.0%</div>
+          <div class="text-[10px] text-zinc-400 mt-1">Utilidad Neta media / Inversión</div>
+        </div>
+      </div>
+
+      <!-- PANEL INTEGRAL DE RAZONES FINANCIERAS 360° -->
+      <div id="financialRatiosSection" class="glass-panel p-6 rounded-[20px] border border-zinc-800">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 mb-5 border-b border-zinc-800">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-[#c5a059]/15 text-[#d4b26f] flex items-center justify-center text-base">
+              <i class="fa-solid fa-calculator"></i>
+            </div>
+            <div>
+              <h3 class="text-base font-bold text-white flex items-center gap-2">
+                <span>Razones Financieras Integrales (Ratios 360°)</span>
+                <span class="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-[#c5a059]/15 text-[#d4b26f] border border-[#c5a059]/30">Diagnóstico Cuantitativo</span>
+              </h3>
+              <p class="text-xs text-zinc-400">Indicadores clave de liquidez, rentabilidad operativa, rotación de inventarios y solvencia patrimonial.</p>
+            </div>
+          </div>
+          <span class="text-xs text-[#d4b26f] font-mono bg-[#c5a059]/10 px-2.5 py-1 rounded-xl border border-[#c5a059]/20">Fórmulas Financieras Validadas</span>
+        </div>
+
+        <div id="financialRatiosGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Renderizado dinámicamente con app.js -->
+        </div>
+      </div>
+
+      <!-- CHARTS ROW -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- CHART 1: Cash Flow Projection -->
+        <div class="glass-panel p-5 rounded-[20px] border border-zinc-800 chart-container">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-2">
+              <i class="fa-solid fa-chart-column text-[#d4b26f]"></i> Proyección de Flujos a 5 Años
+            </h3>
+            <span class="text-[10px] text-zinc-400">Ingresos vs Utilidad vs Flujo Descontado</span>
+          </div>
+          <div class="relative h-64">
+            <canvas id="cashFlowChart"></canvas>
+          </div>
+        </div>
+
+        <!-- CHART 2: Break Even Curve -->
+        <div class="glass-panel p-5 rounded-[20px] border border-zinc-800 chart-container">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-2">
+              <i class="fa-solid fa-crosshairs text-[#d4b26f]"></i> Curva de Punto de Equilibrio Mensual
+            </h3>
+            <span class="text-[10px] text-zinc-400">Ingresos vs Costos Totales</span>
+          </div>
+          <div class="relative h-64">
+            <canvas id="breakEvenChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- SENSITIVITY SCENARIOS TABLE -->
+      <div class="glass-panel p-5 rounded-[20px] border border-zinc-800">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-300 mb-3 flex items-center gap-2">
+          <i class="fa-solid fa-shuffle text-[#d4b26f]"></i> Análisis de Sensibilidad y Escenarios
+        </h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-zinc-900/80 text-zinc-400 font-semibold border-b border-zinc-800">
+              <tr>
+                <th class="py-2.5 px-3">Escenario</th>
+                <th class="py-2.5 px-3">Premisas</th>
+                <th class="py-2.5 px-3">VAN ($)</th>
+                <th class="py-2.5 px-3">TIR (%)</th>
+                <th class="py-2.5 px-3">Payback (Años)</th>
+                <th class="py-2.5 px-3">ROI Anual Promedio</th>
+              </tr>
+            </thead>
+            <tbody id="scenariosTableBody" class="divide-y divide-slate-800 text-zinc-200">
+              <!-- Dynamically rendered -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- DETAILED 5-YEAR PRO FORMA TABLE -->
+      <div class="glass-panel p-5 rounded-[20px] border border-zinc-800 print-break-inside-avoid">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-2">
+            <i class="fa-solid fa-table text-[#d4b26f]"></i> Estado de Resultados y Flujo de Caja Proforma
+          </h3>
+          <span class="text-[10px] text-zinc-400">Valores anualizados en moneda local</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-right text-xs font-mono">
+            <thead class="bg-zinc-900/80 text-zinc-400 font-sans font-semibold border-b border-zinc-800 text-right">
+              <tr>
+                <th class="text-left py-2.5 px-3">Concepto</th>
+                <th class="py-2.5 px-3">Año 1</th>
+                <th class="py-2.5 px-3">Año 2</th>
+                <th class="py-2.5 px-3">Año 3</th>
+                <th class="py-2.5 px-3">Año 4</th>
+                <th class="py-2.5 px-3">Año 5</th>
+              </tr>
+            </thead>
+            <tbody id="proformaTableBody" class="divide-y divide-slate-800/60 text-zinc-200">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- GEMINI STRATEGIC CONSULTANCY SECTION -->
+      <div id="geminiReportSection" class="glass-panel p-6 rounded-[20px] border border-[#c5a059]/30 space-y-6 glow-primary">
+        <div class="flex items-center justify-between pb-4 border-b border-zinc-800">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-zinc-900 border border-[#c5a059]/40 flex items-center justify-center text-[#d4b26f] shadow">
+              <i class="fa-solid fa-brain"></i>
+            </div>
+            <div>
+              <h2 class="text-base font-bold text-white">Dictamen Estratégico y Consultoría Ejecutiva</h2>
+              <p class="text-xs text-zinc-400">Evaluación cualitativa, micro-localización, ventajas competitivas y plan de acción.</p>
+            </div>
+          </div>
+          <span id="geminiTimestampBadge" class="text-[11px] text-zinc-400"></span>
+        </div>
+
+        <!-- Executive Summary -->
+        <div>
+          <h4 class="text-xs font-bold uppercase tracking-wider text-[#d4b26f] mb-2 flex items-center gap-1.5">
+            <i class="fa-solid fa-file-lines"></i> Diagnóstico Ejecutivo del Consultor
+          </h4>
+          <p id="geminiExecutiveSummary" class="text-sm text-zinc-300 leading-relaxed bg-zinc-900/60 p-4 rounded-xl border border-zinc-800">
+            Presiona el botón <strong>"Dictamen Estratégico IA"</strong> para generar el diagnóstico cualitativo profundo.
+          </p>
+        </div>
+
+        <!-- Location & Competition 2-col -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div class="bg-zinc-900/60 p-4 rounded-xl border border-zinc-800">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-zinc-200 mb-2 flex items-center gap-1.5">
+              <i class="fa-solid fa-map-location-dot text-[#d4b26f]"></i> Análisis de Ubicación & Tráfico
+            </h4>
+            <p id="geminiLocationAnalysis" class="text-xs text-zinc-300 leading-relaxed">
+              Pendiente de generación.
+            </p>
+          </div>
+
+          <div class="bg-zinc-900/60 p-4 rounded-xl border border-zinc-800">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-zinc-200 mb-2 flex items-center gap-1.5">
+              <i class="fa-solid fa-shield-halved text-[#d4b26f]"></i> Análisis de Competencia & Moat
+            </h4>
+            <p id="geminiCompetitionAnalysis" class="text-xs text-zinc-300 leading-relaxed">
+              Pendiente de generación.
+            </p>
+          </div>
+        </div>
+
+        <!-- Cost Structure Analysis -->
+        <div class="bg-zinc-900/60 p-4 rounded-xl border border-zinc-800">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-[#d4b26f] mb-2 flex items-center gap-1.5">
+            <i class="fa-solid fa-calculator"></i> Diagnóstico de Estructura de Costos y Margen de Contribución
+          </h4>
+          <p id="geminiCostAnalysis" class="text-xs text-zinc-300 leading-relaxed">
+            Pendiente de generación.
+          </p>
+        </div>
+
+        <!-- Risks Matrix -->
+        <div>
+          <h4 class="text-xs font-bold uppercase tracking-wider text-rose-300 mb-2 flex items-center gap-1.5">
+            <i class="fa-solid fa-triangle-exclamation"></i> Matriz de Riesgos Principales y Mitigación
+          </h4>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-zinc-900 text-zinc-400 font-semibold border-b border-zinc-800">
+                <tr>
+                  <th class="py-2.5 px-3">Categoría</th>
+                  <th class="py-2.5 px-3">Riesgo Identificado</th>
+                  <th class="py-2.5 px-3">Severidad</th>
+                  <th class="py-2.5 px-3">Estrategia de Mitigación</th>
+                </tr>
+              </thead>
+              <tbody id="geminiRisksTableBody" class="divide-y divide-slate-800/80 text-zinc-300">
+                <!-- Dynamically rendered -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Action Plan & Growth Tactics -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div class="bg-zinc-900/60 p-4 rounded-xl border border-zinc-800">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-[#d4b26f] mb-3 flex items-center gap-1.5">
+              <i class="fa-solid fa-list-check"></i> Plan de Acción Paso a Paso
+            </h4>
+            <ul id="geminiActionPlanList" class="space-y-2 text-xs text-zinc-300">
+              <!-- Dynamically rendered -->
+            </ul>
+          </div>
+
+          <div class="bg-zinc-900/60 p-4 rounded-xl border border-zinc-800">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-white mb-3 flex items-center gap-1.5">
+              <i class="fa-solid fa-arrow-trend-up text-[#d4b26f]"></i> Tácticas para Maximizar Ganancias
+            </h4>
+            <ul id="geminiGrowthList" class="space-y-2 text-xs text-zinc-300">
+              <!-- Dynamically rendered -->
+            </ul>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- EXPORT DATA TO CONTROL OPERATIVO -->
+      <div class="glass-panel p-6 rounded-[20px] border border-zinc-800/80 mt-6 no-print">
+        <div class="flex items-center gap-3 mb-6 pb-4 border-b border-zinc-800">
+          <div class="w-8 h-8 rounded-xl bg-[#c5a059]/15 text-[#d4b26f] flex items-center justify-center">
+            <i class="fa-solid fa-key"></i>
+          </div>
+          <div>
+            <h2 class="text-base font-bold text-white">Clave de Exportación (Control Operativo)</h2>
+            <p class="text-xs text-zinc-400">Copia esta clave para importar tu proyecto o usa el botón "Publicar Plan al ERP" en la barra superior.</p>
+          </div>
+        </div>
+        <div class="flex gap-2">
+            <input type="text" id="exportKeyInput" readonly class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 font-mono focus:outline-none">
+            <button id="generateKeyBtn" class="bg-[#c5a059] hover:bg-[#d4b26f] text-zinc-950 px-4 py-2 rounded-xl text-xs font-bold">Generar Clave</button>
+            <button id="copyKeyBtn" class="bg-zinc-800 hover:bg-zinc-700 text-white px-4 py-2 rounded-xl text-xs font-semibold"><i class="fa-solid fa-copy"></i> Copiar</button>
+        </div>
+      </div>
+
+</section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-zinc-900 py-4 bg-[#0a0a0b] text-center text-xs text-zinc-500 no-print">
+    <p>EconoMetrics Studio · Arquitectura Financiera (VAN, TIR, Payback, Punto de Equilibrio) · Ecosistema Empresarial</p>
+  </footer>
+
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+mermaid.initialize({ 
+  startOnLoad: false, 
+  theme: 'base',
+  themeVariables: {
+    primaryColor: '#18181b',
+    primaryTextColor: '#fafafa',
+    primaryBorderColor: '#c5a059',
+    lineColor: '#c5a059',
+    secondaryColor: '#27272a',
+    tertiaryColor: '#09090b',
+    fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    edgeLabelBackground: '#09090b',
+    clusterBkg: '#18181b',
+    clusterBorder: '#52525b'
+  }
+});
+window.mermaid = mermaid;
+</script>
+<script src="app.js?v=20261103_1"></script>
+  <!-- MODAL DE SUGERENCIAS DE ADQUISICIÓN POR GEOLOCALIZACIÓN -->
+  <div id="geoAcquisitionModal" class="fixed inset-0 z-[100] bg-black/80 hidden items-center justify-center p-4 backdrop-blur-sm overflow-y-auto">
+    <div class="bg-zinc-900 border border-zinc-700 rounded-[20px] w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl my-6">
+      <div class="p-5 border-b border-zinc-800 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-[#c5a059]/15 text-[#d4b26f] flex items-center justify-center text-lg">
+            <i class="fa-solid fa-compass"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+              <span>Sugerencias de Adquisición y Cadena de Suministro</span>
+              <span id="geoModalBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#c5a059]/15 text-[#d4b26f] border border-[#c5a059]/30">Geolocalización</span>
+            </h3>
+            <p id="geoModalSubtitle" class="text-xs text-zinc-400">Recomendaciones estratégicas de abastecimiento según tu estado y sector comercial</p>
+          </div>
+        </div>
+        <button type="button" id="closeGeoModalBtn" class="text-zinc-400 hover:text-white text-lg p-2 rounded-xl hover:bg-zinc-800 transition-all">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div id="geoModalContent" class="p-6 overflow-y-auto space-y-5 text-sm">
+        <!-- Contenido dinámico -->
+      </div>
+
+      <div class="p-4 border-t border-zinc-800 flex justify-between items-center bg-zinc-950/40">
+        <span class="text-xs text-zinc-500">EconoMetrics Studio · Logística y Cadena de Suministro México</span>
+        <button type="button" id="closeGeoModalFooterBtn" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold px-4 py-2 rounded-xl transition-all">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

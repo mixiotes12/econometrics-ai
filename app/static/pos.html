@@ -66,51 +66,64 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="style.css">
   <style>
-    .inp { background:#0f172a; border:1px solid #334155; border-radius:.5rem; padding:.5rem .75rem; width:100%; font-size:.875rem; color:#f1f5f9; }
-    .inp:focus { outline:none; border-color:#f59e0b; }
-    .btn { padding:.5rem .9rem; border-radius:.5rem; font-size:.8rem; font-weight:600; transition: all .15s ease-in-out; }
-    .btn-pri { background:#d97706; color:#fff; } .btn-pri:hover { background:#f59e0b; }
-    .btn-sec { background:#334155; color:#e2e8f0; } .btn-sec:hover { background:#475569; }
-    .btn-red { background:#b91c1c; color:#fff; } .btn-red:hover { background:#dc2626; }
-    .tab-btn { padding:.6rem 1rem; font-size:.8rem; font-weight:600; border-bottom:2px solid transparent; color:#94a3b8; }
-    .tab-btn.active { color:#fbbf24; border-color:#fbbf24; }
-    th { text-align:left; font-weight:600; color:#94a3b8; font-size:.7rem; text-transform:uppercase; padding:.4rem .5rem; }
-    td { padding:.4rem .5rem; font-size:.8rem; border-top:1px solid #1e293b; }
-    label.l { display:block; font-size:.7rem; color:#94a3b8; margin-bottom:.2rem; }
+    .inp { background:#09090b; border:1px solid #27272a; border-radius:.65rem; padding:.5rem .75rem; width:100%; font-size:.875rem; color:#fafafa; }
+    .inp:focus { outline:none; border-color:#c5a059; }
+    .btn { padding:.5rem .9rem; border-radius:.65rem; font-size:.8rem; font-weight:600; transition: all .15s ease-in-out; }
+    .btn-pri { background:#c5a059; color:#09090b; font-weight:700; } .btn-pri:hover { background:#d4b26f; }
+    .btn-sec { background:#18181b; color:#e4e4e7; border:1px solid #27272a; } .btn-sec:hover { background:#27272a; border-color:rgba(197,160,89,.4); }
+    .btn-red { background:#991b1b; color:#fff; } .btn-red:hover { background:#dc2626; }
+    .tab-btn { padding:.65rem 1rem; font-size:.8rem; font-weight:600; border-bottom:2px solid transparent; color:#a1a1aa; }
+    .tab-btn.active { color:#d4b26f; border-color:#c5a059; background:rgba(197,160,89,.06); }
+    th { text-align:left; font-weight:600; color:#a1a1aa; font-size:.7rem; text-transform:uppercase; padding:.4rem .5rem; }
+    td { padding:.4rem .5rem; font-size:.8rem; border-top:1px solid #18181b; }
+    label.l { display:block; font-size:.7rem; color:#a1a1aa; margin-bottom:.2rem; }
   </style>
 </head>
-<body class="bg-zinc-950 text-zinc-100 min-h-screen">
+<body class="bg-[#0a0a0b] text-zinc-100 min-h-screen">
 
   <!-- LOGIN -->
-  <div id="loginOverlay" class="fixed inset-0 z-[100] bg-zinc-950 flex items-center justify-center">
-    <div class="bg-zinc-900 border border-zinc-800 rounded-[20px] p-8 w-full max-w-sm space-y-4">
+  <div id="loginOverlay" class="fixed inset-0 z-[100] bg-[#0a0a0b]/95 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-[#111114] border border-zinc-800 rounded-[22px] p-8 w-full max-w-sm space-y-4 shadow-2xl">
       <div class="text-center">
-        <i class="fa-solid fa-cash-register text-amber-400 text-4xl"></i>
-        <h1 class="text-xl font-bold mt-2">Punto de Venta</h1>
-        <p class="text-xs text-zinc-400">Selecciona tu usuario e ingresa tu PIN</p>
+        <div class="w-12 h-12 rounded-2xl bg-zinc-900 border border-[#c5a059]/40 flex items-center justify-center mx-auto mb-2">
+          <i class="fa-solid fa-cash-register text-[#d4b26f] text-2xl"></i>
+        </div>
+        <h1 class="text-xl font-bold text-white">Terminal de Sucursal</h1>
+        <p class="text-xs text-zinc-400">Selecciona tu usuario operativo e ingresa tu PIN</p>
       </div>
-      <div><label class="l">Cajero</label><select id="loginCashier" class="inp"></select></div>
-      <div><label class="l">PIN</label><input id="loginPin" type="password" inputmode="numeric" maxlength="8" class="inp" autocomplete="off"></div>
-      <div id="loginError" class="text-red-400 text-xs hidden"></div>
-      <button id="loginBtn" class="btn btn-pri w-full">Entrar</button>
-      <p class="text-[11px] text-slate-500 text-center">Primer uso: Administrador / PIN 1234 (el sistema te pedirá cambiarlo).</p>
-      <a href="index.html" class="block text-center text-xs text-zinc-400 hover:text-white">&larr; Volver a EconoMetrics</a>
+      <div><label class="l">Operador / Cajero</label><select id="loginCashier" class="inp"></select></div>
+      <div><label class="l">PIN Operativo</label><input id="loginPin" type="password" inputmode="numeric" maxlength="8" class="inp font-mono" autocomplete="off"></div>
+      <div id="loginError" class="text-rose-400 text-xs hidden"></div>
+      <button id="loginBtn" class="btn btn-pri w-full py-2.5">Abrir Panel de Trabajo</button>
+      <p class="text-[11px] text-zinc-500 text-center">Acceso rápido demo: PIN 1234</p>
+      <div class="flex justify-center pt-2 border-t border-zinc-800 text-xs text-zinc-400">
+        <a href="index.html" class="hover:text-[#d4b26f]"><i class="fa-solid fa-arrow-left mr-1"></i>Volver al Portal Principal de Acceso</a>
+      </div>
     </div>
   </div>
 
-  <!-- HEADER -->
-  <header class="border-b border-zinc-800 bg-zinc-900/80 sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
+  <!-- HEADER (NON-STICKY, BLACK/WHITE/GOLD) -->
+  <header class="border-b border-zinc-800/90 bg-[#0d0d0f]">
+    <div class="max-w-7xl mx-auto px-4 py-3.5 flex items-center justify-between flex-wrap gap-3">
       <div class="flex items-center gap-3">
-        <a href="index.html" class="text-zinc-400 hover:text-white text-sm"><i class="fa-solid fa-arrow-left"></i></a>
-        <i class="fa-solid fa-cash-register text-amber-400"></i>
-        <span class="font-bold">Punto de Venta</span>
-        <span id="shiftBadge" class="text-[11px] px-2 py-0.5 rounded-full bg-slate-700">Sin turno</span>
+        <a href="hub.html" id="posBackToOwner" data-perm="finance.view" class="hidden text-zinc-400 hover:text-white text-sm" title="Volver al Hub del Propietario"><i class="fa-solid fa-arrow-left"></i></a>
+        <div class="w-8 h-8 rounded-lg bg-zinc-900 border border-[#c5a059]/40 flex items-center justify-center text-[#d4b26f]">
+          <i class="fa-solid fa-cash-register text-sm"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-white leading-normal">Punto de Venta</span>
+            <span id="posBranchBadge" class="text-[10px] font-mono uppercase font-semibold px-2.5 py-0.5 rounded-full bg-[#c5a059]/15 text-[#d4b26f] border border-[#c5a059]/30">Sucursal Matriz Roma Norte</span>
+            <span id="shiftBadge" class="text-[11px] px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300">Sin turno</span>
+          </div>
+        </div>
       </div>
-      <div class="flex items-center gap-3 text-xs">
-        <a href="personal.html" class="btn btn-sec"><i class="fa-solid fa-user-shield mr-1"></i>Personal</a>
-        <a href="inventario.html" class="btn btn-sec"><i class="fa-solid fa-boxes-stacked mr-1"></i>Inventarios</a>
-        <span id="whoami" class="text-zinc-300"></span>
+      <div class="flex items-center gap-2 text-xs flex-wrap">
+        <a href="hub.html" id="posHubLink" data-perm="finance.view" class="btn btn-sec hidden"><i class="fa-solid fa-table-cells-large text-[#d4b26f] mr-1"></i>Hub Propietario</a>
+        <a href="owner.html" id="posOwnerLink" data-perm="finance.view" class="btn btn-sec hidden"><i class="fa-solid fa-building-user text-[#d4b26f] mr-1"></i>Portal del Dueño</a>
+        <a href="inventario.html" data-perm="products.manage" class="btn btn-sec hidden"><i class="fa-solid fa-boxes-stacked mr-1"></i>Inventarios</a>
+        <a href="personal.html" data-perm="hr.manage" class="btn btn-sec hidden"><i class="fa-solid fa-user-shield mr-1"></i>Personal</a>
+        <span id="whoami" class="text-zinc-300 px-2 font-medium"></span>
         <button id="logoutBtn" class="btn btn-sec">Salir</button>
       </div>
     </div>

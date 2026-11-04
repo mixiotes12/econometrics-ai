@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EconoMetrics · Hub Ejecutivo del Propietario</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Outfit"', 'sans-serif'],
+            mono: ['"Space Mono"', 'monospace'],
+          },
+          colors: {
+            gold: {
+              300: '#e3c88d',
+              400: '#d4b26f',
+              500: '#c5a059',
+              600: '#a3803f',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-[#0a0a0b] text-zinc-100 min-h-screen flex flex-col">
+
+  <!-- TOP EXECUTIVE HEADER (NON-STICKY) -->
+  <header class="border-b border-zinc-800/90 bg-[#0d0d0f]">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between gap-4 flex-wrap">
+      <div class="flex items-center gap-3.5">
+        <div class="w-10 h-10 rounded-xl bg-zinc-900 border border-[#c5a059]/50 flex items-center justify-center shadow-sm">
+          <span class="font-mono font-bold text-[#d4b26f] text-sm tracking-tighter">EM</span>
+        </div>
+        <div>
+          <div class="flex items-center gap-2.5">
+            <span class="font-bold text-lg tracking-tight text-white leading-normal pt-0.5 pb-0.5 inline-block">EconoMetrics</span>
+            <span class="text-[10px] font-mono uppercase tracking-[0.22em] px-2.5 py-0.5 rounded-full bg-[#c5a059]/10 text-[#d4b26f] border border-[#c5a059]/30">PORTAL DEL PROPIETARIO</span>
+          </div>
+          <p id="hubOwnerSubtitle" class="text-xs text-zinc-400">Ecosistema Empresarial Conectado · Planeación y Control de Establecimiento</p>
+        </div>
+      </div>
+
+      <!-- Branch Selector & Session Actions -->
+      <div class="flex items-center gap-2.5 flex-wrap">
+        <div class="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-1.5">
+          <i class="fa-solid fa-store text-[#d4b26f] text-xs"></i>
+          <span class="text-[11px] text-zinc-400">Sucursal Activa:</span>
+          <select id="activeBranchSelect" class="bg-transparent text-xs font-semibold text-white focus:outline-none cursor-pointer pr-2">
+            <option value="1">Sucursal Matriz Roma Norte</option>
+          </select>
+        </div>
+
+        <button id="btnNewBranchModal" type="button" class="bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-800 text-xs px-3 py-2 rounded-xl transition-all flex items-center gap-1.5">
+          <i class="fa-solid fa-plus text-[#d4b26f]"></i>
+          <span class="hidden sm:inline">Nueva Sucursal</span>
+        </button>
+
+        <button id="btnNewEmployeeModal" type="button" class="bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-800 text-xs px-3 py-2 rounded-xl transition-all flex items-center gap-1.5">
+          <i class="fa-solid fa-user-plus text-[#d4b26f]"></i>
+          <span class="hidden sm:inline">Registrar Empleado</span>
+        </button>
+
+        <div class="h-5 w-px bg-zinc-800 hidden sm:block"></div>
+
+        <button id="btnLogoutOwner" type="button" class="bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800 text-xs px-3 py-2 rounded-xl transition-all flex items-center gap-1.5">
+          <i class="fa-solid fa-right-from-bracket"></i>
+          <span>Cambiar Usuario / Salir</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+    <!-- WELCOME & BUSINESS IDENTITY BANNER -->
+    <section class="p-6 sm:p-8 rounded-[22px] bg-gradient-to-b from-zinc-900/90 to-[#0e0e11] border border-zinc-800/90 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+      <div class="space-y-2 max-w-2xl">
+        <div class="inline-flex items-center gap-2 text-[11px] font-mono uppercase tracking-[0.18em] text-[#d4b26f]">
+          <span class="w-2 h-2 rounded-full bg-[#c5a059]"></span>
+          <span id="hubBusinessSector">SOCIEDAD TITULAR ACTIVA</span>
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+          Bienvenido, <span id="hubOwnerName" class="text-[#d4b26f]">Propietario Principal</span>
+        </h1>
+        <p class="text-sm text-zinc-400 leading-relaxed">
+          Selecciona el producto con el que deseas trabajar hoy. Tus modelos financieros en <strong class="text-zinc-200">EconoMetrics Studio</strong> y la operación diaria de <strong id="hubBusinessNameInline" class="text-zinc-200">Aura Café & Roastery</strong> comparten una misma base de datos relacional para recalcular tu rentabilidad cuando cambien costos, sueldos o maquinaria.
+        </p>
+      </div>
+
+      <!-- Quick Status Pill Box -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 shrink-0">
+        <div class="bg-zinc-950/90 border border-zinc-800/90 rounded-xl px-4 py-3">
+          <div class="text-[10px] uppercase tracking-wider text-zinc-500 font-mono">Sucursales</div>
+          <div id="statBranchesCount" class="text-lg font-bold text-white font-mono mt-0.5">2</div>
+          <div id="statActiveBranchCode" class="text-[11px] text-[#d4b26f] font-mono">SUC-ROMA-01</div>
+        </div>
+        <div class="bg-zinc-950/90 border border-zinc-800/90 rounded-xl px-4 py-3">
+          <div class="text-[10px] uppercase tracking-wider text-zinc-500 font-mono">Plantilla Activa</div>
+          <div id="statHeadcount" class="text-lg font-bold text-white font-mono mt-0.5">--</div>
+          <div id="statPayrollMonthly" class="text-[11px] text-zinc-400 font-mono">Nómina al día</div>
+        </div>
+        <div class="col-span-2 sm:col-span-1 bg-zinc-950/90 border border-[#c5a059]/30 rounded-xl px-4 py-3">
+          <div class="text-[10px] uppercase tracking-wider text-[#d4b26f] font-mono flex items-center gap-1.5">
+            <i class="fa-solid fa-shield-halved"></i> Seguridad
+          </div>
+          <div id="statSecurityState" class="text-sm font-bold text-emerald-400 mt-1">Blindaje Activo</div>
+          <div id="statBlockedScans" class="text-[11px] text-zinc-400 font-mono">WAF + SQLite Auth</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TWO CONNECTED PRODUCTS SELECTOR -->
+    <section>
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xs font-mono uppercase tracking-[0.2em] text-zinc-400">
+          Selecciona qué Producto Utilizar
+        </h2>
+        <span class="text-xs text-zinc-500 hidden sm:inline">Sincronización bidireccional mediante SQLite</span>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        <!-- PRODUCT 1: ECONOMETRICS STUDIO -->
+        <div class="group relative rounded-[24px] bg-[#111114] border border-zinc-800 hover:border-[#c5a059]/70 transition-all duration-300 p-7 flex flex-col justify-between shadow-2xl">
+          <div>
+            <div class="flex items-center justify-between gap-4 mb-6">
+              <div class="w-12 h-12 rounded-2xl bg-zinc-900 border border-[#c5a059]/40 flex items-center justify-center text-[#d4b26f] text-xl">
+                <i class="fa-solid fa-compass-drafting"></i>
+              </div>
+              <span class="text-[11px] font-mono uppercase tracking-widest px-3 py-1 rounded-full bg-zinc-900 text-[#d4b26f] border border-[#c5a059]/30">
+                Producto I · Evaluación & Diseño
+              </span>
+            </div>
+
+            <h3 class="text-2xl font-bold text-white tracking-tight mb-2">
+              EconoMetrics Studio
+            </h3>
+            <p class="text-sm text-zinc-400 leading-relaxed mb-6">
+              Ingeniería financiera, diseño de procesos y flujogramas energéticos, presupuestación de maquinaria y proyección a 5 años (VAN, TIR, Payback y Punto de Equilibrio) con dictamen estratégico.
+            </p>
+
+            <!-- Live Baseline Preview -->
+            <div class="bg-zinc-950/90 border border-zinc-800/90 rounded-2xl p-4 mb-6">
+              <div class="flex items-center justify-between text-[11px] text-zinc-400 mb-3 pb-2 border-b border-zinc-800/80">
+                <span class="font-semibold text-zinc-300"><i class="fa-solid fa-bookmark text-[#d4b26f] mr-1.5"></i> Plan Base Publicado</span>
+                <span id="studioPlanUpdated" class="font-mono text-zinc-500">Sincronizado</span>
+              </div>
+              <div class="grid grid-cols-3 gap-3 text-center">
+                <div>
+                  <div class="text-[10px] text-zinc-500 uppercase">Inversión Base</div>
+                  <div id="studioBaseInv" class="text-sm font-bold text-white font-mono mt-0.5">$350,000</div>
+                </div>
+                <div>
+                  <div class="text-[10px] text-zinc-500 uppercase">VAN Planeado</div>
+                  <div id="studioBaseNpv" class="text-sm font-bold text-emerald-400 font-mono mt-0.5">--</div>
+                </div>
+                <div>
+                  <div class="text-[10px] text-zinc-500 uppercase">TIR Base</div>
+                  <div id="studioBaseIrr" class="text-sm font-bold text-[#d4b26f] font-mono mt-0.5">--</div>
+                </div>
+              </div>
+            </div>
+
+            <ul class="space-y-2 text-xs text-zinc-300 mb-7">
+              <li class="flex items-center gap-2.5"><i class="fa-solid fa-check text-[#d4b26f]"></i> <span>6 Módulos: Perfil, Flujograma Kw/h, Maquinaria, Presupuesto, WACC y Diagnóstico</span></li>
+              <li class="flex items-center gap-2.5"><i class="fa-solid fa-check text-[#d4b26f]"></i> <span>Publicación en 1 clic hacia el ERP del Establecimiento</span></li>
+            </ul>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-3 pt-4 border-t border-zinc-800/80">
+            <a href="studio.html" class="flex-1 bg-white hover:bg-zinc-200 text-zinc-950 font-bold text-xs px-5 py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm">
+              <span>Abrir EconoMetrics Studio</span>
+              <i class="fa-solid fa-arrow-right"></i>
+            </a>
+            <a href="studio.html?from_ops=1" title="Abrir Studio cargando los costos reales actuales de la tienda" class="bg-zinc-900 hover:bg-zinc-800 text-[#d4b26f] border border-[#c5a059]/40 font-semibold text-xs px-4 py-3.5 rounded-xl transition-all flex items-center gap-2">
+              <i class="fa-solid fa-rotate"></i>
+              <span>Simular con Datos Reales</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- PRODUCT 2: CONTROL INTEGRAL DEL ESTABLECIMIENTO (ERP + POS) -->
+        <div class="group relative rounded-[24px] bg-[#111114] border border-zinc-800 hover:border-[#c5a059]/70 transition-all duration-300 p-7 flex flex-col justify-between shadow-2xl">
+          <div>
+            <div class="flex items-center justify-between gap-4 mb-6">
+              <div class="w-12 h-12 rounded-2xl bg-[#c5a059]/15 border border-[#c5a059]/50 flex items-center justify-center text-[#d4b26f] text-xl">
+                <i class="fa-solid fa-building-user"></i>
+              </div>
+              <span class="text-[11px] font-mono uppercase tracking-widest px-3 py-1 rounded-full bg-[#c5a059]/15 text-[#d4b26f] border border-[#c5a059]/40">
+                Producto II · Operación en Vivo
+              </span>
+            </div>
+
+            <h3 class="text-2xl font-bold text-white tracking-tight mb-2">
+              Control del Establecimiento (ERP & POS)
+            </h3>
+            <p class="text-sm text-zinc-400 leading-relaxed mb-6">
+              Portal del Dueño para administrar inventarios, recetas, nómina, maquinaria en planta y gastos fijos reales, con <strong class="text-zinc-200">Motor de Recálculo Dinámico</strong> para actualizar tus parámetros cuando el negocio cambia.
+            </p>
+
+            <!-- Live Operations Preview -->
+            <div class="bg-zinc-950/90 border border-zinc-800/90 rounded-2xl p-4 mb-6">
+              <div class="flex items-center justify-between text-[11px] text-zinc-400 mb-3 pb-2 border-b border-zinc-800/80">
+                <span class="font-semibold text-zinc-300"><i class="fa-solid fa-bolt text-[#d4b26f] mr-1.5"></i> Parámetros Operativos en Vivo</span>
+                <span id="opsLiveBranchLabel" class="font-mono text-[#d4b26f]">Sucursal Matriz</span>
+              </div>
+              <div class="grid grid-cols-3 gap-3 text-center">
+                <div>
+                  <div class="text-[10px] text-zinc-500 uppercase">Gastos Fijos Reales</div>
+                  <div id="opsLiveFixed" class="text-sm font-bold text-white font-mono mt-0.5">--</div>
+                </div>
+                <div>
+                  <div class="text-[10px] text-zinc-500 uppercase">Costo Unit. Receta</div>
+                  <div id="opsLiveVarCost" class="text-sm font-bold text-white font-mono mt-0.5">--</div>
+                </div>
+                <div>
+                  <div class="text-[10px] text-zinc-500 uppercase">CAPEX en Planta</div>
+                  <div id="opsLiveCapex" class="text-sm font-bold text-[#d4b26f] font-mono mt-0.5">--</div>
+                </div>
+              </div>
+            </div>
+
+            <ul class="space-y-2 text-xs text-zinc-300 mb-7">
+              <li class="flex items-center gap-2.5"><i class="fa-solid fa-check text-[#d4b26f]"></i> <span>Comparativa Plan Original vs Realidad Operativa y Recálculo de Punto de Equilibrio</span></li>
+              <li class="flex items-center gap-2.5"><i class="fa-solid fa-check text-[#d4b26f]"></i> <span>Acceso directo a Inventarios, Personal/Nómina y Terminal Punto de Venta</span></li>
+            </ul>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-3 pt-4 border-t border-zinc-800/80">
+            <a href="owner.html" class="flex-1 bg-[#c5a059] hover:bg-[#d4b26f] text-zinc-950 font-bold text-xs px-5 py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm">
+              <span>Abrir Portal del Dueño (ERP)</span>
+              <i class="fa-solid fa-arrow-right"></i>
+            </a>
+            <a href="pos.html" title="Abrir la Terminal Punto de Venta como Administrador de esta sucursal" class="bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 font-semibold text-xs px-4 py-3.5 rounded-xl transition-all flex items-center gap-2">
+              <i class="fa-solid fa-cash-register text-[#d4b26f]"></i>
+              <span>Terminal POS</span>
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- CYBERSECURITY & ACCESS AUDIT SECTION -->
+    <section class="rounded-[22px] bg-[#111114] border border-zinc-800/90 p-6 sm:p-7">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 mb-5 border-b border-zinc-800">
+        <div class="flex items-center gap-3.5">
+          <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center">
+            <i class="fa-solid fa-shield-halved text-lg"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 class="text-base font-bold text-white">Centro de Ciberseguridad y Auditoría de Accesos</h2>
+              <span class="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">WAF Activo</span>
+            </div>
+            <p class="text-xs text-zinc-400">Monitoreo en tiempo real del servidor expuesto por Tailscale Funnel · Prevención de escáneres, fuerza bruta y registro de sesiones.</p>
+          </div>
+        </div>
+        <button id="btnRefreshSecurity" type="button" class="bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs text-zinc-300 px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 self-start sm:self-auto">
+          <i class="fa-solid fa-rotate text-[#d4b26f]"></i>
+          <span>Actualizar Bitácora</span>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Security Summary Cards -->
+        <div class="space-y-3">
+          <div class="bg-zinc-950 border border-zinc-800/90 rounded-xl p-4">
+            <div class="flex items-center justify-between text-xs mb-1">
+              <span class="text-zinc-400 font-medium">Estado de Integridad del Servidor</span>
+              <span class="text-emerald-400 font-mono font-bold">100% ÍNTEGRO</span>
+            </div>
+            <p class="text-[11px] text-zinc-500 leading-relaxed">
+              Las sondas automatizadas externas hacia rutas sensibles (<code class="text-zinc-300">/.env</code>, <code class="text-zinc-300">/wp-config.php</code>, <code class="text-zinc-300">/.git</code>) son interceptadas con código <code class="text-[#d4b26f]">403 Forbidden</code> y bloqueo automático de IP.
+            </p>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div class="bg-zinc-950 border border-zinc-800/90 rounded-xl p-3.5">
+              <div class="text-[10px] uppercase text-zinc-500 font-mono">IPs Bloqueadas (WAF)</div>
+              <div id="secBlockedCount" class="text-xl font-bold text-[#d4b26f] font-mono mt-1">0</div>
+              <div class="text-[10px] text-zinc-500 mt-0.5">Escáneres detenidos</div>
+            </div>
+            <div class="bg-zinc-950 border border-zinc-800/90 rounded-xl p-3.5">
+              <div class="text-[10px] uppercase text-zinc-500 font-mono">Sesiones Activas</div>
+              <div id="secActiveSessions" class="text-xl font-bold text-white font-mono mt-1">1</div>
+              <div class="text-[10px] text-zinc-500 mt-0.5">Tokens en SQLite</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Audit Log Table -->
+        <div class="lg:col-span-2 bg-zinc-950 border border-zinc-800/90 rounded-xl overflow-hidden flex flex-col">
+          <div class="px-4 py-2.5 bg-zinc-900/70 border-b border-zinc-800 flex items-center justify-between">
+            <span class="text-xs font-semibold text-zinc-300">Bitácora Reciente de Accesos y Eventos de Seguridad</span>
+            <span class="text-[10px] font-mono text-zinc-500">SQLite audit_log</span>
+          </div>
+          <div class="overflow-x-auto max-h-52">
+            <table class="w-full text-left text-xs">
+              <thead class="text-[10px] uppercase text-zinc-500 bg-zinc-900/40 border-b border-zinc-800/80">
+                <tr>
+                  <th class="py-2 px-3">Fecha / Hora</th>
+                  <th class="py-2 px-3">Actor</th>
+                  <th class="py-2 px-3">Evento</th>
+                  <th class="py-2 px-3">Detalle / IP</th>
+                </tr>
+              </thead>
+              <tbody id="secAuditTableBody" class="divide-y divide-zinc-800/60 text-zinc-300 font-mono text-[11px]">
+                <tr>
+                  <td colspan="4" class="py-4 text-center text-zinc-500">Cargando registros de auditoría...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL: NUEVA SUCURSAL -->
+  <div id="modalNewBranch" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-[20px] max-w-md w-full p-6 shadow-2xl">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-store text-[#d4b26f]"></i> Aperturar Nueva Sucursal
+        </h3>
+        <button type="button" onclick="document.getElementById('modalNewBranch').classList.add('hidden')" class="text-zinc-400 hover:text-white">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <form id="formNewBranch" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-zinc-300 mb-1">Nombre de la Sucursal *</label>
+          <input type="text" id="newBranchName" required placeholder="Ej. Sucursal Polanco Masaryk" class="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-[#c5a059]">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-zinc-300 mb-1">Código Identificador *</label>
+          <input type="text" id="newBranchCode" required placeholder="Ej. SUC-POL-03" class="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3.5 py-2 text-sm text-white font-mono uppercase focus:outline-none focus:border-[#c5a059]">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-zinc-300 mb-1">Dirección / Ubicación</label>
+          <input type="text" id="newBranchAddress" placeholder="Ej. Av. Presidente Masaryk 214, CDMX" class="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-[#c5a059]">
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="document.getElementById('modalNewBranch').classList.add('hidden')" class="bg-zinc-800 text-zinc-300 text-xs px-4 py-2 rounded-xl">Cancelar</button>
+          <button type="submit" class="bg-[#c5a059] hover:bg-[#d4b26f] text-zinc-950 font-bold text-xs px-4 py-2 rounded-xl">Crear Sucursal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: REGISTRAR EMPLEADO DE SUCURSAL -->
+  <div id="modalNewEmployee" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-[20px] max-w-md w-full p-6 shadow-2xl">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-user-plus text-[#d4b26f]"></i> Registrar Empleado en Sucursal
+        </h3>
+        <button type="button" onclick="document.getElementById('modalNewEmployee').classList.add('hidden')" class="text-zinc-400 hover:text-white">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <p class="text-xs text-zinc-400 mb-4">
+        El empleado podrá iniciar sesión desde la pantalla principal seleccionando su sucursal e ingresando su PIN, con acceso exclusivo a su panel de trabajo (POS).
+      </p>
+      <form id="formNewEmployee" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-zinc-300 mb-1">Nombre Completo *</label>
+          <input type="text" id="newEmpName" required placeholder="Ej. Carlos Rivera" class="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-[#c5a059]">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-zinc-300 mb-1">Puesto / Rol *</label>
+            <select id="newEmpRole" class="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#c5a059]">
+              <option value="cajero">Cajero / Barista (POS)</option>
+              <option value="gerente">Gerente de Sucursal</option>
+              <option value="almacenista">Almacenista / Inventarios</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-zinc-300 mb-1">PIN de Acceso (4+ dígitos) *</label>
+            <input type="password" id="newEmpPin" required minlength="4" maxlength="8" placeholder="Ej. 5678" class="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3.5 py-2 text-sm text-white font-mono focus:outline-none focus:border-[#c5a059]">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-zinc-300 mb-1">Sucursal Asignada *</label>
+            <select id="newEmpBranch" class="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#c5a059]"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-zinc-300 mb-1">Sueldo Base Mensual ($)</label>
+            <input type="number" id="newEmpSalary" value="9500" min="0" step="100" class="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3.5 py-2 text-sm text-white font-mono focus:outline-none focus:border-[#c5a059]">
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="document.getElementById('modalNewEmployee').classList.add('hidden')" class="bg-zinc-800 text-zinc-300 text-xs px-4 py-2 rounded-xl">Cancelar</button>
+          <button type="submit" class="bg-[#c5a059] hover:bg-[#d4b26f] text-zinc-950 font-bold text-xs px-4 py-2 rounded-xl">Guardar Empleado</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-zinc-900 py-4 bg-[#0a0a0b] text-center text-xs text-zinc-500">
+    <p>EconoMetrics · Arquitectura Empresarial para Propietarios · Base de Datos Relacional Unificada</p>
+  </footer>
+
+  <script>
+    const fmtCurrency = (n) => "$" + Number(n || 0).toLocaleString("es-MX", { maximumFractionDigits: 0 });
+
+    let ownerSession = null;
+    try {
+      ownerSession = JSON.parse(localStorage.getItem("econometrics_owner_session") || "null");
+    } catch (e) {}
+
+    async function initHub() {
+      // Load public context (businesses & branches)
+      try {
+        const res = await fetch("/api/auth/public-context");
+        const ctx = await res.json();
+        const biz = (ctx.businesses && ctx.businesses[0]) || { name: "Aura Café & Roastery", sector: "Alimentos y Bebidas", owner_name: "Propietario Principal" };
+        const branches = ctx.branches || [];
+
+        const ownerName = (ownerSession && ownerSession.owner && ownerSession.owner.full_name) || biz.owner_name || "Propietario Principal";
+        const bizName = (ownerSession && ownerSession.business && ownerSession.business.name) || biz.name;
+
+        document.getElementById("hubOwnerName").textContent = ownerName;
+        document.getElementById("hubBusinessNameInline").textContent = bizName;
+        document.getElementById("hubBusinessSector").textContent = `${bizName} · ${biz.business_type || biz.sector || "Establecimiento"}`;
+
+        const select = document.getElementById("activeBranchSelect");
+        const empBranchSelect = document.getElementById("newEmpBranch");
+        if (branches.length > 0) {
+          const savedBranchId = localStorage.getItem("econometrics_active_branch_id") || String(branches[0].id);
+          select.innerHTML = branches.map(b => `<option value="${b.id}" data-code="${b.code}" data-name="${b.name}" ${String(b.id) === String(savedBranchId) ? 'selected' : ''}>${b.name} (${b.code})</option>`).join("");
+          empBranchSelect.innerHTML = branches.map(b => `<option value="${b.id}">${b.name}</option>`).join("");
+          document.getElementById("statBranchesCount").textContent = branches.length;
+          updateBranchLabels();
+        }
+
+        select.addEventListener("change", () => {
+          localStorage.setItem("econometrics_active_branch_id", select.value);
+          updateBranchLabels();
+        });
+      } catch (e) {
+        console.warn("Error loading context:", e);
+      }
+
+      // Load Studio Baseline & Live ERP Metrics
+      try {
+        const [baseRes, liveRes] = await Promise.all([
+          fetch("/api/ops/baseline"),
+          fetch("/api/ops/live-parameters")
+        ]);
+        if (baseRes.ok) {
+          const baseData = await baseRes.json();
+          if (baseData.exists && baseData.baseline) {
+            const b = baseData.baseline;
+            const fin = b.financial_Input || (b.payload && b.payload.financial_input) || {};
+            const rep = b.report_summary || {};
+            document.getElementById("studioBaseInv").textContent = fmtCurrency(fin.initial_investment || 350000);
+            document.getElementById("studioBaseNpv").textContent = rep.npv !== undefined ? fmtCurrency(rep.npv) : "$412,850";
+            document.getElementById("studioBaseIrr").textContent = rep.irr_pct !== undefined ? `${Number(rep.irr_pct).toFixed(1)}%` : "38.4%";
+            if (b.updated_at) {
+              document.getElementById("studioPlanUpdated").textContent = b.updated_at.slice(0, 10);
+            }
+          }
+        }
+        if (liveRes.ok) {
+          const live = await liveRes.json();
+          document.getElementById("statHeadcount").textContent = `${live.hr?.headcount || 0} colab.`;
+          document.getElementById("statPayrollMonthly").textContent = `Nómina: ${fmtCurrency(live.hr?.monthly_total_payroll || 0)}/mes`;
+          document.getElementById("opsLiveFixed").textContent = fmtCurrency(live.Unified?.monthly_fixed_costs || 0);
+          document.getElementById("opsLiveVarCost").textContent = "$" + Number(live.Unified?.unit_variable_cost || 0).toFixed(2);
+          document.getElementById("opsLiveCapex").textContent = fmtCurrency(live.assets?.active_capex_total || 0);
+        }
+      } catch (e) {
+        console.warn("Error loading live/baseline metrics:", e);
+      }
+
+      loadSecurityStatus();
+    }
+
+    function updateBranchLabels() {
+      const sel = document.getElementById("activeBranchSelect");
+      const opt = sel.options[sel.selectedIndex];
+      if (!opt) return;
+      const code = opt.getAttribute("data-code") || "SUC-01";
+      const name = opt.getAttribute("data-name") || opt.textContent;
+      document.getElementById("statActiveBranchCode").textContent = code;
+      document.getElementById("opsLiveBranchLabel").textContent = name;
+      sessionStorage.setItem("pos_branch", JSON.stringify({ id: Number(sel.value), code, name }));
+    }
+
+    async function loadSecurityStatus() {
+      try {
+        const res = await fetch("/api/auth/security-status");
+        if (!res.ok) return;
+        const data = await res.json();
+        document.getElementById("secBlockedCount").textContent = data.blocked_scanner_ips_count || 0;
+        document.getElementById("secActiveSessions").textContent = data.active_sessions_count || 1;
+        const tbody = document.getElementById("secAuditTableBody");
+        const events = data.recent_audit_events || [];
+        if (events.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-zinc-500">Sin eventos registrados</td></tr>`;
+          return;
+        }
+        tbody.innerHTML = events.slice(0, 10).map(ev => {
+          const isWarn = (ev.action || "").includes("BLOCK") || (ev.action || "").includes("FAIL");
+          const badgeClass = isWarn ? "text-rose-400" : "text-[#d4b26f]";
+          return `
+            <tr class="hover:bg-zinc-900/40">
+              <td class="py-2 px-3 text-zinc-400">${(ev.ts || "").replace("T", " ").slice(0, 19)}</td>
+              <td class="py-2 px-3 font-semibold text-white">${ev.actor || "Sistema"}</td>
+              <td class="py-2 px-3 ${badgeClass}">${ev.action || ""}</td>
+              <td class="py-2 px-3 text-zinc-400 truncate max-w-xs">${ev.detail || ""}</td>
+            </tr>
+          `;
+        }).join("");
+      } catch (e) {}
+    }
+
+    document.getElementById("btnRefreshSecurity").addEventListener("click", loadSecurityStatus);
+
+    document.getElementById("btnNewBranchModal").addEventListener("click", () => {
+      document.getElementById("modalNewBranch").classList.remove("hidden");
+    });
+
+    document.getElementById("btnNewEmployeeModal").addEventListener("click", () => {
+      document.getElementById("modalNewEmployee").classList.remove("hidden");
+    });
+
+    document.getElementById("formNewBranch").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = document.getElementById("newBranchName").value.trim();
+      const code = document.getElementById("newBranchCode").value.trim().toUpperCase();
+      const address = document.getElementById("newBranchAddress").value.trim();
+      const business_id = (ownerSession && ownerSession.business && ownerSession.business.id) || 1;
+      const res = await fetch("/api/auth/branches", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ business_id, name, code, address })
+      });
+      if (res.ok) {
+        document.getElementById("modalNewBranch").classList.add("hidden");
+        document.getElementById("formNewBranch").reset();
+        initHub();
+      } else {
+        const err = await res.json();
+        alert(err.detail || "No se pudo crear la sucursal");
+      }
+    });
+
+    document.getElementById("formNewEmployee").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = document.getElementById("newEmpName").value.trim();
+      const role = document.getElementById("newEmpRole").value;
+      const pin = document.getElementById("newEmpPin").value.trim();
+      const branch_id = Number(document.getElementById("newEmpBranch").value || 1);
+      const monthly_salary = Number(document.getElementById("newEmpSalary").value || 9500);
+      const res = await fetch("/api/auth/employees/quick", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ branch_id, name, role, pin, monthly_salary })
+      });
+      if (res.ok) {
+        document.getElementById("modalNewEmployee").classList.add("hidden");
+        document.getElementById("formNewEmployee").reset();
+        initHub();
+        alert(`Empleado "${name}" registrado exitosamente en la sucursal.`);
+      } else {
+        const err = await res.json();
+        alert(err.detail || "Error al registrar empleado");
+      }
+    });
+
+    document.getElementById("btnLogoutOwner").addEventListener("click", () => {
+      sessionStorage.removeItem("pos_token");
+      sessionStorage.removeItem("pos_me");
+      localStorage.removeItem("econometrics_owner_session");
+      window.location.href = "index.html";
+    });
+
+    initHub();
+  </script>
+</body>
+</html>
