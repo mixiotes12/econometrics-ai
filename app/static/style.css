@@ -15,11 +15,17 @@
   --text-muted: #94a3b8;
 }
 
+html {
+  font-size: 17px;
+}
+
 body {
   font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background-color: #09090b; background-image: radial-gradient(circle at 50% 0%, #18181b 0%, #09090b 70%); background-attachment: fixed;
   color: #f1f5f9;
   min-height: 100vh;
+  font-size: 1rem;
+  line-height: 1.6;
 }
 
 code, pre, .font-mono {
@@ -162,6 +168,7 @@ input, select, textarea {
   background-color: rgba(9, 9, 11, 0.6) !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   transition: all 0.3s ease;
+  font-size: 0.95rem !important;
 }
 
 input:focus, select:focus, textarea:focus {
@@ -173,7 +180,8 @@ input:focus, select:focus, textarea:focus {
   border-radius: 14px !important;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  font-size: 0.7rem !important;
+  font-size: 0.82rem !important;
+  padding: 0.6rem 1rem !important;
 }
 
 .tab-btn.active {
@@ -276,7 +284,42 @@ table {
 th {
   background: rgba(39, 39, 42, 0.5) !important;
   backdrop-filter: blur(4px);
+  font-size: 0.85rem !important;
+}
+td {
+  font-size: 0.9rem !important;
 }
 tr:hover td {
   background: rgba(128, 90, 213, 0.05);
+}
+
+/* Global readability scale enhancements */
+.text-\[10px\] {
+  font-size: 0.75rem !important; /* 12px instead of 10px */
+}
+
+.text-\[11px\] {
+  font-size: 0.8rem !important; /* ~13px instead of 11px */
+}
+
+.text-xs {
+  font-size: 0.85rem !important; /* ~13.6px instead of 12px */
+  line-height: 1.35rem !important;
+}
+
+.text-sm {
+  font-size: 0.95rem !important; /* ~15.2px instead of 14px */
+  line-height: 1.45rem !important;
+}
+
+label {
+  font-size: 0.88rem !important;
+  letter-spacing: 0.01em;
+}
+
+/* Improve container width and breathing room on desktop displays */
+@media (min-width: 1280px) {
+  .max-w-7xl {
+    max-width: 88rem !important; /* expand from 80rem to 88rem */
+  }
 }
