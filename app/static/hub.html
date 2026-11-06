@@ -234,95 +234,110 @@
             </ul>
           </div>
 
-          <div class="flex flex-wrap items-center gap-3 pt-4 border-t border-zinc-800/80">
-            <a href="owner.html" class="flex-1 bg-[#c5a059] hover:bg-[#d4b26f] text-zinc-950 font-bold text-xs px-5 py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm">
-              <span>Abrir Portal del Dueño (ERP)</span>
-              <i class="fa-solid fa-arrow-right"></i>
-            </a>
-            <a href="pos.html" title="Abrir la Terminal Punto de Venta como Administrador de esta sucursal" class="bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 font-semibold text-xs px-4 py-3.5 rounded-xl transition-all flex items-center gap-2">
-              <i class="fa-solid fa-cash-register text-[#d4b26f]"></i>
-              <span>Terminal POS</span>
-            </a>
+          <div class="space-y-3 pt-4 border-t border-zinc-800/80">
+            <div class="flex flex-wrap items-center gap-3">
+              <a href="owner.html" class="flex-1 bg-[#c5a059] hover:bg-[#d4b26f] text-zinc-950 font-bold text-xs px-5 py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm">
+                <span>Abrir Portal del Dueño (ERP)</span>
+                <i class="fa-solid fa-arrow-right"></i>
+              </a>
+              <a href="pos.html" title="Abrir la Terminal Punto de Venta como Administrador de esta sucursal" class="bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 font-semibold text-xs px-4 py-3.5 rounded-xl transition-all flex items-center gap-2">
+                <i class="fa-solid fa-cash-register text-[#d4b26f]"></i>
+                <span>Terminal POS</span>
+              </a>
+            </div>
+            <!-- Accesos directos en 1 clic para el Dueño -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1">
+              <a href="inventario.html" class="bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 hover:border-[#c5a059]/40 rounded-xl px-3 py-2 text-xs text-zinc-300 flex items-center justify-center gap-1.5 transition-all">
+                <i class="fa-solid fa-boxes-stacked text-[#d4b26f]"></i>
+                <span>Inventarios</span>
+              </a>
+              <a href="personal.html" class="bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 hover:border-[#c5a059]/40 rounded-xl px-3 py-2 text-xs text-zinc-300 flex items-center justify-center gap-1.5 transition-all">
+                <i class="fa-solid fa-users text-[#d4b26f]"></i>
+                <span>Nómina y RRHH</span>
+              </a>
+              <a href="owner.html" class="col-span-2 sm:col-span-1 bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 hover:border-[#c5a059]/40 rounded-xl px-3 py-2 text-xs text-zinc-300 flex items-center justify-center gap-1.5 transition-all">
+                <i class="fa-solid fa-sliders text-[#d4b26f]"></i>
+                <span>Simulador Precios</span>
+              </a>
+            </div>
           </div>
         </div>
 
       </div>
     </section>
 
-    <!-- CYBERSECURITY & ACCESS AUDIT SECTION -->
-    <section class="rounded-[22px] bg-[#111114] border border-zinc-800/90 p-6 sm:p-7">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 mb-5 border-b border-zinc-800">
-        <div class="flex items-center gap-3.5">
-          <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center">
-            <i class="fa-solid fa-shield-halved text-lg"></i>
-          </div>
-          <div>
-            <div class="flex items-center gap-2">
-              <h2 class="text-base font-bold text-white">Centro de Ciberseguridad y Auditoría de Accesos</h2>
-              <span class="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">WAF Activo</span>
-            </div>
-            <p class="text-xs text-zinc-400">Monitoreo en tiempo real del servidor expuesto por Tailscale Funnel · Prevención de escáneres, fuerza bruta y registro de sesiones.</p>
-          </div>
-        </div>
-        <button id="btnRefreshSecurity" type="button" class="bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs text-zinc-300 px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 self-start sm:self-auto">
-          <i class="fa-solid fa-rotate text-[#d4b26f]"></i>
-          <span>Actualizar Bitácora</span>
-        </button>
-      </div>
-
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Security Summary Cards -->
-        <div class="space-y-3">
-          <div class="bg-zinc-950 border border-zinc-800/90 rounded-xl p-4">
-            <div class="flex items-center justify-between text-xs mb-1">
-              <span class="text-zinc-400 font-medium">Estado de Integridad del Servidor</span>
-              <span class="text-emerald-400 font-mono font-bold">100% ÍNTEGRO</span>
-            </div>
-            <p class="text-[11px] text-zinc-500 leading-relaxed">
-              Las sondas automatizadas externas hacia rutas sensibles (<code class="text-zinc-300">/.env</code>, <code class="text-zinc-300">/wp-config.php</code>, <code class="text-zinc-300">/.git</code>) son interceptadas con código <code class="text-[#d4b26f]">403 Forbidden</code> y bloqueo automático de IP.
-            </p>
-          </div>
-
-          <div class="grid grid-cols-2 gap-3">
-            <div class="bg-zinc-950 border border-zinc-800/90 rounded-xl p-3.5">
-              <div class="text-[10px] uppercase text-zinc-500 font-mono">IPs Bloqueadas (WAF)</div>
-              <div id="secBlockedCount" class="text-xl font-bold text-[#d4b26f] font-mono mt-1">0</div>
-              <div class="text-[10px] text-zinc-500 mt-0.5">Escáneres detenidos</div>
-            </div>
-            <div class="bg-zinc-950 border border-zinc-800/90 rounded-xl p-3.5">
-              <div class="text-[10px] uppercase text-zinc-500 font-mono">Sesiones Activas</div>
-              <div id="secActiveSessions" class="text-xl font-bold text-white font-mono mt-1">1</div>
-              <div class="text-[10px] text-zinc-500 mt-0.5">Tokens en SQLite</div>
-            </div>
-          </div>
+    <!-- CYBERSECURITY & ACCESS AUDIT SECTION (COLLAPSIBLE SO IT DOES NOT OVERWHELM) -->
+    <details class="advanced-panel">
+      <summary>
+        <span class="flex items-center gap-2.5">
+          <i class="fa-solid fa-shield-halved text-emerald-400"></i>
+          <span>Centro de Ciberseguridad y Bitácora Técnica de Accesos (WAF Activo · 100% Íntegro)</span>
+        </span>
+        <span class="text-xs text-[#d4b26f] font-mono">Ver Bitácora <i class="fa-solid fa-chevron-down chevron-icon ml-1"></i></span>
+      </summary>
+      <div class="advanced-body space-y-5">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-zinc-800">
+          <p class="text-xs text-zinc-400">Monitoreo en tiempo real del servidor expuesto por Tailscale Funnel · Prevención de escáneres, fuerza bruta y registro de sesiones.</p>
+          <button id="btnRefreshSecurity" type="button" class="bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs text-zinc-300 px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 self-start sm:self-auto">
+            <i class="fa-solid fa-rotate text-[#d4b26f]"></i>
+            <span>Actualizar Bitácora</span>
+          </button>
         </div>
 
-        <!-- Audit Log Table -->
-        <div class="lg:col-span-2 bg-zinc-950 border border-zinc-800/90 rounded-xl overflow-hidden flex flex-col">
-          <div class="px-4 py-2.5 bg-zinc-900/70 border-b border-zinc-800 flex items-center justify-between">
-            <span class="text-xs font-semibold text-zinc-300">Bitácora Reciente de Accesos y Eventos de Seguridad</span>
-            <span class="text-[10px] font-mono text-zinc-500">SQLite audit_log</span>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Security Summary Cards -->
+          <div class="space-y-3">
+            <div class="bg-zinc-950 border border-zinc-800/90 rounded-xl p-4">
+              <div class="flex items-center justify-between text-xs mb-1">
+                <span class="text-zinc-400 font-medium">Estado de Integridad del Servidor</span>
+                <span class="text-emerald-400 font-mono font-bold">100% ÍNTEGRO</span>
+              </div>
+              <p class="text-[11px] text-zinc-500 leading-relaxed">
+                Las sondas automatizadas externas hacia rutas sensibles (<code class="text-zinc-300">/.env</code>, <code class="text-zinc-300">/wp-config.php</code>, <code class="text-zinc-300">/.git</code>) son interceptadas con código <code class="text-[#d4b26f]">403 Forbidden</code> y bloqueo automático de IP.
+              </p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div class="bg-zinc-950 border border-zinc-800/90 rounded-xl p-3.5">
+                <div class="text-[10px] uppercase text-zinc-500 font-mono">IPs Bloqueadas (WAF)</div>
+                <div id="secBlockedCount" class="text-xl font-bold text-[#d4b26f] font-mono mt-1">0</div>
+                <div class="text-[10px] text-zinc-500 mt-0.5">Escáneres detenidos</div>
+              </div>
+              <div class="bg-zinc-950 border border-zinc-800/90 rounded-xl p-3.5">
+                <div class="text-[10px] uppercase text-zinc-500 font-mono">Sesiones Activas</div>
+                <div id="secActiveSessions" class="text-xl font-bold text-white font-mono mt-1">1</div>
+                <div class="text-[10px] text-zinc-500 mt-0.5">Tokens en SQLite</div>
+              </div>
+            </div>
           </div>
-          <div class="overflow-x-auto max-h-52">
-            <table class="w-full text-left text-xs">
-              <thead class="text-[10px] uppercase text-zinc-500 bg-zinc-900/40 border-b border-zinc-800/80">
-                <tr>
-                  <th class="py-2 px-3">Fecha / Hora</th>
-                  <th class="py-2 px-3">Actor</th>
-                  <th class="py-2 px-3">Evento</th>
-                  <th class="py-2 px-3">Detalle / IP</th>
-                </tr>
-              </thead>
-              <tbody id="secAuditTableBody" class="divide-y divide-zinc-800/60 text-zinc-300 font-mono text-[11px]">
-                <tr>
-                  <td colspan="4" class="py-4 text-center text-zinc-500">Cargando registros de auditoría...</td>
-                </tr>
-              </tbody>
-            </table>
+
+          <!-- Audit Log Table -->
+          <div class="lg:col-span-2 bg-zinc-950 border border-zinc-800/90 rounded-xl overflow-hidden flex flex-col">
+            <div class="px-4 py-2.5 bg-zinc-900/70 border-b border-zinc-800 flex items-center justify-between">
+              <span class="text-xs font-semibold text-zinc-300">Bitácora Reciente de Accesos y Eventos de Seguridad</span>
+              <span class="text-[10px] font-mono text-zinc-500">SQLite audit_log</span>
+            </div>
+            <div class="overflow-x-auto max-h-52">
+              <table class="w-full text-left text-xs">
+                <thead class="text-[10px] uppercase text-zinc-500 bg-zinc-900/40 border-b border-zinc-800/80">
+                  <tr>
+                    <th class="py-2 px-3">Fecha / Hora</th>
+                    <th class="py-2 px-3">Actor</th>
+                    <th class="py-2 px-3">Evento</th>
+                    <th class="py-2 px-3">Detalle / IP</th>
+                  </tr>
+                </thead>
+                <tbody id="secAuditTableBody" class="divide-y divide-zinc-800/60 text-zinc-300 font-mono text-[11px]">
+                  <tr>
+                    <td colspan="4" class="py-4 text-center text-zinc-500">Cargando registros de auditoría...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
-    </section>
+    </details>
 
   </main>
 

@@ -126,6 +126,76 @@
     $("kpiNewBreakeven").textContent = `${fmtNum(beUnits, 0)} uds/mes`;
     $("kpiNewBreakevenRev").textContent = `${fmtMoney(beRev)} / mes (Antes: ${fmtNum(baseRep.break_even.monthly_breakeven_units, 0)} uds)`;
 
+    // Renderizar Semáforo Ejecutivo de 3 tarjetas claras para el Dueño
+    if ($("ownerTrafficLightGrid")) {
+      const npvOk = curRep.npv > 0;
+      const fixedDeltaPct = baseRep && recalcData.baseline_inputs?.monthly_fixed_costs > 0
+        ? ((brk.monthly_fixed_costs_total - recalcData.baseline_inputs.monthly_fixed_costs) / recalcData.baseline_inputs.monthly_fixed_costs) * 100
+        : 0;
+      const fixedOk = fixedDeltaPct <= 10;
+      const beDeltaPct = baseRep.break_even.monthly_breakeven_units > 0
+        ? ((beUnits - baseRep.break_even.monthly_breakeven_units) / baseRep.break_even.monthly_breakeven_units) * 100
+        : 0;
+      const beOk = beDeltaPct <= 10;
+
+      const cardHtml = (ok, warn, title, statusText, detailText, icon) => {
+        const badgeCls = ok
+          ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
+          : warn
+          ? "bg-amber-500/20 text-amber-300 border-amber-500/40"
+          : "bg-rose-500/20 text-rose-300 border-rose-500/40";
+        const dotCls = ok ? "bg-emerald-400" : warn ? "bg-amber-400" : "bg-rose-400";
+        return `
+        <div class="bg-zinc-950/90 border border-zinc-800/90 rounded-xl p-4 flex flex-col justify-between gap-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-zinc-300 flex items-center gap-1.5"><i class="fa-solid ${icon} text-[#d4b26f]"></i> ${title}</span>
+            <span class="pill border ${badgeCls} flex items-center gap-1.5"><span class="w-2 h-2 rounded-full ${dotCls}"></span>${statusText}</span>
+          </div>
+          <p class="text-xs text-zinc-300 leading-relaxed">${detailText}</p>
+        </div>`;
+      };
+
+      $("ownerTrafficLightGrid").innerHTML =
+        cardHtml(
+          npvOk,
+          !npvOk && curRep.irr_pct > 0,
+          "1. Rentabilidad del Negocio",
+          npvOk ? "Rentable (En Verde)" : "Atención Requerida",
+          npvOk
+            ? `Tu operación genera un Valor Neto positivo (${fmtMoney(curRep.npv)}) con una TIR de ${fmtNum(curRep.irr_pct || 0, 1)}% anual.`
+            : `Con los costos actuales el VAN es ${fmtMoney(curRep.npv)}. Usa el Simulador Rápido abajo para probar un ajuste de precio.` ,
+          "fa-chart-line"
+        ) +
+        cardHtml(
+          fixedOk,
+          fixedDeltaPct > 10 && fixedDeltaPct <= 25,
+          "2. Control de Gastos Fijos",
+          fixedOk ? "Bajo Control" : `Subieron +${fmtNum(fixedDeltaPct, 1)}%`,
+          fixedOk
+            ? `Tus gastos fijos y nómina (${fmtMoney(brk.monthly_fixed_costs_total)}/mes) están alineados con tu plan financiero.`
+            : `Tus gastos fijos actuales superan en ${fmtNum(fixedDeltaPct, 1)}% lo planeado originalmente. Revisa la pestaña Gastos Fijos.` ,
+          "fa-file-invoice-dollar"
+        ) +
+        cardHtml(
+          beOk,
+          beDeltaPct > 10 && beDeltaPct <= 25,
+          "3. Meta de Punto de Equilibrio",
+          beOk ? "Meta Accesible" : `Exige +${fmtNum(beDeltaPct, 0)}% ventas`,
+          `Necesitas vender ${fmtNum(beUnits, 0)} unidades al mes (${fmtMoney(beRev)}) para cubrir todos tus gastos sin perder dinero.`,
+          "fa-scale-balanced"
+        );
+    }
+
+    // Actualizar vista del Simulador Rápido en 1 Clic
+    if ($("qsimBreakevenLabel")) {
+      $("qsimPriceCostLabel").textContent = `Precio: ${fmtMoney(recalcData.current_inputs?.monthly_price)} | Costo Fijo: ${fmtMoney(recalcData.current_inputs?.monthly_fixed_costs)}`;
+      $("qsimBreakevenLabel").textContent = `${fmtNum(beUnits, 0)} uds/mes`;
+      $("qsimBreakevenSub").textContent = `${fmtMoney(beRev)} / mes requeridos`;
+      $("qsimNpvLabel").textContent = fmtMoney(curRep.npv);
+      $("qsimNpvLabel").className = `text-lg font-black font-mono block mt-0.5 ${curRep.npv >= 0 ? "text-emerald-400" : "text-rose-400"}`;
+      $("qsimIrrSub").textContent = `TIR: ${fmtNum(curRep.irr_pct || 0, 1)}% anual`;
+    }
+
     // Alertas prescriptivas
     const severityStyles = {
       critica: "border-rose-500/50 bg-rose-950/30 text-rose-200",
@@ -488,6 +558,48 @@
     $("exportSimToStudioBtn").addEventListener("click", () => {
       sendFinancialsToStudio(readSimulatorInputs());
     });
+
+    if ($("quickScenarioBtns")) {
+      $("quickScenarioBtns").addEventListener("click", async (e) => {
+        const btn = e.target.closest("[data-qsim]");
+        if (!btn || !lastLiveData) return;
+        const mode = btn.dataset.qsim;
+
+        document.querySelectorAll("#quickScenarioBtns [data-qsim]").forEach((b) => {
+          b.className = b === btn ? "btn btn-pri !py-1.5 !px-3 text-xs" : "btn btn-sec !py-1.5 !px-3 text-xs";
+        });
+
+        const baseFin = { ...lastLiveData.live_inputs };
+        let label = "Operación Real Vigente (Sin cambios)";
+        if (mode === "price_up_5") {
+          baseFin.monthly_price = +(baseFin.monthly_price * 1.05).toFixed(2);
+          label = "Simulación: Subir Precio Promedio +5%";
+        } else if (mode === "price_up_10") {
+          baseFin.monthly_price = +(baseFin.monthly_price * 1.10).toFixed(2);
+          label = "Simulación: Subir Precio Promedio +10%";
+        } else if (mode === "fixed_down_10") {
+          baseFin.monthly_fixed_costs = +(baseFin.monthly_fixed_costs * 0.90).toFixed(2);
+          label = "Simulación: Reducir Gastos Fijos -10%";
+        } else if (mode === "units_up_15") {
+          baseFin.monthly_units = Math.round(baseFin.monthly_units * 1.15);
+          label = "Simulación: Aumentar Volumen de Ventas +15%";
+        }
+
+        try {
+          const days = +$("daysWindowSelect").value || 30;
+          const simRes = await api(`/api/ops/recalculate`, {
+            method: "POST",
+            body: { days_window: days, custom_financials: baseFin },
+          });
+          lastRecalcData = simRes;
+          populateSimulatorInputs(baseFin);
+          if ($("qsimScenarioLabel")) $("qsimScenarioLabel").textContent = label;
+          renderDashboardAndComparison(lastLiveData, simRes);
+        } catch (err) {
+          alert(err.message);
+        }
+      });
+    }
 
     await loadAll();
   });

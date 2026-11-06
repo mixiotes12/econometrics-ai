@@ -67,17 +67,17 @@
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
   <link rel="stylesheet" href="style.css">
   <style>
-    .inp { background:#09090b; border:1px solid #27272a; border-radius:.65rem; padding:.5rem .75rem; width:100%; font-size:.875rem; color:#fafafa; }
+    .inp { background:#09090b; border:1px solid #27272a; border-radius:.65rem; padding:.6rem .85rem; width:100%; font-size:.95rem; color:#fafafa; }
     .inp:focus { outline:none; border-color:#c5a059; }
-    .btn { padding:.5rem .9rem; border-radius:.65rem; font-size:.8rem; font-weight:600; transition: all .15s ease-in-out; }
+    .btn { padding:.6rem 1.05rem; border-radius:.65rem; font-size:.88rem; font-weight:600; transition: all .15s ease-in-out; cursor:pointer; }
     .btn-pri { background:#c5a059; color:#09090b; font-weight:700; } .btn-pri:hover { background:#d4b26f; }
     .btn-sec { background:#18181b; color:#e4e4e7; border:1px solid #27272a; } .btn-sec:hover { background:#27272a; border-color:rgba(197,160,89,.4); }
     .btn-red { background:#991b1b; color:#fff; } .btn-red:hover { background:#dc2626; }
-    .tab-btn { padding:.65rem 1rem; font-size:.8rem; font-weight:600; border-bottom:2px solid transparent; color:#a1a1aa; }
+    .tab-btn { padding:.75rem 1.15rem; font-size:.9rem; font-weight:600; border-bottom:2px solid transparent; color:#a1a1aa; }
     .tab-btn.active { color:#d4b26f; border-color:#c5a059; background:rgba(197,160,89,.06); }
-    th { text-align:left; font-weight:600; color:#a1a1aa; font-size:.7rem; text-transform:uppercase; padding:.4rem .5rem; }
-    td { padding:.4rem .5rem; font-size:.8rem; border-top:1px solid #18181b; }
-    label.l { display:block; font-size:.7rem; color:#a1a1aa; margin-bottom:.2rem; }
+    th { text-align:left; font-weight:600; color:#a1a1aa; font-size:.78rem; text-transform:uppercase; padding:.55rem .65rem; }
+    td { padding:.55rem .65rem; font-size:.9rem; border-top:1px solid #18181b; }
+    label.l { display:block; font-size:.8rem; color:#d4d4d8; margin-bottom:.28rem; font-weight:600; }
   </style>
 </head>
 <body class="bg-[#0a0a0b] text-zinc-100 min-h-screen">
@@ -141,58 +141,115 @@
   <main class="max-w-7xl mx-auto px-4 py-5">
 
     <!-- VENTA -->
-    <section id="tab-venta" class="tab-panel grid lg:grid-cols-3 gap-5">
-      <div class="lg:col-span-2 space-y-3">
-        <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 relative">
-          <div class="flex justify-between items-center mb-1">
-            <label class="l mb-0">Código de barras / SKU / nombre</label>
-            <span class="text-[10px] text-zinc-400">
-              <span class="hidden sm:inline">2+ letras para opciones · </span>
-              <kbd class="px-1.5 py-0.5 bg-zinc-800 rounded border border-zinc-700 font-mono text-zinc-300">Tab</kbd> para elegir · 
-              <kbd class="px-1.5 py-0.5 bg-zinc-800 rounded border border-zinc-700 font-mono text-zinc-300">Enter</kbd> agregar
-            </span>
-          </div>
-          <div class="relative">
-            <div class="flex gap-2">
-              <div class="relative flex-1">
-                <input id="scanInput" class="inp text-base pr-8" placeholder="Escribe para buscar o escanea (ej. café, americano, latte)..." autocomplete="off" spellcheck="false">
-                <span id="scanClearBtn" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 cursor-pointer hidden text-xs p-1" title="Limpiar">
-                  <i class="fa-solid fa-xmark"></i>
+    <section id="tab-venta" class="tab-panel space-y-4">
+      <!-- Barra de ayuda rápida y atajos para el empleado -->
+      <div class="bg-[#111114] border border-zinc-800/90 rounded-xl px-4 py-2.5 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex flex-wrap items-center gap-3 text-xs text-zinc-300">
+          <span class="font-bold text-[#d4b26f] flex items-center gap-1.5"><i class="fa-solid fa-bolt"></i> Atajos de Teclado:</span>
+          <span class="bg-zinc-900 border border-zinc-800 px-2 py-0.5 rounded font-mono text-[11px]"><b class="text-[#d4b26f]">F2</b> Buscar</span>
+          <span class="bg-zinc-900 border border-zinc-800 px-2 py-0.5 rounded font-mono text-[11px]"><b class="text-[#d4b26f]">Tab</b> Autocompletar</span>
+          <span class="bg-zinc-900 border border-zinc-800 px-2 py-0.5 rounded font-mono text-[11px]"><b class="text-[#d4b26f]">F4</b> Cobrar</span>
+          <span class="bg-zinc-900 border border-zinc-800 px-2 py-0.5 rounded font-mono text-[11px]"><b class="text-[#d4b26f]">F8</b> Vaciar</span>
+          <span class="bg-zinc-900 border border-zinc-800 px-2 py-0.5 rounded font-mono text-[11px]"><b class="text-[#d4b26f]">F9</b> Último Ticket</span>
+        </div>
+        <button id="reprintLastBtn" type="button" class="btn btn-sec !py-1.5 !px-3 text-xs flex items-center gap-1.5 border-[#c5a059]/40 text-[#d4b26f]">
+          <i class="fa-solid fa-print"></i>
+          <span>Reimprimir Último Ticket (F9)</span>
+        </button>
+      </div>
+
+      <div class="grid lg:grid-cols-3 gap-5">
+        <div class="lg:col-span-2 space-y-4">
+          <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3 relative">
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <label class="l mb-0">Código de barras / SKU / nombre del producto</label>
+                <span class="text-[10px] text-zinc-400">
+                  <span class="hidden sm:inline">2+ letras para opciones · </span>
+                  <kbd class="px-1.5 py-0.5 bg-zinc-800 rounded border border-zinc-700 font-mono text-zinc-300">Tab</kbd> para elegir ·
+                  <kbd class="px-1.5 py-0.5 bg-zinc-800 rounded border border-zinc-700 font-mono text-zinc-300">Enter</kbd> agregar
                 </span>
               </div>
-              <button id="scanBtn" class="btn btn-pri" title="Agregar producto"><i class="fa-solid fa-plus"></i></button>
+              <div class="relative">
+                <div class="flex gap-2">
+                  <div class="relative flex-1">
+                    <input id="scanInput" class="inp text-base pr-8" placeholder="Escribe para buscar o escanea (ej. café, americano, latte)..." autocomplete="off" spellcheck="false">
+                    <span id="scanClearBtn" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 cursor-pointer hidden text-xs p-1" title="Limpiar">
+                      <i class="fa-solid fa-xmark"></i>
+                    </span>
+                  </div>
+                  <button id="scanBtn" class="btn btn-pri px-5" title="Agregar producto"><i class="fa-solid fa-plus"></i> Agregar</button>
+                </div>
+                <!-- LISTA DESPLEGABLE AUTOCOMPLETE INTELIGENTE -->
+                <div id="searchResults" class="absolute left-0 right-0 top-full mt-1.5 z-50 bg-[#121215] border border-zinc-700/80 rounded-xl shadow-2xl max-h-80 overflow-y-auto divide-y divide-zinc-800/80 hidden"></div>
+              </div>
             </div>
-            <!-- LISTA DESPLEGABLE AUTOCOMPLETE INTELIGENTE -->
-            <div id="searchResults" class="absolute left-0 right-0 top-full mt-1.5 z-50 bg-[#121215] border border-zinc-700/80 rounded-xl shadow-2xl max-h-80 overflow-y-auto divide-y divide-zinc-800/80 hidden"></div>
+
+            <!-- Botonera de Productos Rápidos / Favoritos en 1 Clic -->
+            <div class="pt-3 border-t border-zinc-800/80">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-[#d4b26f] flex items-center gap-1.5">
+                  <i class="fa-solid fa-star"></i> Productos Rápidos (Toca para agregar en 1 clic)
+                </span>
+                <span class="text-[11px] text-zinc-400">Catálogo activo</span>
+              </div>
+              <div id="quickProductsBar" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                <!-- Renderizado dinámicamente por pos.js -->
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 overflow-x-auto">
+            <table class="w-full">
+              <thead><tr><th>Producto</th><th>Precio</th><th>Cant.</th><th class="text-right">Importe</th><th></th></tr></thead>
+              <tbody id="cartBody"></tbody>
+            </table>
+            <p id="cartEmpty" class="text-zinc-400 text-sm text-center py-8">Carrito vacío. Toca un producto rápido arriba o escanea un código.</p>
           </div>
         </div>
-        <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 overflow-x-auto">
-          <table class="w-full">
-            <thead><tr><th>Producto</th><th>Precio</th><th>Cant.</th><th class="text-right">Importe</th><th></th></tr></thead>
-            <tbody id="cartBody"></tbody>
-          </table>
-          <p id="cartEmpty" class="text-slate-500 text-xs text-center py-6">Carrito vacío. Escanea un producto.</p>
+
+        <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 space-y-4 h-fit">
+          <h2 class="font-bold text-base text-white border-b border-zinc-800 pb-2 flex items-center justify-between">
+            <span>Resumen de Cobro</span>
+            <i class="fa-solid fa-cash-register text-[#d4b26f]"></i>
+          </h2>
+          <div id="totals" class="text-sm space-y-1.5"></div>
+          <div>
+            <label class="l">Forma de pago</label>
+            <select id="payMethod" class="inp font-semibold">
+              <option value="efectivo">💵 Efectivo</option>
+              <option value="tarjeta">💳 Tarjeta (Débito / Crédito)</option>
+              <option value="transferencia">🏦 Transferencia SPEI</option>
+            </select>
+          </div>
+          <div id="cashBox" class="space-y-2.5 bg-zinc-950/70 p-3.5 rounded-xl border border-zinc-800/90">
+            <div>
+              <label class="l">Efectivo recibido del cliente</label>
+              <input id="received" type="number" min="0" step="0.01" class="inp font-mono text-lg font-bold text-white" placeholder="$0.00">
+            </div>
+            <!-- Botones rápidos de billetes para el cajero -->
+            <div>
+              <span class="text-[11px] text-zinc-400 block mb-1.5">Billetes rápidos (1 clic):</span>
+              <div class="grid grid-cols-3 gap-1.5">
+                <button type="button" data-cash-denom="exact" class="btn btn-sec !py-1.5 !px-2 text-xs font-mono font-bold text-[#d4b26f] border-[#c5a059]/40">Exacto</button>
+                <button type="button" data-cash-denom="50" class="btn btn-sec !py-1.5 !px-2 text-xs font-mono font-bold">$50</button>
+                <button type="button" data-cash-denom="100" class="btn btn-sec !py-1.5 !px-2 text-xs font-mono font-bold">$100</button>
+                <button type="button" data-cash-denom="200" class="btn btn-sec !py-1.5 !px-2 text-xs font-mono font-bold">$200</button>
+                <button type="button" data-cash-denom="500" class="btn btn-sec !py-1.5 !px-2 text-xs font-mono font-bold">$500</button>
+                <button type="button" data-cash-denom="1000" class="btn btn-sec !py-1.5 !px-2 text-xs font-mono font-bold">$1,000</button>
+              </div>
+            </div>
+            <div class="pt-2 border-t border-zinc-800 flex items-center justify-between">
+              <span class="text-sm font-semibold text-zinc-300">Cambio a entregar:</span>
+              <b id="changeAmt" class="text-2xl font-black text-emerald-400 font-mono">$0.00</b>
+            </div>
+          </div>
+          <div class="flex gap-2 pt-1">
+            <button id="chargeBtn" class="btn btn-pri flex-1 py-3.5 text-base shadow-lg"><i class="fa-solid fa-coins mr-1.5"></i>Cobrar (F4)</button>
+            <button id="clearCartBtn" class="btn btn-sec" title="Vaciar carrito (F8)"><i class="fa-solid fa-trash-can"></i></button>
+          </div>
+          <div id="saleMsg" class="text-sm font-medium"></div>
         </div>
-      </div>
-      <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3 h-fit">
-        <h2 class="font-bold text-sm">Resumen</h2>
-        <div id="totals" class="text-sm space-y-1"></div>
-        <div>
-          <label class="l">Forma de pago</label>
-          <select id="payMethod" class="inp">
-            <option value="efectivo">Efectivo</option><option value="tarjeta">Tarjeta</option><option value="transferencia">Transferencia</option>
-          </select>
-        </div>
-        <div id="cashBox">
-          <label class="l">Efectivo recibido</label>
-          <input id="received" type="number" min="0" step="0.01" class="inp">
-          <p class="text-sm mt-1">Cambio: <b id="changeAmt" class="text-emerald-400">$0.00</b></p>
-        </div>
-        <div class="flex gap-2">
-          <button id="chargeBtn" class="btn btn-pri flex-1 py-3 text-base"><i class="fa-solid fa-coins mr-1"></i>Cobrar</button>
-          <button id="clearCartBtn" class="btn btn-sec">Vaciar</button>
-        </div>
-        <div id="saleMsg" class="text-xs"></div>
       </div>
     </section>
 

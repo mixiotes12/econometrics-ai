@@ -28,20 +28,20 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="style.css">
   <style>
-    .inp { background:#09090b; border:1px solid #27272a; border-radius:.65rem; padding:.5rem .75rem; width:100%; font-size:.83rem; color:#f4f4f5; transition: border-color .15s; }
+    .inp { background:#09090b; border:1px solid #27272a; border-radius:.65rem; padding:.6rem .85rem; width:100%; font-size:.92rem; color:#f4f4f5; transition: border-color .15s; }
     .inp:focus { outline:none; border-color:#c5a059; }
-    .btn { padding:.5rem .95rem; border-radius:.65rem; font-size:.78rem; font-weight:600; transition: all .15s ease-in-out; display:inline-flex; align-items:center; gap:.45rem; }
+    .btn { padding:.6rem 1.05rem; border-radius:.65rem; font-size:.86rem; font-weight:600; transition: all .15s ease-in-out; display:inline-flex; align-items:center; gap:.45rem; cursor:pointer; }
     .btn-pri { background:#c5a059; color:#09090b; border:1px solid rgba(197,160,89,.6); font-weight:700; } .btn-pri:hover { background:#d4b26f; }
     .btn-purple { background:#fafafa; color:#09090b; border:1px solid #e4e4e7; font-weight:700; } .btn-purple:hover { background:#e4e4e7; }
     .btn-sec { background:#18181b; color:#e4e4e7; border:1px solid #27272a; } .btn-sec:hover { background:#27272a; border-color:rgba(197,160,89,.4); }
     .btn-red { background:#991b1b; color:#fff; } .btn-red:hover { background:#dc2626; }
-    .tab-btn { padding:.7rem 1.1rem; font-size:.82rem; font-weight:600; border-bottom:2px solid transparent; color:#a1a1aa; white-space:nowrap; transition:all .15s; }
+    .tab-btn { padding:.8rem 1.2rem; font-size:.9rem; font-weight:600; border-bottom:2px solid transparent; color:#a1a1aa; white-space:nowrap; transition:all .15s; }
     .tab-btn.active { color:#d4b26f; border-color:#c5a059; background:rgba(197,160,89,.08); }
-    th { text-align:left; font-weight:600; color:#a1a1aa; font-size:.68rem; text-transform:uppercase; letter-spacing:.04em; padding:.55rem .65rem; }
-    td { padding:.55rem .65rem; font-size:.82rem; border-top:1px solid #1f2937; vertical-align:middle; }
-    label.l { display:block; font-size:.7rem; color:#a1a1aa; margin-bottom:.2rem; font-weight:500; }
-    .card { background:rgba(20,20,23,.92); border:1px solid #27272a; border-radius:1rem; padding:1.25rem; }
-    .pill { font-size:.65rem; padding:.15rem .55rem; border-radius:9999px; font-weight:700; }
+    th { text-align:left; font-weight:600; color:#a1a1aa; font-size:.76rem; text-transform:uppercase; letter-spacing:.04em; padding:.65rem .75rem; }
+    td { padding:.65rem .75rem; font-size:.9rem; border-top:1px solid #1f2937; vertical-align:middle; }
+    label.l { display:block; font-size:.8rem; color:#d4d4d8; margin-bottom:.28rem; font-weight:600; }
+    .card { background:rgba(20,20,23,.92); border:1px solid #27272a; border-radius:1rem; padding:1.35rem; }
+    .pill { font-size:.74rem; padding:.2rem .65rem; border-radius:9999px; font-weight:700; }
   </style>
 </head>
 <body class="bg-[#0a0a0b] text-zinc-100 min-h-screen flex flex-col">
@@ -169,6 +169,26 @@
          ========================================== -->
     <section id="tab-recalculo" class="tab-panel space-y-6">
 
+      <!-- SEMÁFORO EJECUTIVO DEL NEGOCIO (RESUMEN SIMPLE PARA EL DUEÑO) -->
+      <div class="card border-[#c5a059]/40 bg-gradient-to-b from-[#151519] to-[#101013] space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800/80 pb-3">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-xl bg-[#c5a059]/15 border border-[#c5a059]/40 flex items-center justify-center text-[#d4b26f]">
+              <i class="fa-solid fa-traffic-light"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-base text-white">Semáforo Ejecutivo de tu Negocio Hoy</h3>
+              <p class="text-xs text-zinc-400">Estado general en lenguaje sencillo comparando tu operación real contra tu plan original</p>
+            </div>
+          </div>
+          <span class="text-xs text-zinc-400 font-mono" id="recalcTimestamp"></span>
+        </div>
+
+        <div id="ownerTrafficLightGrid" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- Renderizado dinámicamente por owner.js -->
+        </div>
+      </div>
+
       <!-- KPIs EN TIEMPO REAL DEL ESTABLECIMIENTO -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="card">
@@ -208,6 +228,44 @@
         </div>
       </div>
 
+      <!-- SIMULADOR RÁPIDO EN 1 CLIC PARA EL DUEÑO -->
+      <div id="quickSimSection" class="card border-[#c5a059]/35 space-y-4">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-zinc-800 pb-3">
+          <div>
+            <h3 class="font-bold text-base text-white flex items-center gap-2">
+              <i class="fa-solid fa-wand-magic-sparkles text-[#d4b26f]"></i>
+              <span>Simulador Rápido de Decisiones en 1 Clic</span>
+            </h3>
+            <p class="text-xs text-zinc-400">Toca un botón para ver al instante qué pasaría con tus ganancias y tu punto de equilibrio sin llenar formularios.</p>
+          </div>
+          <div class="flex flex-wrap gap-1.5" id="quickScenarioBtns">
+            <button type="button" data-qsim="actual" class="btn btn-pri !py-1.5 !px-3 text-xs">Realidad Hoy</button>
+            <button type="button" data-qsim="price_up_5" class="btn btn-sec !py-1.5 !px-3 text-xs">Subir Precio +5%</button>
+            <button type="button" data-qsim="price_up_10" class="btn btn-sec !py-1.5 !px-3 text-xs">Subir Precio +10%</button>
+            <button type="button" data-qsim="fixed_down_10" class="btn btn-sec !py-1.5 !px-3 text-xs">Reducir Gastos Fijos -10%</button>
+            <button type="button" data-qsim="units_up_15" class="btn btn-sec !py-1.5 !px-3 text-xs">Vender +15% Unidades</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-zinc-950/70 p-4 rounded-xl border border-zinc-800/90">
+          <div>
+            <span class="text-xs text-zinc-400 block">Escenario Seleccionado</span>
+            <strong id="qsimScenarioLabel" class="text-sm font-bold text-[#d4b26f] block mt-0.5">Operación Real Vigente (Sin cambios)</strong>
+            <span id="qsimPriceCostLabel" class="text-xs text-zinc-400 font-mono mt-1 block">Precio: $0.00 | Costo Fijo: $0.00</span>
+          </div>
+          <div>
+            <span class="text-xs text-zinc-400 block">Nuevo Punto de Equilibrio</span>
+            <strong id="qsimBreakevenLabel" class="text-lg font-black text-white font-mono block mt-0.5">0 uds/mes</strong>
+            <span id="qsimBreakevenSub" class="text-xs text-emerald-400 font-mono block">$0.00 / mes en ventas</span>
+          </div>
+          <div>
+            <span class="text-xs text-zinc-400 block">VAN Proyectado a 5 Años (Valor Neto)</span>
+            <strong id="qsimNpvLabel" class="text-lg font-black text-emerald-400 font-mono block mt-0.5">$0.00</strong>
+            <span id="qsimIrrSub" class="text-xs text-zinc-300 font-mono block">TIR: 0.0% anual</span>
+          </div>
+        </div>
+      </div>
+
       <!-- ALERTAS Y PRESCRIPCIONES AUTOMÁTICAS -->
       <div class="card space-y-3">
         <div class="flex items-center justify-between">
@@ -215,38 +273,42 @@
             <i class="fa-solid fa-triangle-exclamation text-amber-400"></i>
             <span>Diagnóstico de Desviaciones Operativas vs. Estudio Inicial</span>
           </h3>
-          <span class="text-xs text-zinc-400" id="recalcTimestamp"></span>
         </div>
         <div id="alertsContainer" class="grid md:grid-cols-2 gap-3"></div>
       </div>
 
       <!-- TABLA COMPARATIVA LADO A LADO: ESTUDIO INICIAL VS REALIDAD ACTUAL -->
-      <div class="card overflow-x-auto space-y-3">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div>
-            <h3 class="font-bold text-sm">Comparativa Rigurosa: EconoMetrics Inicial vs. Operación Real Vigente</h3>
-            <p class="text-xs text-zinc-400">Muestra cómo los cambios en precios, proveedores, nómina y maquinaria afectan los indicadores financieros clave.</p>
+      <details class="advanced-panel" open>
+        <summary>
+          <span class="flex items-center gap-2"><i class="fa-solid fa-table-columns text-[#d4b26f]"></i> Tabla Comparativa Detallada: Plan Inicial (Baseline) vs. Realidad Actual (ERP)</span>
+          <span class="text-xs text-[#d4b26f] font-mono">Mostrar / Ocultar <i class="fa-solid fa-chevron-down chevron-icon ml-1"></i></span>
+        </summary>
+        <div class="advanced-body overflow-x-auto space-y-3">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <p class="text-xs text-zinc-400">Muestra cómo los cambios en precios, proveedores, nómina y maquinaria afectan los indicadores financieros clave.</p>
+            </div>
+            <label class="flex items-center gap-2 text-xs text-zinc-300 cursor-pointer bg-zinc-900 px-3 py-1.5 rounded-lg border border-zinc-800">
+              <input type="checkbox" id="useRealSalesVolumeChk" class="rounded">
+              <span>Usar volumen de ventas del POS (en vez de meta de unidades)</span>
+            </label>
           </div>
-          <label class="flex items-center gap-2 text-xs text-zinc-300 cursor-pointer bg-zinc-900 px-3 py-1.5 rounded-lg border border-zinc-800">
-            <input type="checkbox" id="useRealSalesVolumeChk" class="rounded">
-            <span>Usar volumen de ventas del POS (en vez de meta de unidades)</span>
-          </label>
-        </div>
 
-        <table class="w-full">
-          <thead>
-            <tr>
-              <th>Parámetro / Indicador Financiero</th>
-              <th class="text-right">Plan Inicial (Baseline)</th>
-              <th class="text-right">Realidad Actual (ERP)</th>
-              <th class="text-right">Diferencia (Delta)</th>
-              <th class="text-right">Variación %</th>
-              <th class="text-center">Impacto</th>
-            </tr>
-          </thead>
-          <tbody id="comparisonTableBody"></tbody>
-        </table>
-      </div>
+          <table class="w-full">
+            <thead>
+              <tr>
+                <th>Parámetro / Indicador Financiero</th>
+                <th class="text-right">Plan Inicial (Baseline)</th>
+                <th class="text-right">Realidad Actual (ERP)</th>
+                <th class="text-right">Diferencia (Delta)</th>
+                <th class="text-right">Variación %</th>
+                <th class="text-center">Impacto</th>
+              </tr>
+            </thead>
+            <tbody id="comparisonTableBody"></tbody>
+          </table>
+        </div>
+      </details>
     </section>
 
     <!-- ==========================================

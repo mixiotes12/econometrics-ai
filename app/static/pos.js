@@ -12,6 +12,8 @@
   let shift = null;
   let settings = {};
   let currentInvoiceSale = null;
+  let lastSaleId = null;
+  let quickProductsCache = [];
   const can = (perm) => !!me && (me.is_admin || (me.permissions || []).includes(perm));
 
   // ---------- API
@@ -70,10 +72,38 @@
     if (me.must_change_pin) await forcePinChange();
     settings = await api("/settings");
     await refreshShift();
+    await loadQuickProducts();
     renderCart();
     await loadCachedProducts();
     switchTab("venta");
     $("scanInput").focus();
+  }
+
+  async function loadQuickProducts() {
+    const bar = $("quickProductsBar");
+    if (!bar) return;
+    try {
+      const list = await api("/products?q=");
+      quickProductsCache = (list || []).filter((p) => p.active !== false).slice(0, 12);
+      if (!quickProductsCache.length) {
+        bar.innerHTML = `<span class="text-xs text-zinc-500 col-span-full">No hay productos activos en el catálogo.</span>`;
+        return;
+      }
+      bar.innerHTML = quickProductsCache
+        .map(
+          (p) => `
+        <button type="button" data-quick-pick="${p.id}" class="bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 hover:border-[#c5a059]/60 rounded-xl p-2.5 text-left transition-all flex flex-col justify-between gap-1 group">
+          <span class="text-xs font-semibold text-zinc-200 group-hover:text-white line-clamp-1">${esc(p.name)}</span>
+          <div class="flex items-center justify-between w-full">
+            <span class="text-xs font-mono font-bold text-[#d4b26f]">${fmt(p.price)}</span>
+            <span class="text-[10px] text-zinc-500 group-hover:text-[#d4b26f]"><i class="fa-solid fa-plus-circle"></i></span>
+          </div>
+        </button>`
+        )
+        .join("");
+    } catch {
+      bar.innerHTML = "";
+    }
   }
 
   async function forcePinChange() {
@@ -427,6 +457,7 @@
     const received = method === "efectivo" ? parseFloat($("received").value) || 0 : total;
     try {
       const sale = await api("/sales", { method: "POST", body: { items: cart.map((l) => ({ product_id: l.product.id, qty: l.qty })), payment_method: method, received } });
+      lastSaleId = sale.id;
       cart = []; $("received").value = ""; renderCart();
       toast($("saleMsg"), `Venta ${sale.folio} registrada. Cambio: ${fmt(sale.change_given)}`);
       openTicket(sale.id, true);
@@ -434,6 +465,24 @@
     } catch (e) { toast($("saleMsg"), e.message, false); }
   }
   const openTicket = (id, print) => window.open(`/api/pos/sales/${id}/ticket?token=${token}${print ? "&print=true" : ""}`, "_blank", "width=420,height=700");
+
+  async function reprintLastTicket() {
+    try {
+      if (lastSaleId) {
+        openTicket(lastSaleId, true);
+        return;
+      }
+      const sales = await api("/sales");
+      const lastCompleted = (sales || []).find((s) => s.status === "completada") || (sales || [])[0];
+      if (!lastCompleted) {
+        return toast($("saleMsg"), "No hay ventas registradas para reimprimir.", false);
+      }
+      lastSaleId = lastCompleted.id;
+      openTicket(lastCompleted.id, true);
+    } catch (e) {
+      toast($("saleMsg"), e.message, false);
+    }
+  }
 
   // ---------- Ventas y facturas
   let currentSaleMethod = "efectivo";
@@ -576,6 +625,7 @@
     $("productsBody").innerHTML = list.map((p) => `<tr class="${p.active ? "" : "opacity-50"}"><td>${esc(p.name)}</td><td>${esc(p.sku || "")}</td><td>${esc(p.barcode || "")}</td>
       <td>${fmt(p.price)}</td><td>${fmt(p.cost)}</td><td>${IVA_LABEL[p.iva_type]}</td><td>${p.track_stock ? p.stock : "—"}</td>
       <td><button class="btn btn-sec !py-0.5" data-editp='${esc(JSON.stringify(p))}'>Editar</button></td></tr>`).join("");
+    await loadQuickProducts();
   }
   function resetProductForm() {
     $("productForm").reset(); $("pId").value = ""; $("pTrack").checked = true; $("pActive").checked = true;
@@ -677,6 +727,53 @@
     $("received").oninput = updateChange;
     $("chargeBtn").onclick = charge;
     $("clearCartBtn").onclick = () => { cart = []; renderCart(); };
+    if ($("reprintLastBtn")) $("reprintLastBtn").onclick = reprintLastTicket;
+
+    if ($("quickProductsBar")) {
+      $("quickProductsBar").addEventListener("click", (e) => {
+        const b = e.target.closest("[data-quick-pick]");
+        if (!b) return;
+        const p = quickProductsCache.find((x) => x.id === +b.dataset.quickPick);
+        if (p) {
+          addToCart(p, 1);
+          toast($("saleMsg"), `Agregado: ${p.name}`);
+        }
+      });
+    }
+
+    if ($("cashBox")) {
+      $("cashBox").addEventListener("click", (e) => {
+        const b = e.target.closest("[data-cash-denom]");
+        if (!b) return;
+        const val = b.dataset.cashDenom;
+        if (val === "exact") {
+          $("received").value = cartTotals().total.toFixed(2);
+        } else {
+          $("received").value = parseFloat(val).toFixed(2);
+        }
+        updateChange();
+      });
+    }
+
+    window.addEventListener("keydown", (e) => {
+      if (!$("loginOverlay").classList.contains("hidden")) return;
+      if (e.key === "F2") {
+        e.preventDefault();
+        switchTab("venta");
+        $("scanInput").focus();
+        $("scanInput").select();
+      } else if (e.key === "F4") {
+        e.preventDefault();
+        charge();
+      } else if (e.key === "F8") {
+        e.preventDefault();
+        cart = [];
+        renderCart();
+      } else if (e.key === "F9") {
+        e.preventDefault();
+        reprintLastTicket();
+      }
+    });
 
     $("openShiftBtn").onclick = async () => {
       try { await api("/shifts/open", { method: "POST", body: { opening_float: parseFloat($("openFloat").value) || 0 } }); await loadCaja(); }

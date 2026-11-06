@@ -182,14 +182,15 @@
         </div>
       </div>
       <div class="mb-5">
-        <label class="block text-xs font-medium text-zinc-300 mb-1">Modelo de Gemini</label>
+        <label class="block text-xs font-medium text-zinc-300 mb-1">Modelo de Gemini (Cuota Gratuita AI Studio)</label>
         <select id="geminiModelSelect" class="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059]">
-          <option value="gemini-3.5-flash" selected>gemini-3.5-flash (Recomendado • Alta Disponibilidad)</option>
+          <option value="gemini-3.8-flash" selected>gemini-3.8-flash (Recomendado • Última Generación)</option>
+          <option value="gemini-3.5-flash">gemini-3.5-flash (Alta Disponibilidad)</option>
           <option value="gemini-3.5-flash-lite">gemini-3.5-flash-lite (Ultra Rápido)</option>
-          <option value="gemini-3.6-flash">gemini-3.6-flash</option>
-          <option value="gemini-3.8-flash">gemini-3.8-flash (Preview)</option>
-          <option value="gemini-3.7-flash">gemini-3.7-flash</option>
+          <option value="gemini-3.6-flash">gemini-3.6-flash (Equilibrado)</option>
+          <option value="gemini-2.5-flash">gemini-2.5-flash (LTS / Retrocompatible)</option>
         </select>
+        <p class="text-[11px] text-zinc-400 mt-1">Modelos con soporte en el nivel gratuito de Google AI Studio.</p>
       </div>
       <div class="flex justify-end gap-2">
         <button id="saveApiKeyBtn" class="bg-[#c5a059] hover:bg-[#d4b26f] text-zinc-950 text-xs font-bold px-4 py-2 rounded-xl transition-all">Guardar Configuración</button>
@@ -548,22 +549,37 @@
               <option value="Saturada">Saturada (Mercado maduro con guerra de precios)</option>
             </select>
           </div>
-
-          <div>
-            <label class="block text-xs font-semibold text-zinc-300 mb-1.5">Detalles del Entorno (Tráfico, Accesibilidad, Renta)</label>
-            <textarea id="locationDetails" rows="2" placeholder="Ej. Paso peatonal de ~4,000 personas/día, cercanía con oficinas o universidades, estacionamiento..." class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059]">Cerca de corporativos y zona residencial, paso peatonal de ~4,000 personas al día, visibilidad frontal con ventanal.</textarea>
-          </div>
-
-          <div>
-            <label class="block text-xs font-semibold text-zinc-300 mb-1.5">Competidores Principales y Diferenciadores</label>
-            <textarea id="competitionDetails" rows="2" placeholder="Ej. Starbucks a 300m, cafetería de especialidad a 5 cuadras..." class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059]">3 cafeterías comerciales (Starbucks, Oxxo café) a 300m y 1 cafetería local independiente.</textarea>
-          </div>
-
-          <div class="md:col-span-2">
-            <label class="block text-xs font-semibold text-zinc-300 mb-1.5">Ventaja Competitiva (¿Por qué te elegirán a ti y no a otros?)</label>
-            <input type="text" id="competitiveAdvantage" value="Tueste propio en vivo, granos con trazabilidad directa con productores, atmósfera estética y café de calidad 86+ SCA." placeholder="Ej. Receta única, buena ubicación, atención más rápida..." class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059]">
-          </div>
         </div>
+
+        <!-- REVELACIÓN PROGRESIVA: DETALLES AVANZADOS DE ENTORNO Y COMPETENCIA -->
+        <details class="advanced-panel mt-5 bg-zinc-950/70 border border-zinc-800/90 rounded-2xl overflow-hidden">
+          <summary class="px-5 py-3.5 flex items-center justify-between text-xs font-semibold text-zinc-300 hover:text-white hover:bg-zinc-900/50 transition-all">
+            <span class="flex items-center gap-2">
+              <i class="fa-solid fa-sliders text-[#d4b26f]"></i>
+              <span>Detalles opcionales de entorno, competidores y ventaja competitiva (Recomendado para IA)</span>
+            </span>
+            <span class="text-[11px] text-[#d4b26f] flex items-center gap-1.5">
+              <span>Mostrar / Ocultar</span>
+              <i class="fa-solid fa-chevron-down chevron-icon transition-transform duration-200"></i>
+            </span>
+          </summary>
+          <div class="p-5 pt-2 border-t border-zinc-800/80 grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <label class="block text-xs font-semibold text-zinc-300 mb-1.5">Detalles del Entorno (Tráfico, Accesibilidad, Renta)</label>
+              <textarea id="locationDetails" rows="2" placeholder="Ej. Paso peatonal de ~4,000 personas/día, cercanía con oficinas o universidades, estacionamiento..." class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059]">Cerca de corporativos y zona residencial, paso peatonal de ~4,000 personas al día, visibilidad frontal con ventanal.</textarea>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-zinc-300 mb-1.5">Competidores Principales y Diferenciadores</label>
+              <textarea id="competitionDetails" rows="2" placeholder="Ej. Starbucks a 300m, cafetería de especialidad a 5 cuadras..." class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059]">3 cafeterías comerciales (Starbucks, Oxxo café) a 300m y 1 cafetería local independiente.</textarea>
+            </div>
+
+            <div class="md:col-span-2">
+              <label class="block text-xs font-semibold text-zinc-300 mb-1.5">Ventaja Competitiva (¿Por qué te elegirán a ti y no a otros?)</label>
+              <input type="text" id="competitiveAdvantage" value="Tueste propio en vivo, granos con trazabilidad directa con productores, atmósfera estética y café de calidad 86+ SCA." placeholder="Ej. Receta única, buena ubicación, atención más rápida..." class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059]">
+            </div>
+          </div>
+        </details>
 
         <div class="mt-6 flex justify-end">
           <button type="button" class="bg-[#c5a059] hover:bg-[#d4b26f] text-zinc-950 text-xs font-bold px-5 py-2.5 rounded-xl transition-all flex items-center gap-2" onclick="switchTab(2)">
@@ -587,51 +603,67 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <div title="El total de dinero que pondrás de tu bolsa para arrancar el negocio (equipo, permisos, inventario inicial, etc.).">
-            <label class="block text-xs font-semibold text-zinc-300 mb-1.5 cursor-help border-b border-dashed border-slate-600 inline-block">Dinero para arrancar ($ MXN) *</label>
+            <label class="block text-xs font-semibold text-zinc-200 mb-1.5 cursor-help border-b border-dashed border-slate-600 inline-block">1. Dinero total para arrancar ($ MXN) *</label>
             <div class="relative">
-              <span class="absolute left-3 top-2.5 text-zinc-400 text-xs font-mono">MXN $</span>
-              <input type="number" id="initialInvestment" value="350000" min="0" step="1000" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl pl-14 pr-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059] font-mono">
+              <span class="absolute left-3.5 top-3 text-zinc-400 text-xs font-mono">MXN $</span>
+              <input type="number" id="initialInvestment" value="350000" min="0" step="1000" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl pl-16 pr-3.5 py-3 text-base font-bold text-white focus:outline-none focus:ring-2 focus:ring-[#c5a059] font-mono">
             </div>
-            <span class="text-[10px] text-zinc-400 mt-1 block leading-tight">Inversión inicial requerida en $t=0$.</span>
-          </div>
-
-          <div title="¿Cuánto ganarías si metes este dinero al banco, pagaré o CETES sin trabajar ni correr ningún riesgo?">
-            <label class="block text-xs font-semibold text-[#d4b26f] mb-1.5 cursor-help border-b border-dashed border-[#c5a059] inline-block">Rendimiento Banco / CETES (%) *</label>
-            <div class="relative">
-              <input type="number" id="bankRiskFreeRate" value="10.5" min="0" step="0.5" class="w-full bg-zinc-900 border border-[#c5a059]/50 rounded-xl px-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059] pr-8 font-mono">
-              <span class="absolute right-3 top-2.5 text-[#d4b26f] text-sm">%</span>
-            </div>
-            <span id="bankPassiveIncomeHint" class="text-[10px] text-[#d4b26f]/90 mt-1 block leading-tight font-mono">Pasivo: $3,063/mes sin riesgo</span>
-          </div>
-
-          <div title="El rendimiento anual mínimo que exiges por arriesgar tu dinero y tu tiempo en este negocio (debe ser mayor al banco).">
-            <label class="block text-xs font-semibold text-zinc-300 mb-1.5 cursor-help border-b border-dashed border-slate-600 inline-block">Ganancia mínima exigida (%) *</label>
-            <div class="relative">
-              <input type="number" id="discountRate" value="14.0" min="0" step="0.5" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059] pr-8 font-mono">
-              <span class="absolute right-3 top-2.5 text-zinc-400 text-sm">%</span>
-            </div>
-            <span class="text-[10px] text-zinc-400 mt-1 block leading-tight">Tasa de descuento / WACC.</span>
+            <span class="text-xs text-zinc-400 mt-1.5 block leading-tight">Todo lo que invertirás para abrir (equipo, remodelación, inventario inicial).</span>
           </div>
 
           <div title="Normalmente los negocios se evalúan a 3 o 5 años para ver si a futuro valen la pena.">
-            <label class="block text-xs font-semibold text-zinc-300 mb-1.5 cursor-help border-b border-dashed border-slate-600 inline-block">¿A cuántos años calculamos?</label>
-            <select id="projectionYears" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059]">
+            <label class="block text-xs font-semibold text-zinc-200 mb-1.5 cursor-help border-b border-dashed border-slate-600 inline-block">2. ¿A cuántos años proyectamos el negocio?</label>
+            <select id="projectionYears" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3.5 py-3 text-base font-semibold text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059]">
               <option value="3">3 Años</option>
-              <option value="5" selected>5 Años (Lo más común)</option>
+              <option value="5" selected>5 Años (Recomendado)</option>
               <option value="7">7 Años</option>
               <option value="10">10 Años</option>
             </select>
-            <span class="text-[10px] text-zinc-400 mt-1 block leading-tight">Horizonte de evaluación.</span>
-          </div>
-
-          <div title="El tiempo estimado en que el equipo o los muebles que compraste dejarán de servir.">
-            <label class="block text-xs font-semibold text-zinc-300 mb-1.5 cursor-help border-b border-dashed border-slate-600 inline-block">Duración equipo (años)</label>
-            <input type="number" id="depreciationYears" value="5" min="1" max="50" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059] font-mono">
-            <span class="text-[10px] text-zinc-400 mt-1 block leading-tight">Años de vida útil fiscal.</span>
+            <span class="text-xs text-zinc-400 mt-1.5 block leading-tight">Horizonte de tiempo para evaluar tus ganancias acumuladas.</span>
           </div>
         </div>
+
+        <!-- AJUSTES AVANZADOS DE CAPITAL Y TASAS -->
+        <details class="advanced-panel mt-5 bg-zinc-950/70 border border-zinc-800/90 rounded-2xl overflow-hidden">
+          <summary class="px-5 py-3.5 flex items-center justify-between text-xs font-semibold text-zinc-300 hover:text-white hover:bg-zinc-900/50 transition-all">
+            <span class="flex items-center gap-2">
+              <i class="fa-solid fa-sliders text-[#d4b26f]"></i>
+              <span>Parámetros Financieros Avanzados (Tasa CETES, WACC exigido y Depreciación)</span>
+              <span class="text-[11px] font-mono text-zinc-500 hidden sm:inline">• Preconfigurados (10.5% CETES / 14% WACC)</span>
+            </span>
+            <span class="text-[11px] text-[#d4b26f] flex items-center gap-1.5">
+              <span>Ajustar</span>
+              <i class="fa-solid fa-chevron-down chevron-icon transition-transform duration-200"></i>
+            </span>
+          </summary>
+          <div class="p-5 pt-3 border-t border-zinc-800/80 grid grid-cols-1 sm:grid-cols-3 gap-5">
+            <div title="¿Cuánto ganarías si metes este dinero al banco, pagaré o CETES sin trabajar ni correr ningún riesgo?">
+              <label class="block text-xs font-semibold text-[#d4b26f] mb-1.5 cursor-help border-b border-dashed border-[#c5a059] inline-block">Rendimiento Banco / CETES (%) *</label>
+              <div class="relative">
+                <input type="number" id="bankRiskFreeRate" value="10.5" min="0" step="0.5" class="w-full bg-zinc-900 border border-[#c5a059]/50 rounded-xl px-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059] pr-8 font-mono">
+                <span class="absolute right-3 top-2.5 text-[#d4b26f] text-sm">%</span>
+              </div>
+              <span id="bankPassiveIncomeHint" class="text-[10px] text-[#d4b26f]/90 mt-1 block leading-tight font-mono">Pasivo: $3,063/mes sin riesgo</span>
+            </div>
+
+            <div title="El rendimiento anual mínimo que exiges por arriesgar tu dinero y tu tiempo en este negocio (debe ser mayor al banco).">
+              <label class="block text-xs font-semibold text-zinc-300 mb-1.5 cursor-help border-b border-dashed border-slate-600 inline-block">Ganancia mínima exigida (WACC %)</label>
+              <div class="relative">
+                <input type="number" id="discountRate" value="14.0" min="0" step="0.5" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059] pr-8 font-mono">
+                <span class="absolute right-3 top-2.5 text-zinc-400 text-sm">%</span>
+              </div>
+              <span class="text-[10px] text-zinc-400 mt-1 block leading-tight">Tasa de descuento exigida al proyecto.</span>
+            </div>
+
+            <div title="El tiempo estimado en que el equipo o los muebles que compraste dejarán de servir.">
+              <label class="block text-xs font-semibold text-zinc-300 mb-1.5 cursor-help border-b border-dashed border-slate-600 inline-block">Vida útil del equipo (años)</label>
+              <input type="number" id="depreciationYears" value="5" min="1" max="50" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059] font-mono">
+              <span class="text-[10px] text-zinc-400 mt-1 block leading-tight">Años de depreciación contable.</span>
+            </div>
+          </div>
+        </details>
       </div>
 
       <!-- INGRESOS, CATÁLOGO MULTIPRODUCTO Y VENTAS -->
@@ -781,7 +813,7 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <div title="Suma solo lo que cuesta hacer o entregar UNA unidad: insumos, bolsa, servilletas, comisión de tarjeta. NO incluyas renta ni luz aquí.">
             <div class="flex items-center justify-between mb-1.5">
               <label class="block text-xs font-semibold text-zinc-300 cursor-help border-b border-dashed border-slate-600 inline-block">Costo variable promedio ($) *</label>
@@ -825,48 +857,56 @@
               });
             </script>
           </div>
-
-          <div title="Fondo mensual para reparar y reemplazar tu equipo cuando venza su vida útil (Inversión / (Años * 12)).">
-            <div class="flex items-center justify-between mb-1.5">
-              <label class="block text-xs font-semibold text-zinc-300 cursor-help border-b border-dashed border-slate-600 inline-block">Mantenimiento y Reserva Equipo ($/mes)</label>
-              <button type="button" id="applySuggestedReserveBtn" title="Hacer clic para usar la reserva mensual sugerida según tu inversión y años de vida útil" class="text-[10px] text-[#d4b26f] hover:text-[#e3c88d] underline font-mono cursor-pointer">
-                Usar sugerido
-              </button>
-            </div>
-            <div class="relative">
-              <span class="absolute left-3 top-2.5 text-zinc-400 text-xs font-mono">MXN $</span>
-              <input type="number" id="monthlyMaintenanceCost" value="3500" min="0" step="100" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl pl-14 pr-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059] font-mono">
-            </div>
-            <span id="suggestedReserveHelper" class="text-[10px] text-emerald-400/90 mt-1 block leading-tight font-medium">Sugerido: $5,833/mes (Inversión / 5 años)</span>
-          </div>
-
-          <div title="Pérdidas estimadas por robo hormiga, descomposición/caducidad de insumos, cancelaciones, contracargos o errores operativos. Se descontará directamente de tus ventas brutas.">
-            <label class="block text-xs font-semibold text-rose-300 mb-1.5 cursor-help border-b border-dashed border-rose-600 inline-block">Mermas, Robos y Riesgos (%)</label>
-            <div class="relative">
-              <input type="number" id="shrinkageLossPct" value="3.0" min="0" max="100" step="0.5" class="w-full bg-zinc-900 border border-rose-500/50 rounded-xl px-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-rose-500 pr-8 font-mono">
-              <span class="absolute right-3 top-2.5 text-rose-400 text-sm">%</span>
-            </div>
-            <span id="shrinkageLossHelper" class="text-[10px] text-rose-400/90 mt-1 block leading-tight font-mono">Descuento: -$7,980/mes</span>
-          </div>
-
-          <div title="Considerar la inflación hace que tu cálculo sea más real, ya que cada año los precios suben un poco.">
-            <label class="block text-xs font-semibold text-zinc-300 mb-1.5 cursor-help border-b border-dashed border-slate-600 inline-block">Inflación Anual (%)</label>
-            <div class="relative">
-              <input type="number" id="annualInflation" value="4.5" min="0" step="0.5" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059] pr-8 font-mono">
-              <span class="absolute right-3 top-2.5 text-zinc-400 text-sm">%</span>
-            </div>
-            <span class="text-[10px] text-zinc-400 mt-1 block leading-tight">Lo que suben las cosas en México cada año (suele ser entre el 4% y 5%).</span>
-          </div>
-
-          <div title="Es importante descontar los impuestos para saber cuánto dinero realmente te quedará limpio a ti.">
-            <label class="block text-xs font-semibold text-zinc-300 mb-1.5 cursor-help border-b border-dashed border-slate-600 inline-block">Impuestos sobre ganancias (%)</label>
-            <div class="relative">
-              <input type="number" id="taxRate" value="30.0" min="0" max="100" step="1" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059] pr-8 font-mono">
-              <span class="absolute right-3 top-2.5 text-zinc-400 text-sm">%</span>
-            </div>
-            <span class="text-[10px] text-zinc-400 mt-1 block leading-tight">El porcentaje que pagas de ISR al gobierno (ronda el 30%).</span>
-          </div>
         </div>
+
+        <details class="advanced-panel mt-5">
+          <summary>
+            <span class="flex items-center gap-2"><i class="fa-solid fa-sliders text-[#d4b26f]"></i> Ajustes Avanzados de Costos, Mermas e Impuestos (Ya preconfigurados para México)</span>
+            <span class="text-xs text-[#d4b26f] font-mono">Mostrar / Ocultar <i class="fa-solid fa-chevron-down chevron-icon ml-1"></i></span>
+          </summary>
+          <div class="advanced-body grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div title="Fondo mensual para reparar y reemplazar tu equipo cuando venza su vida útil (Inversión / (Años * 12)).">
+              <div class="flex items-center justify-between mb-1.5">
+                <label class="block text-xs font-semibold text-zinc-300 cursor-help border-b border-dashed border-slate-600 inline-block">Mantenimiento y Reserva ($/mes)</label>
+                <button type="button" id="applySuggestedReserveBtn" title="Hacer clic para usar la reserva mensual sugerida según tu inversión y años de vida útil" class="text-[10px] text-[#d4b26f] hover:text-[#e3c88d] underline font-mono cursor-pointer">
+                  Usar sugerido
+                </button>
+              </div>
+              <div class="relative">
+                <span class="absolute left-3 top-2.5 text-zinc-400 text-xs font-mono">MXN $</span>
+                <input type="number" id="monthlyMaintenanceCost" value="3500" min="0" step="100" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl pl-14 pr-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059] font-mono">
+              </div>
+              <span id="suggestedReserveHelper" class="text-[10px] text-emerald-400/90 mt-1 block leading-tight font-medium">Sugerido: $5,833/mes (Inversión / 5 años)</span>
+            </div>
+
+            <div title="Pérdidas estimadas por robo hormiga, descomposición/caducidad de insumos, cancelaciones, contracargos o errores operativos. Se descontará directamente de tus ventas brutas.">
+              <label class="block text-xs font-semibold text-rose-300 mb-1.5 cursor-help border-b border-dashed border-rose-600 inline-block">Mermas, Robos y Riesgos (%)</label>
+              <div class="relative">
+                <input type="number" id="shrinkageLossPct" value="3.0" min="0" max="100" step="0.5" class="w-full bg-zinc-900 border border-rose-500/50 rounded-xl px-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-rose-500 pr-8 font-mono">
+                <span class="absolute right-3 top-2.5 text-rose-400 text-sm">%</span>
+              </div>
+              <span id="shrinkageLossHelper" class="text-[10px] text-rose-400/90 mt-1 block leading-tight font-mono">Descuento: -$7,980/mes</span>
+            </div>
+
+            <div title="Considerar la inflación hace que tu cálculo sea más real, ya que cada año los precios suben un poco.">
+              <label class="block text-xs font-semibold text-zinc-300 mb-1.5 cursor-help border-b border-dashed border-slate-600 inline-block">Inflación Anual (%)</label>
+              <div class="relative">
+                <input type="number" id="annualInflation" value="4.5" min="0" step="0.5" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059] pr-8 font-mono">
+                <span class="absolute right-3 top-2.5 text-zinc-400 text-sm">%</span>
+              </div>
+              <span class="text-[10px] text-zinc-400 mt-1 block leading-tight">Lo que suben las cosas en México cada año (4% a 5%).</span>
+            </div>
+
+            <div title="Es importante descontar los impuestos para saber cuánto dinero realmente te quedará limpio a ti.">
+              <label class="block text-xs font-semibold text-zinc-300 mb-1.5 cursor-help border-b border-dashed border-slate-600 inline-block">Impuestos sobre ganancias (%)</label>
+              <div class="relative">
+                <input type="number" id="taxRate" value="30.0" min="0" max="100" step="1" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059] pr-8 font-mono">
+                <span class="absolute right-3 top-2.5 text-zinc-400 text-sm">%</span>
+              </div>
+              <span class="text-[10px] text-zinc-400 mt-1 block leading-tight">Porcentaje de ISR estimado sobre utilidad (~30%).</span>
+            </div>
+          </div>
+        </details>
 
         <div class="mt-6 flex justify-between">
           <button type="button" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-semibold px-4 py-2.5 rounded-xl transition-all" onclick="switchTab(4)">
@@ -1046,57 +1086,6 @@
           <div id="kpiBreakevenUnits" class="text-xl sm:text-2xl font-black text-white font-mono">0 unidades/mes</div>
           <div id="kpiBreakevenRevenue" class="text-[10px] text-zinc-400 mt-1">$0.00 MXN / mes</div>
         </div>
-
-        <!-- MARGEN DE SEGURIDAD -->
-        <div class="glass-panel p-4 rounded-xl border border-zinc-800">
-          <div class="text-[11px] font-medium text-zinc-400 uppercase tracking-wider mb-1">Margen de Seguridad</div>
-          <div id="kpiMarginOfSafety" class="text-lg sm:text-xl font-bold text-zinc-200 font-mono">0.0%</div>
-          <div class="text-[10px] text-zinc-400 mt-1">Colchón contra caída de ventas</div>
-        </div>
-
-        <!-- MARGEN DE CONTRIBUCIÓN -->
-        <div class="glass-panel p-4 rounded-xl border border-zinc-800">
-          <div class="text-[11px] font-medium text-zinc-400 uppercase tracking-wider mb-1">Margen de Contribución</div>
-          <div id="kpiContributionMargin" class="text-lg sm:text-xl font-bold text-zinc-200 font-mono">$0 (0%)</div>
-          <div class="text-[10px] text-zinc-400 mt-1">Aporte unitario para cubrir fijos</div>
-        </div>
-
-        <!-- RATIO BENEFICIO/COSTO -->
-        <div class="glass-panel p-4 rounded-xl border border-zinc-800">
-          <div class="text-[11px] font-medium text-zinc-400 uppercase tracking-wider mb-1">Ratio Beneficio / Costo</div>
-          <div id="kpiBenefitCost" class="text-lg sm:text-xl font-bold text-zinc-200 font-mono">0.0x</div>
-          <div class="text-[10px] text-zinc-400 mt-1">VP Flujos / Inversión Inicial</div>
-        </div>
-
-        <!-- ROI ANUAL PROMEDIO -->
-        <div class="glass-panel p-4 rounded-xl border border-zinc-800">
-          <div class="text-[11px] font-medium text-zinc-400 uppercase tracking-wider mb-1">ROI Anual Promedio</div>
-          <div id="kpiRoiAvg" class="text-lg sm:text-xl font-bold text-emerald-400 font-mono">0.0%</div>
-          <div class="text-[10px] text-zinc-400 mt-1">Utilidad Neta media / Inversión</div>
-        </div>
-      </div>
-
-      <!-- PANEL INTEGRAL DE RAZONES FINANCIERAS 360° -->
-      <div id="financialRatiosSection" class="glass-panel p-6 rounded-[20px] border border-zinc-800">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 mb-5 border-b border-zinc-800">
-          <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-xl bg-[#c5a059]/15 text-[#d4b26f] flex items-center justify-center text-base">
-              <i class="fa-solid fa-calculator"></i>
-            </div>
-            <div>
-              <h3 class="text-base font-bold text-white flex items-center gap-2">
-                <span>Razones Financieras Integrales (Ratios 360°)</span>
-                <span class="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-[#c5a059]/15 text-[#d4b26f] border border-[#c5a059]/30">Diagnóstico Cuantitativo</span>
-              </h3>
-              <p class="text-xs text-zinc-400">Indicadores clave de liquidez, rentabilidad operativa, rotación de inventarios y solvencia patrimonial.</p>
-            </div>
-          </div>
-          <span class="text-xs text-[#d4b26f] font-mono bg-[#c5a059]/10 px-2.5 py-1 rounded-xl border border-[#c5a059]/20">Fórmulas Financieras Validadas</span>
-        </div>
-
-        <div id="financialRatiosGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <!-- Renderizado dinámicamente con app.js -->
-        </div>
       </div>
 
       <!-- CHARTS ROW -->
@@ -1128,66 +1117,140 @@
         </div>
       </div>
 
-      <!-- SENSITIVITY SCENARIOS TABLE -->
-      <div class="glass-panel p-5 rounded-[20px] border border-zinc-800">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-300 mb-3 flex items-center gap-2">
-          <i class="fa-solid fa-shuffle text-[#d4b26f]"></i> Análisis de Sensibilidad y Escenarios
-        </h3>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs">
-            <thead class="bg-zinc-900/80 text-zinc-400 font-semibold border-b border-zinc-800">
-              <tr>
-                <th class="py-2.5 px-3">Escenario</th>
-                <th class="py-2.5 px-3">Premisas</th>
-                <th class="py-2.5 px-3">VAN ($)</th>
-                <th class="py-2.5 px-3">TIR (%)</th>
-                <th class="py-2.5 px-3">Payback (Años)</th>
-                <th class="py-2.5 px-3">ROI Anual Promedio</th>
-              </tr>
-            </thead>
-            <tbody id="scenariosTableBody" class="divide-y divide-slate-800 text-zinc-200">
-              <!-- Dynamically rendered -->
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <!-- ACCORDION 1: INDICADORES SECUNDARIOS Y RAZONES FINANCIERAS 360 -->
+      <details class="advanced-panel">
+        <summary>
+          <span class="flex items-center gap-2"><i class="fa-solid fa-calculator text-[#d4b26f]"></i> Ver Indicadores Secundarios y Razones Financieras 360° (Márgenes, Liquidez, Solvencia y ROI)</span>
+          <span class="text-xs text-[#d4b26f] font-mono">Desplegar Detalle <i class="fa-solid fa-chevron-down chevron-icon ml-1"></i></span>
+        </summary>
+        <div class="advanced-body space-y-6">
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- MARGEN DE SEGURIDAD -->
+            <div class="glass-panel p-4 rounded-xl border border-zinc-800">
+              <div class="text-[11px] font-medium text-zinc-400 uppercase tracking-wider mb-1">Margen de Seguridad</div>
+              <div id="kpiMarginOfSafety" class="text-lg sm:text-xl font-bold text-zinc-200 font-mono">0.0%</div>
+              <div class="text-[10px] text-zinc-400 mt-1">Colchón contra caída de ventas</div>
+            </div>
 
-      <!-- DETAILED 5-YEAR PRO FORMA TABLE -->
-      <div class="glass-panel p-5 rounded-[20px] border border-zinc-800 print-break-inside-avoid">
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-2">
-            <i class="fa-solid fa-table text-[#d4b26f]"></i> Estado de Resultados y Flujo de Caja Proforma
-          </h3>
-          <span class="text-[10px] text-zinc-400">Valores anualizados en moneda local</span>
+            <!-- MARGEN DE CONTRIBUCIÓN -->
+            <div class="glass-panel p-4 rounded-xl border border-zinc-800">
+              <div class="text-[11px] font-medium text-zinc-400 uppercase tracking-wider mb-1">Margen de Contribución</div>
+              <div id="kpiContributionMargin" class="text-lg sm:text-xl font-bold text-zinc-200 font-mono">$0 (0%)</div>
+              <div class="text-[10px] text-zinc-400 mt-1">Aporte unitario para cubrir fijos</div>
+            </div>
+
+            <!-- RATIO BENEFICIO/COSTO -->
+            <div class="glass-panel p-4 rounded-xl border border-zinc-800">
+              <div class="text-[11px] font-medium text-zinc-400 uppercase tracking-wider mb-1">Ratio Beneficio / Costo</div>
+              <div id="kpiBenefitCost" class="text-lg sm:text-xl font-bold text-zinc-200 font-mono">0.0x</div>
+              <div class="text-[10px] text-zinc-400 mt-1">VP Flujos / Inversión Inicial</div>
+            </div>
+
+            <!-- ROI ANUAL PROMEDIO -->
+            <div class="glass-panel p-4 rounded-xl border border-zinc-800">
+              <div class="text-[11px] font-medium text-zinc-400 uppercase tracking-wider mb-1">ROI Anual Promedio</div>
+              <div id="kpiRoiAvg" class="text-lg sm:text-xl font-bold text-emerald-400 font-mono">0.0%</div>
+              <div class="text-[10px] text-zinc-400 mt-1">Utilidad Neta media / Inversión</div>
+            </div>
+          </div>
+
+          <!-- PANEL INTEGRAL DE RAZONES FINANCIERAS 360° -->
+          <div id="financialRatiosSection" class="glass-panel p-6 rounded-[20px] border border-zinc-800">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 mb-5 border-b border-zinc-800">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-[#c5a059]/15 text-[#d4b26f] flex items-center justify-center text-base">
+                  <i class="fa-solid fa-calculator"></i>
+                </div>
+                <div>
+                  <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <span>Razones Financieras Integrales (Ratios 360°)</span>
+                    <span class="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-[#c5a059]/15 text-[#d4b26f] border border-[#c5a059]/30">Diagnóstico Cuantitativo</span>
+                  </h3>
+                  <p class="text-xs text-zinc-400">Indicadores clave de liquidez, rentabilidad operativa, rotación de inventarios y solvencia patrimonial.</p>
+                </div>
+              </div>
+              <span class="text-xs text-[#d4b26f] font-mono bg-[#c5a059]/10 px-2.5 py-1 rounded-xl border border-[#c5a059]/20">Fórmulas Financieras Validadas</span>
+            </div>
+
+            <div id="financialRatiosGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <!-- Renderizado dinámicamente con app.js -->
+            </div>
+          </div>
         </div>
-        <div class="overflow-x-auto">
-          <table class="w-full text-right text-xs font-mono">
-            <thead class="bg-zinc-900/80 text-zinc-400 font-sans font-semibold border-b border-zinc-800 text-right">
-              <tr>
-                <th class="text-left py-2.5 px-3">Concepto</th>
-                <th class="py-2.5 px-3">Año 1</th>
-                <th class="py-2.5 px-3">Año 2</th>
-                <th class="py-2.5 px-3">Año 3</th>
-                <th class="py-2.5 px-3">Año 4</th>
-                <th class="py-2.5 px-3">Año 5</th>
-              </tr>
-            </thead>
-            <tbody id="proformaTableBody" class="divide-y divide-slate-800/60 text-zinc-200">
-              <!-- Dynamically populated -->
-            </tbody>
-          </table>
+      </details>
+
+      <!-- ACCORDION 2: TABLAS FINANCIERAS DETALLADAS (SENSIBILIDAD Y PROFORMA 5 AÑOS) -->
+      <details class="advanced-panel">
+        <summary>
+          <span class="flex items-center gap-2"><i class="fa-solid fa-table text-[#d4b26f]"></i> Ver Tablas Financieras Completas (Escenarios de Sensibilidad y Estado de Resultados a 5 Años)</span>
+          <span class="text-xs text-[#d4b26f] font-mono">Desplegar Tablas <i class="fa-solid fa-chevron-down chevron-icon ml-1"></i></span>
+        </summary>
+        <div class="advanced-body space-y-6">
+          <!-- SENSITIVITY SCENARIOS TABLE -->
+          <div class="glass-panel p-5 rounded-[20px] border border-zinc-800">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-300 mb-3 flex items-center gap-2">
+              <i class="fa-solid fa-shuffle text-[#d4b26f]"></i> Análisis de Sensibilidad y Escenarios
+            </h3>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-zinc-900/80 text-zinc-400 font-semibold border-b border-zinc-800">
+                  <tr>
+                    <th class="py-2.5 px-3">Escenario</th>
+                    <th class="py-2.5 px-3">Premisas</th>
+                    <th class="py-2.5 px-3">VAN ($)</th>
+                    <th class="py-2.5 px-3">TIR (%)</th>
+                    <th class="py-2.5 px-3">Payback (Años)</th>
+                    <th class="py-2.5 px-3">ROI Anual Promedio</th>
+                  </tr>
+                </thead>
+                <tbody id="scenariosTableBody" class="divide-y divide-slate-800 text-zinc-200">
+                  <!-- Dynamically rendered -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- DETAILED 5-YEAR PRO FORMA TABLE -->
+          <div class="glass-panel p-5 rounded-[20px] border border-zinc-800 print-break-inside-avoid">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-2">
+                <i class="fa-solid fa-table text-[#d4b26f]"></i> Estado de Resultados y Flujo de Caja Proforma
+              </h3>
+              <span class="text-[10px] text-zinc-400">Valores anualizados en moneda local</span>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-right text-xs font-mono">
+                <thead class="bg-zinc-900/80 text-zinc-400 font-sans font-semibold border-b border-zinc-800 text-right">
+                  <tr>
+                    <th class="text-left py-2.5 px-3">Concepto</th>
+                    <th class="py-2.5 px-3">Año 1</th>
+                    <th class="py-2.5 px-3">Año 2</th>
+                    <th class="py-2.5 px-3">Año 3</th>
+                    <th class="py-2.5 px-3">Año 4</th>
+                    <th class="py-2.5 px-3">Año 5</th>
+                  </tr>
+                </thead>
+                <tbody id="proformaTableBody" class="divide-y divide-slate-800/60 text-zinc-200">
+                  <!-- Dynamically populated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
-      </div>
+      </details>
 
       <!-- GEMINI STRATEGIC CONSULTANCY SECTION -->
-      <div id="geminiReportSection" class="glass-panel p-6 rounded-[20px] border border-[#c5a059]/30 space-y-6 glow-primary">
+      <div id="geminiReportSection" class="glass-panel p-6 rounded-[20px] border border-zinc-800 space-y-6">
         <div class="flex items-center justify-between pb-4 border-b border-zinc-800">
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-zinc-900 border border-[#c5a059]/40 flex items-center justify-center text-[#d4b26f] shadow">
+            <div id="geminiSectionIconBox" class="w-10 h-10 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 shadow">
               <i class="fa-solid fa-brain"></i>
             </div>
             <div>
-              <h2 class="text-base font-bold text-white">Dictamen Estratégico y Consultoría Ejecutiva</h2>
+              <div class="flex items-center gap-2">
+                <h2 class="text-base font-bold text-white">Dictamen Estratégico y Consultoría Ejecutiva</h2>
+                <span id="geminiSectionStatusBadge" class="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-zinc-800 text-zinc-400 border border-zinc-700">Pendiente de análisis</span>
+              </div>
               <p class="text-xs text-zinc-400">Evaluación cualitativa, micro-localización, ventajas competitivas y plan de acción.</p>
             </div>
           </div>
