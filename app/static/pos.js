@@ -71,6 +71,7 @@
     settings = await api("/settings");
     await refreshShift();
     renderCart();
+    await loadCachedProducts();
     switchTab("venta");
     $("scanInput").focus();
   }
@@ -167,20 +168,255 @@
     if (ex) ex.qty += qty; else cart.push({ product: p, qty });
     renderCart();
   }
+  // ---------- Autocompletado inteligente de productos
+  let cachedProducts = [];
+  let currentMatches = [];
+  let currentSuggestionIndex = -1;
+
+  async function loadCachedProducts() {
+    try {
+      cachedProducts = await api("/products?include_inactive=false");
+    } catch (e) {
+      console.warn("No se pudo pre-cargar catálogo de productos:", e);
+    }
+  }
+
+  function normStr(str) {
+    return (str || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim();
+  }
+
+  function highlightMatches(text, tokens) {
+    if (!tokens || !tokens.length) return esc(text);
+    const escaped = tokens.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).filter(Boolean);
+    if (!escaped.length) return esc(text);
+    try {
+      const re = new RegExp(`(${escaped.join("|")})`, "gi");
+      return esc(text).replace(re, '<span class="text-amber-400 font-extrabold underline decoration-amber-500/50">$1</span>');
+    } catch {
+      return esc(text);
+    }
+  }
+
+  function filterProducts(query) {
+    const q = normStr(query);
+    if (q.length < 2) return [];
+
+    const tokens = q.split(/\s+/).filter(Boolean);
+    if (!tokens.length) return [];
+
+    const list = cachedProducts.filter((p) => {
+      const pName = normStr(p.name);
+      const pWords = pName.split(/\s+/).filter(Boolean);
+      const pSku = normStr(p.sku);
+      const pBarcode = normStr(p.barcode);
+
+      // Cada palabra escrita por el usuario debe coincidir con el inicio de alguna palabra
+      // del producto (ej: 'caf' -> 'cafe', 'g' -> 'grande'), o coincidir con SKU/barcode
+      return tokens.every((tok) => {
+        if (pWords.some((w) => w.startsWith(tok))) return true;
+        if (pSku.startsWith(tok) || pBarcode.startsWith(tok)) return true;
+        if (tok.length >= 3 && pName.includes(tok)) return true;
+        return false;
+      });
+    });
+
+    list.sort((a, b) => {
+      const aName = normStr(a.name);
+      const bName = normStr(b.name);
+      const aStarts = aName.startsWith(q);
+      const bStarts = bName.startsWith(q);
+      if (aStarts && !bStarts) return -1;
+      if (!aStarts && bStarts) return 1;
+      return aName.localeCompare(bName);
+    });
+
+    return list;
+  }
+
+  function renderSuggestions(matches, tokens) {
+    const box = $("searchResults");
+    if (!matches || !matches.length) {
+      box.innerHTML = `
+        <div class="p-3 text-center text-xs text-zinc-500">
+          <i class="fa-solid fa-magnifying-glass mr-1.5 opacity-60"></i>
+          Sin coincidencias en el inventario para tu búsqueda.
+        </div>`;
+      box.classList.remove("hidden");
+      currentMatches = [];
+      currentSuggestionIndex = -1;
+      return;
+    }
+
+    currentMatches = matches.slice(0, 15);
+    currentSuggestionIndex = -1;
+
+    const listHtml = currentMatches.map((p, idx) => `
+      <div class="suggestion-item p-3 cursor-pointer flex items-center justify-between transition-colors hover:bg-zinc-800/90 text-left select-none"
+           data-pick="${p.id}" data-index="${idx}">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-8 h-8 rounded-lg bg-zinc-800 border border-zinc-700/70 flex items-center justify-center text-xs font-bold text-[#c5a059] flex-shrink-0">
+            <i class="fa-solid fa-tag"></i>
+          </div>
+          <div class="min-w-0">
+            <div class="font-bold text-sm text-zinc-100 truncate">${highlightMatches(p.name, tokens)}</div>
+            <div class="text-[11px] text-zinc-400 flex items-center gap-2 mt-0.5 flex-wrap">
+              <span class="font-mono bg-zinc-800 px-1.5 py-0.2 rounded text-[10px] text-zinc-300">SKU: ${esc(p.sku || 'S/N')}</span>
+              ${p.track_stock ? `<span class="text-emerald-400 font-medium text-[10px]"><i class="fa-solid fa-cubes text-[9px] mr-0.5"></i> Stock: ${p.stock}</span>` : ''}
+            </div>
+          </div>
+        </div>
+        <div class="text-right flex-shrink-0 ml-3">
+          <div class="font-mono font-bold text-amber-300 text-sm">${fmt(p.price)}</div>
+          <span class="text-[9px] text-zinc-500 uppercase tracking-wider block">IVA incl.</span>
+        </div>
+      </div>
+    `).join("");
+
+    const footerHtml = `
+      <div class="px-3 py-1.5 bg-zinc-950/90 text-[10px] text-zinc-400 flex items-center justify-between border-t border-zinc-800">
+        <span class="flex items-center gap-1">
+          <kbd class="px-1 py-0.2 bg-zinc-800 border border-zinc-700 rounded text-[9px] text-zinc-300 font-mono">Tab</kbd> o 
+          <kbd class="px-1 py-0.2 bg-zinc-800 border border-zinc-700 rounded text-[9px] text-zinc-300 font-mono">↓↑</kbd> para elegir
+        </span>
+        <span class="flex items-center gap-1">
+          <kbd class="px-1 py-0.2 bg-zinc-800 border border-zinc-700 rounded text-[9px] text-zinc-300 font-mono">Enter</kbd> para agregar al carrito
+        </span>
+      </div>
+    `;
+
+    box.innerHTML = listHtml + footerHtml;
+    box.classList.remove("hidden");
+  }
+
+  function closeSuggestions() {
+    const box = $("searchResults");
+    box.classList.add("hidden");
+    box.innerHTML = "";
+    currentMatches = [];
+    currentSuggestionIndex = -1;
+  }
+
+  function updateSuggestionHighlight() {
+    const box = $("searchResults");
+    const items = box.querySelectorAll(".suggestion-item");
+    items.forEach((item, idx) => {
+      if (idx === currentSuggestionIndex) {
+        item.classList.add("bg-[#c5a059]/25", "border-l-4", "border-[#c5a059]");
+        item.scrollIntoView({ block: "nearest" });
+      } else {
+        item.classList.remove("bg-[#c5a059]/25", "border-l-4", "border-[#c5a059]");
+      }
+    });
+
+    if (currentSuggestionIndex >= 0 && currentSuggestionIndex < currentMatches.length) {
+      $("scanInput").value = currentMatches[currentSuggestionIndex].name;
+    }
+  }
+
+  function handleScanInput() {
+    const raw = $("scanInput").value;
+    if ($("scanClearBtn")) $("scanClearBtn").classList.toggle("hidden", !raw);
+
+    const q = normStr(raw);
+    if (q.length < 2) {
+      closeSuggestions();
+      return;
+    }
+
+    if (!cachedProducts.length) {
+      loadCachedProducts().then(() => {
+        const matches = filterProducts(raw);
+        renderSuggestions(matches, normStr(raw).split(/\s+/).filter(Boolean));
+      });
+      return;
+    }
+
+    const matches = filterProducts(raw);
+    renderSuggestions(matches, normStr(raw).split(/\s+/).filter(Boolean));
+  }
+
+  function handleScanKeyDown(e) {
+    const box = $("searchResults");
+    const isOpen = !box.classList.contains("hidden") && currentMatches.length > 0;
+
+    if (e.key === "Tab") {
+      if (isOpen) {
+        e.preventDefault();
+        if (e.shiftKey) {
+          currentSuggestionIndex = (currentSuggestionIndex - 1 + currentMatches.length) % currentMatches.length;
+        } else {
+          currentSuggestionIndex = (currentSuggestionIndex + 1) % currentMatches.length;
+        }
+        updateSuggestionHighlight();
+        return;
+      }
+    }
+
+    if (e.key === "ArrowDown") {
+      if (isOpen) {
+        e.preventDefault();
+        currentSuggestionIndex = (currentSuggestionIndex + 1) % currentMatches.length;
+        updateSuggestionHighlight();
+        return;
+      }
+    }
+
+    if (e.key === "ArrowUp") {
+      if (isOpen) {
+        e.preventDefault();
+        currentSuggestionIndex = (currentSuggestionIndex - 1 + currentMatches.length) % currentMatches.length;
+        updateSuggestionHighlight();
+        return;
+      }
+    }
+
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (isOpen && currentSuggestionIndex >= 0 && currentSuggestionIndex < currentMatches.length) {
+        addToCart(currentMatches[currentSuggestionIndex]);
+        $("scanInput").value = "";
+        closeSuggestions();
+        if ($("scanClearBtn")) $("scanClearBtn").classList.add("hidden");
+        $("scanInput").focus();
+        return;
+      }
+
+      if (isOpen && currentMatches.length === 1) {
+        addToCart(currentMatches[0]);
+        $("scanInput").value = "";
+        closeSuggestions();
+        if ($("scanClearBtn")) $("scanClearBtn").classList.add("hidden");
+        $("scanInput").focus();
+        return;
+      }
+
+      scan();
+      closeSuggestions();
+      return;
+    }
+
+    if (e.key === "Escape") {
+      closeSuggestions();
+      return;
+    }
+  }
+
   async function scan() {
     const code = $("scanInput").value.trim();
     if (!code) return;
-    const box = $("searchResults");
-    box.innerHTML = "";
     try {
       addToCart(await api("/products/barcode/" + encodeURIComponent(code)));
       $("scanInput").value = ""; $("saleMsg").innerHTML = "";
+      closeSuggestions();
     } catch {
       const found = await api("/products?q=" + encodeURIComponent(code));
       if (!found.length) return toast($("saleMsg"), "Producto no encontrado: " + code, false);
-      if (found.length === 1) { addToCart(found[0]); $("scanInput").value = ""; return; }
-      box.innerHTML = found.slice(0, 10).map((p) => `<button class="btn btn-sec text-left" data-pick='${p.id}'>${esc(p.name)} <b class="float-right">${fmt(p.price)}</b></button>`).join("");
-      box._found = found;
+      if (found.length === 1) { addToCart(found[0]); $("scanInput").value = ""; closeSuggestions(); return; }
+      renderSuggestions(found, normStr(code).split(/\s+/).filter(Boolean));
     }
   }
   async function charge() {
@@ -373,12 +609,55 @@
     $("logoutBtn").onclick = async () => { try { await api("/logout", { method: "POST" }); } catch {} logoutLocal(); };
     $("tabs").addEventListener("click", (e) => { const b = e.target.closest(".tab-btn"); if (b && b.dataset.tab) switchTab(b.dataset.tab); });
 
-    $("scanInput").addEventListener("keydown", (e) => e.key === "Enter" && scan());
-    $("scanBtn").onclick = scan;
+    $("scanInput").addEventListener("input", handleScanInput);
+    $("scanInput").addEventListener("keydown", handleScanKeyDown);
+    $("scanBtn").onclick = () => {
+      const box = $("searchResults");
+      const isOpen = !box.classList.contains("hidden") && currentMatches.length > 0;
+      if (isOpen && currentSuggestionIndex >= 0 && currentSuggestionIndex < currentMatches.length) {
+        addToCart(currentMatches[currentSuggestionIndex]);
+        $("scanInput").value = "";
+        closeSuggestions();
+        if ($("scanClearBtn")) $("scanClearBtn").classList.add("hidden");
+        $("scanInput").focus();
+      } else if (isOpen && currentMatches.length === 1) {
+        addToCart(currentMatches[0]);
+        $("scanInput").value = "";
+        closeSuggestions();
+        if ($("scanClearBtn")) $("scanClearBtn").classList.add("hidden");
+        $("scanInput").focus();
+      } else {
+        scan();
+      }
+    };
+
+    if ($("scanClearBtn")) {
+      $("scanClearBtn").onclick = () => {
+        $("scanInput").value = "";
+        $("scanClearBtn").classList.add("hidden");
+        closeSuggestions();
+        $("scanInput").focus();
+      };
+    }
+
     $("searchResults").addEventListener("click", (e) => {
-      const b = e.target.closest("[data-pick]"); if (!b) return;
-      const p = $("searchResults")._found.find((x) => x.id === +b.dataset.pick);
-      addToCart(p); $("searchResults").innerHTML = ""; $("scanInput").value = ""; $("scanInput").focus();
+      const b = e.target.closest(".suggestion-item") || e.target.closest("[data-pick]");
+      if (!b) return;
+      const id = +b.dataset.pick;
+      const p = currentMatches.find((x) => x.id === id) || cachedProducts.find((x) => x.id === id);
+      if (p) {
+        addToCart(p);
+        $("scanInput").value = "";
+        closeSuggestions();
+        if ($("scanClearBtn")) $("scanClearBtn").classList.add("hidden");
+        $("scanInput").focus();
+      }
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!e.target.closest("#scanInput") && !e.target.closest("#searchResults") && !e.target.closest("#scanClearBtn")) {
+        closeSuggestions();
+      }
     });
     $("cartBody").addEventListener("click", (e) => {
       const t = e.target.closest("button"); if (!t) return;
@@ -491,7 +770,7 @@
       try {
         const id = $("pId").value;
         await api(id ? "/products/" + id : "/products", { method: id ? "PUT" : "POST", body });
-        resetProductForm(); await loadProducts();
+        resetProductForm(); await loadProducts(); await loadCachedProducts();
       } catch (er) { alert(er.message); }
     };
     $("pReset").onclick = resetProductForm;
