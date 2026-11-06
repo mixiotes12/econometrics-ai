@@ -67,32 +67,40 @@ document.addEventListener("DOMContentLoaded", async () => {
 // ----------------- TAB SWITCHING -----------------
 
 function switchTab(tabIndex) {
+  const idx = Number(tabIndex) || 1;
   document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.classList.remove('active', 'text-white', 'border-purple-500/50', 'bg-zinc-800');
+    btn.classList.remove('active', 'text-white', 'border-purple-500/50', 'border-[#c5a059]/60', 'bg-zinc-800');
     btn.classList.add('text-zinc-300', 'border-zinc-800', 'bg-zinc-900');
-    btn.querySelector('span:first-child').classList.remove('bg-purple-500', 'text-white');
-    btn.querySelector('span:first-child').classList.add('bg-purple-500/30', 'text-purple-300');
+    const badge = btn.querySelector('span:first-child');
+    if (badge) {
+      badge.classList.remove('bg-purple-500', 'bg-[#c5a059]', 'text-white', 'text-zinc-950');
+      badge.classList.add('bg-zinc-800', 'text-[#d4b26f]');
+    }
   });
 
-  const activeBtn = document.getElementById(`tabBtn${tabIndex}`);
+  const activeBtn = document.getElementById(`tabBtn${idx}`);
   if (activeBtn) {
     activeBtn.classList.remove('text-zinc-300', 'border-zinc-800', 'bg-zinc-900');
-    activeBtn.classList.add('active', 'text-white', 'border-purple-500/50', 'bg-zinc-800');
-    activeBtn.querySelector('span:first-child').classList.remove('bg-purple-500/30', 'text-purple-300');
-    activeBtn.querySelector('span:first-child').classList.add('bg-purple-500', 'text-white');
+    activeBtn.classList.add('active', 'text-white', 'border-[#c5a059]/60', 'bg-zinc-800');
+    const activeBadge = activeBtn.querySelector('span:first-child');
+    if (activeBadge) {
+      activeBadge.classList.remove('bg-zinc-800', 'text-[#d4b26f]', 'bg-purple-500/30', 'text-purple-300');
+      activeBadge.classList.add('bg-[#c5a059]', 'text-zinc-950');
+    }
   }
 
   for (let i = 1; i <= 6; i++) {
     const section = document.getElementById(`tab${i}`);
     if (section) {
-      if (i === tabIndex) {
+      if (i === idx) {
         section.classList.remove('hidden');
       } else {
         section.classList.add('hidden');
       }
     }
   }
-  if (tabIndex === 2 && typeof window.renderPendingMermaid === "function") {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (idx === 2 && typeof window.renderPendingMermaid === "function") {
     window.renderPendingMermaid();
   }
 }
@@ -119,8 +127,9 @@ async function initApiKey() {
     console.warn("No se pudo verificar /api/config", e);
   }
 
+  const keyInput = document.getElementById("geminiApiKeyInput");
   if (savedKey) {
-    document.getElementById("geminiApiKeyInput").value = savedKey;
+    if (keyInput) keyInput.value = savedKey;
     updateApiKeyBadge(true, "API Key: Configurada");
   } else if (hasServerApiKey) {
     updateApiKeyBadge(true, "API Key: Servidor Activa");
@@ -128,7 +137,8 @@ async function initApiKey() {
     updateApiKeyBadge(false, "API Key: Inactiva");
   }
 
-  document.getElementById("geminiModelSelect").value = savedModel;
+  const modelSelect = document.getElementById("geminiModelSelect");
+  if (modelSelect) modelSelect.value = savedModel;
   updateGeminiHeaderBadge(savedModel);
   resetGeminiReportSectionStatus();
 }
@@ -159,29 +169,39 @@ function resetGeminiReportSectionStatus() {
 function updateApiKeyBadge(hasKey, labelText) {
   const label = document.getElementById("apiKeyStatusLabel");
   const btn = document.getElementById("apiKeyBtn");
-  label.textContent = labelText || (hasKey ? "API Key: Configurada" : "API Key: Inactiva");
-  if (hasKey) {
-    btn.classList.add("border-emerald-500/40", "text-emerald-400");
-    btn.classList.remove("border-zinc-700", "text-zinc-300");
-  } else {
-    btn.classList.remove("border-emerald-500/40", "text-emerald-400");
-    btn.classList.add("border-zinc-700", "text-zinc-300");
+  if (label) label.textContent = labelText || (hasKey ? "API Key: Configurada" : "API Key: Inactiva");
+  if (btn) {
+    if (hasKey) {
+      btn.classList.add("border-emerald-500/40", "text-emerald-400");
+      btn.classList.remove("border-zinc-700", "text-zinc-300");
+    } else {
+      btn.classList.remove("border-emerald-500/40", "text-emerald-400");
+      btn.classList.add("border-zinc-700", "text-zinc-300");
+    }
   }
 }
 
 // ----------------- EVENT LISTENERS -----------------
 function initEventListeners() {
+  // Bind tab buttons explicitly in addition to inline onclick
+  for (let i = 1; i <= 6; i++) {
+    const tBtn = document.getElementById(`tabBtn${i}`);
+    if (tBtn) {
+      tBtn.addEventListener("click", () => switchTab(i));
+    }
+  }
+
   // API Key Modal
   const modal = document.getElementById("apiKeyModal");
-  document.getElementById("apiKeyBtn").addEventListener("click", () => {
-    modal.classList.remove("hidden");
+  document.getElementById("apiKeyBtn")?.addEventListener("click", () => {
+    modal?.classList.remove("hidden");
   });
-  document.getElementById("closeApiKeyModal").addEventListener("click", () => {
-    modal.classList.add("hidden");
+  document.getElementById("closeApiKeyModal")?.addEventListener("click", () => {
+    modal?.classList.add("hidden");
   });
-  document.getElementById("saveApiKeyBtn").addEventListener("click", () => {
-    const key = document.getElementById("geminiApiKeyInput").value.trim();
-    const model = document.getElementById("geminiModelSelect").value;
+  document.getElementById("saveApiKeyBtn")?.addEventListener("click", () => {
+    const key = document.getElementById("geminiApiKeyInput")?.value.trim() || "";
+    const model = document.getElementById("geminiModelSelect")?.value || "gemini-3.8-flash";
     if (key) {
       localStorage.setItem("gemini_api_key", key);
       updateApiKeyBadge(true, "API Key: Configurada");
@@ -191,12 +211,13 @@ function initEventListeners() {
     }
     localStorage.setItem("gemini_model", model);
     updateGeminiHeaderBadge(model);
-    modal.classList.add("hidden");
+    modal?.classList.add("hidden");
   });
 
-  document.getElementById("toggleApiKeyVisibility").addEventListener("click", () => {
+  document.getElementById("toggleApiKeyVisibility")?.addEventListener("click", () => {
     const input = document.getElementById("geminiApiKeyInput");
     const icon = document.querySelector("#toggleApiKeyVisibility i");
+    if (!input || !icon) return;
     if (input.type === "password") {
       input.type = "text";
       icon.classList.remove("fa-eye");
@@ -209,7 +230,7 @@ function initEventListeners() {
   });
 
   // Action Buttons
-  document.getElementById("quickCalcBtn").addEventListener("click", () => {
+  document.getElementById("quickCalcBtn")?.addEventListener("click", () => {
     runQuickCalculation().then(() => switchTab(6));
   });
 
@@ -220,11 +241,11 @@ function initEventListeners() {
     });
   }
 
-  document.getElementById("runFullAnalysisBtn").addEventListener("click", () => {
+  document.getElementById("runFullAnalysisBtn")?.addEventListener("click", () => {
     runFullGeminiAnalysis();
   });
 
-  document.getElementById("reanalyzeBtn").addEventListener("click", () => {
+  document.getElementById("reanalyzeBtn")?.addEventListener("click", () => {
     runFullGeminiAnalysis();
   });
 
@@ -604,7 +625,7 @@ async function initTemplatesAndSavedProjects() {
   updateTemplateSelectDropdown();
 
   const select = document.getElementById("templateSelect");
-  select.addEventListener("change", () => {
+  select?.addEventListener("change", () => {
     const val = select.value;
     if (!val) return;
 
@@ -693,17 +714,25 @@ function initProjectPersistence() {
         };
         applyFormData(blank);
         resetGeminiReportSectionStatus();
-        document.getElementById("viabilityScoreBadge").classList.add("hidden");
-        document.getElementById("geminiExecutiveSummary").innerHTML = 'Presiona el botón <strong>"Analizar con Gemini"</strong> para generar el diagnóstico cualitativo profundo.';
-        document.getElementById("geminiLocationAnalysis").innerHTML = 'Pendiente de generación.';
-        document.getElementById("geminiCompetitionAnalysis").innerHTML = 'Pendiente de generación.';
-        document.getElementById("geminiCostAnalysis").innerHTML = 'Pendiente de generación.';
-        document.getElementById("geminiRisksTableBody").innerHTML = '';
-        document.getElementById("geminiActionPlanList").innerHTML = '';
-        document.getElementById("geminiTimestampBadge").textContent = '';
+        document.getElementById("viabilityScoreBadge")?.classList.add("hidden");
+        const execSum = document.getElementById("geminiExecutiveSummary");
+        if (execSum) execSum.innerHTML = 'Presiona el botón <strong>"Dictamen Estratégico IA"</strong> para generar el diagnóstico cualitativo profundo.';
+        const locAn = document.getElementById("geminiLocationAnalysis");
+        if (locAn) locAn.innerHTML = 'Pendiente de generación.';
+        const compAn = document.getElementById("geminiCompetitionAnalysis");
+        if (compAn) compAn.innerHTML = 'Pendiente de generación.';
+        const costAn = document.getElementById("geminiCostAnalysis");
+        if (costAn) costAn.innerHTML = 'Pendiente de generación.';
+        const risksTb = document.getElementById("geminiRisksTableBody");
+        if (risksTb) risksTb.innerHTML = '';
+        const actList = document.getElementById("geminiActionPlanList");
+        if (actList) actList.innerHTML = '';
+        const tsBadge = document.getElementById("geminiTimestampBadge");
+        if (tsBadge) tsBadge.textContent = '';
         runQuickCalculation();
         scheduleAutoSave();
-        document.getElementById("templateSelect").value = "";
+        const tmplSel = document.getElementById("templateSelect");
+        if (tmplSel) tmplSel.value = "";
         showToast("Formulario listo para nuevo proyecto", true);
         switchTab(1);
       }
@@ -1340,16 +1369,16 @@ function initEngineeringAndTrackerListeners() {
     return div;
   }
 
-  addEqBtn.addEventListener("click", () => {
+  addEqBtn?.addEventListener("click", () => {
     createEquipmentRow();
     scheduleAutoSave();
   });
 
   // Autosave de las pestañas 1 y 2
-  equipmentList.addEventListener("input", () => scheduleAutoSave());
-  equipmentList.addEventListener("change", () => scheduleAutoSave());
+  equipmentList?.addEventListener("input", () => scheduleAutoSave());
+  equipmentList?.addEventListener("change", () => scheduleAutoSave());
 
-  genBudgetsBtn.addEventListener("click", async () => {
+  genBudgetsBtn?.addEventListener("click", async () => {
     const items = [];
     document.querySelectorAll(".equipment-item").forEach(item => {
       const category = item.querySelector(".eq-category").value;
@@ -1454,11 +1483,14 @@ function initEngineeringAndTrackerListeners() {
     scheduleAutoSave();
   }
 
-  useInvestmentBtn.addEventListener("click", () => {
-    document.getElementById("initialInvestment").value = selectedBudgetCost;
-    document.getElementById("initialInvestment").setAttribute("readonly", true);
-    document.getElementById("initialInvestment").classList.add("bg-zinc-800", "cursor-not-allowed");
-    alert(`Inversión de $${selectedBudgetCost.toLocaleString('es-MX')} aplicada al modelo.`);
+  useInvestmentBtn?.addEventListener("click", () => {
+    const invInput = document.getElementById("initialInvestment");
+    if (invInput) {
+      invInput.value = selectedBudgetCost;
+      invInput.setAttribute("readonly", true);
+      invInput.classList.add("bg-zinc-800", "cursor-not-allowed");
+    }
+    showToast(`Inversión de $${selectedBudgetCost.toLocaleString('es-MX')} aplicada al modelo.`, true);
     scheduleAutoSave();
     switchTab(5);
   });
@@ -1474,7 +1506,7 @@ function initEngineeringAndTrackerListeners() {
   const consumablesTable = document.getElementById("consumablesTable");
   const totalConsumablesCost = document.getElementById("totalConsumablesCost");
 
-  genFlowchartBtn.addEventListener("click", async () => {
+  genFlowchartBtn?.addEventListener("click", async () => {
     const desc = processDesc.value.trim();
     if(!desc) { alert("Describe el proceso primero."); return; }
 
@@ -1593,7 +1625,7 @@ function initEngineeringAndTrackerListeners() {
     scheduleAutoSave();
   }
 
-  processDesc.addEventListener("input", () => scheduleAutoSave());
+  processDesc?.addEventListener("input", () => scheduleAutoSave());
 
   // --- Estado de Presupuestos/Procesos para plantillas y proyectos guardados ---
   window.getEngineeringData = () => {
@@ -2177,21 +2209,31 @@ function initOpsBridgeListeners() {
     const f = data.financials || {};
     const eng = data.engineering || {};
 
-    // Extraer maquinaria presupuestada si existe en la pestaña 1
+    // Extraer maquinaria presupuestada si existe en la pestaña 3
     let assetsToExport = [];
     if (Array.isArray(eng.equipment_items) && eng.equipment_items.length > 0) {
+      const totalInv = parseFloat(f.initial_investment || 0);
+      const count = eng.equipment_items.length;
+      const estimatedUnitCost = count > 0 && totalInv > 0 ? Math.round((totalInv * 0.5) / count) : 15000;
       assetsToExport = eng.equipment_items.map(it => ({
-        name: `${it.name || "Equipo"} (x${it.qty || 1})`,
-        category: "Maquinaria Presupuestada",
-        purchase_cost: (parseFloat(it.price_standard || 0) * parseFloat(it.qty || 1)) || 0,
+        name: `${it.name || "Equipo"} (${it.category || "Maquinaria"})`,
+        category: it.category || "Maquinaria Presupuestada",
+        purchase_cost: (parseFloat(it.price_standard || 0) * parseFloat(it.qty || 1)) || estimatedUnitCost,
         useful_life_years: f.depreciation_years || 5,
         monthly_maintenance: 0
       })).filter(a => a.purchase_cost > 0);
     }
 
-    const replaceAssets = assetsToExport.length > 0 && confirm(
-      `¿Deseas publicar "${b.name || 'Mi Proyecto'}" como el Plan Base oficial en el Portal del Dueño?\n\nPulsa Aceptar para actualizar también el inventario de maquinaria con las ${assetsToExport.length} partidas presupuestadas, o Cancelar para actualizar únicamente las metas financieras.`
-    );
+    let replaceAssets = false;
+    if (assetsToExport.length > 0) {
+      replaceAssets = confirm(
+        `¿Deseas actualizar también el inventario de maquinaria del Portal del Dueño con las ${assetsToExport.length} partidas de equipo registradas en "${b.name || 'Mi Proyecto'}"?\n\n• Aceptar: Actualiza metas financieras + inventario de maquinaria.\n• Cancelar: Actualiza únicamente las metas financieras del Plan Base.`
+      );
+    }
+
+    const originalHtml = publishBtn.innerHTML;
+    publishBtn.disabled = true;
+    publishBtn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin text-xs"></i><span>Publicando...</span>`;
 
     try {
       const res = await fetch("/api/ops/baseline", {
@@ -2206,9 +2248,12 @@ function initOpsBridgeListeners() {
         })
       });
       if (!res.ok) throw new Error("No se pudo publicar el Plan Base al ERP.");
-      showToast("Plan Base publicado en el Portal del Dueño exitosamente.", true);
+      showToast(`Plan Base "${b.name || 'Mi Proyecto'}" publicado en el Portal del Dueño exitosamente.`, true);
     } catch (e) {
       showToast(e.message || "Error al conectar con el Portal del Dueño", false);
+    } finally {
+      publishBtn.disabled = false;
+      publishBtn.innerHTML = originalHtml;
     }
   });
 }

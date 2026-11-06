@@ -1,4 +1,5 @@
 import os
+import re
 from datetime import datetime
 from typing import Dict, Any, List
 from fastapi import FastAPI, HTTPException, Header, Request
@@ -45,11 +46,38 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+_CONFLICT_PATTERN = re.compile(
+    r"<<<<<<< Updated upstream\r?\n(.*?)=======\r?\n.*?>>>>>>> Stashed changes\r?\n?",
+    re.DOTALL,
+)
+
+def _sanitize_static_conflict_markers(directory: str) -> None:
+    """Limpia automáticamente marcadores de conflicto de git stash pop en archivos estáticos."""
+    if not os.path.isdir(directory):
+        return
+    for fname in os.listdir(directory):
+        if not fname.endswith((".js", ".css", ".html")):
+            continue
+        fpath = os.path.join(directory, fname)
+        try:
+            with open(fpath, "r", encoding="utf-8") as f:
+                content = f.read()
+            if "<<<<<<< Updated upstream" in content and ">>>>>>> Stashed changes" in content:
+                cleaned = _CONFLICT_PATTERN.sub(r"\1", content)
+                if cleaned != content:
+                    with open(fpath, "w", encoding="utf-8") as f:
+                        f.write(cleaned)
+                    print(f">>> AUTO-SANITIZED GIT STASH MARKERS IN: {fname}")
+        except Exception as exc:
+            print(f">>> WARN sanitizing {fname}: {exc}")
+
 @app.middleware("http")
 async def add_no_cache_headers(request: Request, call_next):
-    response = await call_next(request)
     path = request.url.path
-    if path == "/" or path.endswith(".html") or path.endswith(".js"):
+    if path == "/" or path.endswith((".html", ".js", ".css")):
+        _sanitize_static_conflict_markers(os.path.join(os.path.dirname(__file__), "static"))
+    response = await call_next(request)
+    if path == "/" or path.endswith((".html", ".js", ".css")):
         response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
         response.headers["Pragma"] = "no-cache"
         response.headers["Expires"] = "0"
@@ -317,5 +345,6 @@ app.include_router(geo_router)
 static_dir = os.path.join(os.path.dirname(__file__), "static")
 if not os.path.exists(static_dir):
     os.makedirs(static_dir, exist_ok=True)
+_sanitize_static_conflict_markers(static_dir)
 
 app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")

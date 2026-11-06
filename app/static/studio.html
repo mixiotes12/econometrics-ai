@@ -82,7 +82,8 @@
   <!-- Font Awesome & Chart.js -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=20261106_3">
+  <link rel="stylesheet" href="studio-theme.css?v=20261106_3">
 </head>
 <body class="bg-[#0a0a0b] text-zinc-100 flex flex-col min-h-screen">
 
@@ -1389,7 +1390,35 @@ mermaid.initialize({
 });
 window.mermaid = mermaid;
 </script>
-<script src="app.js?v=20261103_1"></script>
+<script>
+  // Respaldo inmediato para navegación entre pestañas (garantiza que las 6 etapas funcionen siempre)
+  window.switchTab = function(tabIndex) {
+    const activeClasses = ["border-[#c5a059]", "text-[#d4b26f]", "bg-zinc-900/50", "border-emerald-400", "text-emerald-400"];
+    const inactiveClasses = ["border-transparent", "text-zinc-400", "hover:text-zinc-200", "hover:bg-zinc-900/30"];
+    for (let i = 1; i <= 6; i++) {
+      const btn = document.getElementById("tabBtn" + i);
+      const tab = document.getElementById("tab" + i);
+      if (i === tabIndex) {
+        if (btn) {
+          btn.classList.remove(...inactiveClasses, "border-emerald-400", "text-emerald-400");
+          btn.classList.add("border-[#c5a059]", "text-[#d4b26f]", "bg-zinc-900/50");
+        }
+        if (tab) tab.classList.remove("hidden");
+      } else {
+        if (btn) {
+          btn.classList.remove(...activeClasses);
+          btn.classList.add(...inactiveClasses);
+        }
+        if (tab) tab.classList.add("hidden");
+      }
+    }
+    if (tabIndex === 2 && typeof window.renderPendingMermaid === "function") {
+      window.renderPendingMermaid();
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+</script>
+<script src="studio-engine.js?v=20261106_3"></script>
   <!-- MODAL DE SUGERENCIAS DE ADQUISICIÓN POR GEOLOCALIZACIÓN -->
   <div id="geoAcquisitionModal" class="fixed inset-0 z-[100] bg-black/80 hidden items-center justify-center p-4 backdrop-blur-sm overflow-y-auto">
     <div class="bg-zinc-900 border border-zinc-700 rounded-[20px] w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl my-6">
