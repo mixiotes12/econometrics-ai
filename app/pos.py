@@ -1303,28 +1303,7 @@ def render_invoice_html(inv: dict, sale: dict, st: dict) -> str:
     }}
   </style>
 </head>
-<body class="bg-zinc-100 text-gray-800 font-sans antialiased py-6">
-  <div class="no-print max-w-4xl mx-auto mb-4 flex items-center justify-between bg-zinc-900 text-white px-5 py-3 rounded-xl shadow-lg border border-zinc-700">
-    <div class="flex items-center gap-3">
-      <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-lg">✓</div>
-      <div>
-        <div class="text-xs text-zinc-400 uppercase tracking-widest font-semibold">Comprobante Fiscal Digital por Internet</div>
-        <div class="text-sm font-bold text-white">Factura {escape(inv['serie'])}{escape(inv['folio'])} &bull; CFDI Versión 4.0 Timbrada</div>
-      </div>
-    </div>
-    <div class="flex items-center gap-2">
-      <button onclick="window.print()" class="bg-amber-400 hover:bg-amber-300 text-black font-semibold text-xs px-4 py-2 rounded-lg flex items-center gap-1.5 transition-all shadow">
-        <i class="fa-solid fa-print"></i> Imprimir / Guardar como PDF
-      </button>
-      <a href="/api/pos/invoices/{inv['id']}/xml" download="CFDI_{inv['serie']}{inv['folio']}.xml" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs px-3 py-2 rounded-lg border border-zinc-600 flex items-center gap-1.5 transition-all">
-        <i class="fa-solid fa-code"></i> Descargar XML
-      </a>
-      <button onclick="window.close()" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white text-xs px-3 py-2 rounded-lg border border-zinc-600 transition-all">
-        Cerrar
-      </button>
-    </div>
-  </div>
-
+<body class="bg-zinc-100 text-gray-800 font-sans antialiased p-3 sm:p-5">
   <div class="sheet max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md border border-gray-300 text-gray-800">
     <!-- ENCABEZADO -->
     <div class="flex justify-between items-start border-b-2 border-amber-500 pb-4 mb-4">
