@@ -103,9 +103,10 @@ let hasServerApiKey = false;
 // ----------------- API KEY & SETTINGS -----------------
 async function initApiKey() {
   const savedKey = localStorage.getItem("gemini_api_key") || "";
-  let savedModel = localStorage.getItem("gemini_model") || "gemini-3.5-flash";
-  if (savedModel === "gemini-2.5-flash" || savedModel === "gemini-3.8-flash") {
-    savedModel = "gemini-3.5-flash";
+  let savedModel = localStorage.getItem("gemini_model") || "gemini-3.8-flash";
+  const validModels = ["gemini-3.8-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.6-flash", "gemini-2.5-flash"];
+  if (!validModels.includes(savedModel)) {
+    savedModel = "gemini-3.8-flash";
   }
 
   try {
@@ -124,16 +125,41 @@ async function initApiKey() {
   } else if (hasServerApiKey) {
     updateApiKeyBadge(true, "API Key: Servidor Activa");
   } else {
-    updateApiKeyBadge(false, "Configurar API Key");
+    updateApiKeyBadge(false, "API Key: Inactiva");
   }
 
   document.getElementById("geminiModelSelect").value = savedModel;
+  updateGeminiHeaderBadge(savedModel);
+  resetGeminiReportSectionStatus();
+}
+
+function updateGeminiHeaderBadge(modelName) {
+  const badge = document.getElementById("geminiModelHeaderBadge");
+  if (badge) {
+    badge.textContent = modelName || "Gemini AI";
+  }
+}
+
+function resetGeminiReportSectionStatus() {
+  const badge = document.getElementById("geminiSectionStatusBadge");
+  const iconBox = document.getElementById("geminiSectionIconBox");
+  const section = document.getElementById("geminiReportSection");
+  if (badge) {
+    badge.textContent = "Pendiente de análisis";
+    badge.className = "text-[10px] font-semibold px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400 border border-zinc-700";
+  }
+  if (iconBox) {
+    iconBox.className = "w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center text-zinc-400 shadow";
+  }
+  if (section) {
+    section.classList.remove("glow-primary");
+  }
 }
 
 function updateApiKeyBadge(hasKey, labelText) {
   const label = document.getElementById("apiKeyStatusLabel");
   const btn = document.getElementById("apiKeyBtn");
-  label.textContent = labelText || (hasKey ? "API Key: Configurada" : "Configurar API Key");
+  label.textContent = labelText || (hasKey ? "API Key: Configurada" : "API Key: Inactiva");
   if (hasKey) {
     btn.classList.add("border-emerald-500/40", "text-emerald-400");
     btn.classList.remove("border-zinc-700", "text-zinc-300");
@@ -158,12 +184,13 @@ function initEventListeners() {
     const model = document.getElementById("geminiModelSelect").value;
     if (key) {
       localStorage.setItem("gemini_api_key", key);
-      updateApiKeyBadge(true);
+      updateApiKeyBadge(true, "API Key: Configurada");
     } else {
       localStorage.removeItem("gemini_api_key");
-      updateApiKeyBadge(false);
+      updateApiKeyBadge(hasServerApiKey, hasServerApiKey ? "API Key: Servidor Activa" : "API Key: Inactiva");
     }
     localStorage.setItem("gemini_model", model);
+    updateGeminiHeaderBadge(model);
     modal.classList.add("hidden");
   });
 
@@ -665,6 +692,15 @@ function initProjectPersistence() {
           engineering: { equipment_items: [], process_description: "", budgets: null, flowchart: null }
         };
         applyFormData(blank);
+        resetGeminiReportSectionStatus();
+        document.getElementById("viabilityScoreBadge").classList.add("hidden");
+        document.getElementById("geminiExecutiveSummary").innerHTML = 'Presiona el botón <strong>"Analizar con Gemini"</strong> para generar el diagnóstico cualitativo profundo.';
+        document.getElementById("geminiLocationAnalysis").innerHTML = 'Pendiente de generación.';
+        document.getElementById("geminiCompetitionAnalysis").innerHTML = 'Pendiente de generación.';
+        document.getElementById("geminiCostAnalysis").innerHTML = 'Pendiente de generación.';
+        document.getElementById("geminiRisksTableBody").innerHTML = '';
+        document.getElementById("geminiActionPlanList").innerHTML = '';
+        document.getElementById("geminiTimestampBadge").textContent = '';
         runQuickCalculation();
         scheduleAutoSave();
         document.getElementById("templateSelect").value = "";
@@ -1204,6 +1240,21 @@ function renderStrategicAdvice(advice, timestamp) {
   const scoreBadge = document.getElementById("viabilityScoreBadge");
   scoreBadge.classList.remove("hidden");
   scoreBadge.textContent = `Score IA: ${advice.viability_score}/100`;
+
+  // Update Gemini Section Status & Appearance
+  const sectionBadge = document.getElementById("geminiSectionStatusBadge");
+  const sectionIconBox = document.getElementById("geminiSectionIconBox");
+  const reportSection = document.getElementById("geminiReportSection");
+  if (sectionBadge) {
+    sectionBadge.textContent = "Análisis Activo";
+    sectionBadge.className = "text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
+  }
+  if (sectionIconBox) {
+    sectionIconBox.className = "w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-cyan-400 flex items-center justify-center text-white shadow";
+  }
+  if (reportSection) {
+    reportSection.classList.add("glow-primary");
+  }
 
   document.getElementById("geminiTimestampBadge").textContent = `Generado: ${timestamp}`;
   document.getElementById("geminiExecutiveSummary").innerHTML = advice.executive_summary.replace(/\n/g, '<br/>');

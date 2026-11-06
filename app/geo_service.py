@@ -325,7 +325,7 @@ async def get_acquisition_suggestions(
     # Si hay API Key de Gemini, enriquecer con análisis de IA
     if api_key:
         try:
-            model = req.gemini_model or "gemini-3.5-flash"
+            model = req.gemini_model or "gemini-3.8-flash"
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
             prompt = f"""
             Eres un experto en Cadena de Suministro (Supply Chain), Logística y Adquisiciones comerciales en México.

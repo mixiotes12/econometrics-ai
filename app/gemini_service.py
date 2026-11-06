@@ -127,11 +127,11 @@ async def generate_gemini_analysis(
 
     # Sanitize model name if needed
     clean_model = model_name.strip()
-    if not clean_model or clean_model in ["gemini-2.5-flash", "gemini-2.5-flash-lite"]:
-        clean_model = "gemini-3.5-flash"
+    if not clean_model:
+        clean_model = "gemini-3.8-flash"
     
-    # Priority order: selected model first, then guaranteed working 3.5 models, then fallback previews
-    ordered = [clean_model, "gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.6-flash", "gemini-3.8-flash", "gemini-3.7-flash"]
+    # Priority order: selected model first, then guaranteed working flash models (free tier support)
+    ordered = [clean_model, "gemini-3.8-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.6-flash", "gemini-2.5-flash"]
     candidate_models = []
     for m in ordered:
         if m not in candidate_models:

@@ -41,7 +41,7 @@ class FinancialInputs(BaseModel):
 class AnalysisRequest(BaseModel):
     business: BusinessProfile
     financials: FinancialInputs
-    gemini_model: Optional[str] = Field(default="gemini-3.5-flash", description="Modelo de Gemini a utilizar")
+    gemini_model: Optional[str] = Field(default="gemini-3.8-flash", description="Modelo de Gemini a utilizar")
     custom_api_key: Optional[str] = Field(default=None, description="API Key opcional provista en la petición")
 
 class YearCashFlow(BaseModel):
@@ -173,7 +173,7 @@ class EquipmentItem(BaseModel):
 class EquipmentRequest(BaseModel):
     items: List[EquipmentItem]
     custom_api_key: Optional[str] = None
-    gemini_model: Optional[str] = "gemini-3.5-flash"
+    gemini_model: Optional[str] = "gemini-3.8-flash"
 
 class BudgetOption(BaseModel):
     budget_type: str = Field(..., description="Ej: Económico, Estándar, Premium")
@@ -188,7 +188,7 @@ class BudgetsResponse(BaseModel):
 class ProcessRequest(BaseModel):
     process_description: str = Field(..., description="Descripción del proceso de producción o servicio")
     custom_api_key: Optional[str] = None
-    gemini_model: Optional[str] = "gemini-3.5-flash"
+    gemini_model: Optional[str] = "gemini-3.8-flash"
 
 class ActivityItem(BaseModel):
     step_number: int = 1
@@ -225,7 +225,7 @@ class SeasonalCalendarItem(BaseModel):
 class AcquisitionSuggestionRequest(BaseModel):
     business: BusinessProfile
     custom_api_key: Optional[str] = None
-    gemini_model: Optional[str] = "gemini-3.5-flash"
+    gemini_model: Optional[str] = "gemini-3.8-flash"
 
 class AcquisitionSuggestionResponse(BaseModel):
     state: str
