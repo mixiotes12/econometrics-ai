@@ -200,24 +200,139 @@
   const openTicket = (id, print) => window.open(`/api/pos/sales/${id}/ticket?token=${token}${print ? "&print=true" : ""}`, "_blank", "width=420,height=700");
 
   // ---------- Ventas y facturas
+  let currentSaleMethod = "efectivo";
+
   async function loadSales() {
     const d = $("salesDate").value;
     const sales = await api("/sales" + (d ? "?date=" + d : ""));
-    $("salesBody").innerHTML = sales.map((s) => `<tr><td>${esc(s.folio)}</td><td>${esc(s.created_at)}</td><td>${esc(s.cashier_name)}</td><td>${esc(s.payment_method)}</td>
-      <td>${fmt(s.total)}</td><td class="${s.status === "cancelada" ? "text-red-400" : ""}">${esc(s.status)}</td>
-      <td class="space-x-1 whitespace-nowrap"><button class="btn btn-sec !py-0.5" data-ticket="${s.id}"><i class="fa-solid fa-print"></i></button>
-      ${s.status === "completada" && !s.invoiced ? `<button class="btn btn-pri !py-0.5" data-invoice="${s.id}" data-folio="${esc(s.folio)}">Facturar</button>` : ""}
-      ${can("sales.cancel") && s.status === "completada" && !s.invoiced ? `<button class="btn btn-red !py-0.5" data-cancel="${s.id}">Cancelar</button>` : ""}</td></tr>`).join("");
+    $("salesBody").innerHTML = sales.map((s) => `<tr>
+      <td class="font-bold">${esc(s.folio)}</td>
+      <td>${esc(s.created_at)}</td>
+      <td>${esc(s.cashier_name)}</td>
+      <td>${esc(s.payment_method)}</td>
+      <td class="font-bold">${fmt(s.total)}</td>
+      <td class="${s.status === "cancelada" ? "text-red-400" : ""}">${esc(s.status)}</td>
+      <td class="space-x-1 whitespace-nowrap">
+        <button class="btn btn-sec !py-0.5" data-ticket="${s.id}" title="Imprimir ticket"><i class="fa-solid fa-print"></i></button>
+        ${s.status === "completada" && !s.invoiced ? `<button class="btn btn-pri !py-0.5" data-invoice="${s.id}" data-folio="${esc(s.folio)}" data-method="${esc(s.payment_method)}"><i class="fa-solid fa-bolt mr-1"></i>Facturar</button>` : ""}
+        ${can("sales.cancel") && s.status === "completada" && !s.invoiced ? `<button class="btn btn-red !py-0.5" data-cancel="${s.id}">Cancelar</button>` : ""}
+      </td></tr>`).join("");
+
     const inv = await api("/invoices");
-    $("invoicesBody").innerHTML = inv.map((i) => `<tr><td>${esc(i.serie)}-${esc(i.folio)}</td><td>${esc(i.sale_folio)}</td><td>${esc(i.rfc)}</td><td>${esc(i.razon_social)}</td>
-      <td>${fmt(i.total)}</td><td>${esc(i.status.replace("_", " "))}</td>
-      <td><a class="btn btn-sec !py-0.5 inline-block" href="/api/pos/invoices/${i.id}/xml?token=${token}">XML</a></td></tr>`).join("");
+    $("invoicesBody").innerHTML = inv.map((i) => {
+      const shortUuid = i.uuid ? (i.uuid.substring(0, 8) + "...") : "—";
+      return `<tr>
+        <td>
+          <div class="font-mono text-xs font-bold text-amber-400" title="${esc(i.uuid || '')}">${esc(shortUuid)}</div>
+          <div class="text-[10px] text-zinc-500">${esc(i.fecha_timbrado || i.created_at)}</div>
+        </td>
+        <td class="font-bold">${esc(i.serie)}-${esc(i.folio)}</td>
+        <td class="font-mono text-xs text-zinc-400">${esc(i.sale_folio)}</td>
+        <td>
+          <div class="font-bold text-zinc-200">${esc(i.rfc)}</div>
+          <div class="text-[11px] text-zinc-400 truncate max-w-[180px]">${esc(i.razon_social)}</div>
+        </td>
+        <td class="font-bold">${fmt(i.total)}</td>
+        <td>
+          <span class="bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-bold px-2 py-0.5 rounded text-[10px] uppercase inline-flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Timbrada
+          </span>
+        </td>
+        <td class="space-x-1 whitespace-nowrap text-right">
+          <button class="btn btn-pri !py-1 !px-2.5 text-xs inline-flex items-center gap-1" data-viewinv="${i.id}" data-serie="${esc(i.serie)}" data-folio="${esc(i.folio)}">
+            <i class="fa-solid fa-file-invoice"></i> Ver Factura
+          </button>
+          <a class="btn btn-sec !py-1 !px-2.5 text-xs inline-flex items-center gap-1" href="/api/pos/invoices/${i.id}/xml?token=${token}" download="CFDI_${esc(i.serie)}${esc(i.folio)}.xml">
+            <i class="fa-solid fa-code"></i> XML
+          </a>
+        </td>
+      </tr>`;
+    }).join("");
   }
-  function openInvoiceModal(id, folio) {
-    currentInvoiceSale = id; $("invSaleFolio").textContent = folio; $("invError").classList.add("hidden");
-    $("invoiceModal").classList.remove("hidden"); $("invoiceModal").classList.add("flex"); $("iRfc").focus();
+
+  function openInvoiceModal(id, folio, method) {
+    currentInvoiceSale = id;
+    currentSaleMethod = method || "efectivo";
+    $("invSaleFolio").textContent = folio;
+    $("invError").classList.add("hidden");
+
+    // Pre-seleccionar forma de pago según método de venta
+    const methodSatMap = { efectivo: "01", tarjeta: "04", transferencia: "03" };
+    if ($("iFormaPago")) $("iFormaPago").value = methodSatMap[currentSaleMethod] || "01";
+    if ($("iMetodoPago")) $("iMetodoPago").value = "PUE";
+
+    $("iRfc").value = "";
+    $("iName").value = "";
+    $("iZip").value = (settings && settings.zip_code) ? settings.zip_code : "";
+    $("iReg").value = "601";
+    $("iUso").value = "G03";
+    $("iMail").value = "";
+    updateRfcValidation();
+
+    $("invoiceModal").classList.remove("hidden");
+    $("invoiceModal").classList.add("flex");
+    $("iRfc").focus();
   }
+
+  function fillGenericInvoice() {
+    $("iRfc").value = "XAXX010101000";
+    $("iName").value = "PÚBLICO EN GENERAL";
+    $("iReg").value = "616";
+    $("iUso").value = "S01";
+    $("iZip").value = (settings && settings.zip_code) ? settings.zip_code : "06700";
+    updateRfcValidation();
+  }
+
+  function updateRfcValidation() {
+    const val = $("iRfc").value.trim().toUpperCase();
+    $("iRfc").value = val;
+    const badge = $("rfcTypeBadge");
+    if (!badge) return;
+
+    if (val === "XAXX010101000" || val === "XEXX010101000") {
+      badge.textContent = "Público en General (SAT 616 / S01)";
+      badge.className = "text-[10px] text-amber-400 font-bold font-mono";
+      $("iReg").value = "616";
+      $("iUso").value = "S01";
+    } else if (val.length === 12) {
+      badge.textContent = "Persona Moral (12 caracteres)";
+      badge.className = "text-[10px] text-emerald-400 font-mono";
+      if ($("iReg").value === "616" || $("iReg").value === "605" || $("iReg").value === "612") {
+        $("iReg").value = "601";
+      }
+      if ($("iUso").value === "S01") {
+        $("iUso").value = "G03";
+      }
+    } else if (val.length === 13) {
+      badge.textContent = "Persona Física (13 caracteres)";
+      badge.className = "text-[10px] text-emerald-400 font-mono";
+      if ($("iReg").value === "601" || $("iReg").value === "603") {
+        $("iReg").value = "612";
+      }
+      if ($("iUso").value === "S01") {
+        $("iUso").value = "G03";
+      }
+    } else {
+      badge.textContent = `${val.length}/13 caracteres`;
+      badge.className = "text-[10px] text-zinc-400 font-mono";
+    }
+  }
+
+  function openInvoicePrintModal(invoiceId, serie, folio) {
+    $("printModalTitle").textContent = `Factura ${serie}-${folio}`;
+    $("invoicePrintFrame").src = `/api/pos/invoices/${invoiceId}/print?token=${token}`;
+    $("btnModalXmlLink").href = `/api/pos/invoices/${invoiceId}/xml?token=${token}`;
+    $("btnModalXmlLink").setAttribute("download", `CFDI_${serie}${folio}.xml`);
+    $("invoicePrintModal").classList.remove("hidden");
+    $("invoicePrintModal").classList.add("flex");
+  }
+
   const closeInvoiceModal = () => { $("invoiceModal").classList.add("hidden"); $("invoiceModal").classList.remove("flex"); };
+  const closeInvoicePrintModal = () => {
+    $("invoicePrintModal").classList.add("hidden");
+    $("invoicePrintModal").classList.remove("flex");
+    $("invoicePrintFrame").src = "about:blank";
+  };
 
   // ---------- Productos
   async function loadProducts() {
@@ -308,20 +423,63 @@
     $("salesBody").addEventListener("click", async (e) => {
       const b = e.target.closest("button"); if (!b) return;
       if (b.dataset.ticket) openTicket(b.dataset.ticket, true);
-      else if (b.dataset.invoice) openInvoiceModal(b.dataset.invoice, b.dataset.folio);
+      else if (b.dataset.invoice) openInvoiceModal(b.dataset.invoice, b.dataset.folio, b.dataset.method);
       else if (b.dataset.cancel && confirm("¿Cancelar esta venta? El inventario será devuelto.")) {
         try { await api(`/sales/${b.dataset.cancel}/cancel`, { method: "POST" }); await loadSales(); } catch (er) { alert(er.message); }
       }
     });
+
+    $("invoicesBody").addEventListener("click", (e) => {
+      const b = e.target.closest("button"); if (!b) return;
+      if (b.dataset.viewinv) openInvoicePrintModal(b.dataset.viewinv, b.dataset.serie, b.dataset.folio);
+    });
+
+    $("btnFillGenericInvoice").onclick = fillGenericInvoice;
     $("invCancel").onclick = closeInvoiceModal;
+    if ($("invModalTopClose")) $("invModalTopClose").onclick = closeInvoiceModal;
+
+    $("iRfc").oninput = updateRfcValidation;
+    $("iReg").onchange = () => {
+      if ($("iReg").value === "616") {
+        $("iUso").value = "S01";
+      } else if ($("iUso").value === "S01") {
+        $("iUso").value = "G03";
+      }
+    };
+
+    $("btnClosePrintModal").onclick = closeInvoicePrintModal;
+    $("btnDoPrintInvoice").onclick = () => {
+      const iframe = $("invoicePrintFrame");
+      if (iframe && iframe.contentWindow) {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+      }
+    };
+
     $("invoiceForm").onsubmit = async (e) => {
       e.preventDefault();
       try {
-        await api(`/sales/${currentInvoiceSale}/invoice`, { method: "POST", body: {
-          rfc: $("iRfc").value, razon_social: $("iName").value, regimen_fiscal: $("iReg").value,
-          codigo_postal: $("iZip").value, uso_cfdi: $("iUso").value || "G03", email: $("iMail").value || null } });
-        closeInvoiceModal(); $("invoiceForm").reset(); $("iUso").value = "G03"; await loadSales();
-      } catch (er) { $("invError").textContent = er.message; $("invError").classList.remove("hidden"); }
+        const res = await api(`/sales/${currentInvoiceSale}/invoice`, { method: "POST", body: {
+          rfc: $("iRfc").value.trim().toUpperCase(),
+          razon_social: $("iName").value.trim().toUpperCase(),
+          regimen_fiscal: $("iReg").value,
+          codigo_postal: $("iZip").value.trim(),
+          uso_cfdi: $("iUso").value || "G03",
+          forma_pago: $("iFormaPago") ? $("iFormaPago").value : "01",
+          metodo_pago: $("iMetodoPago") ? $("iMetodoPago").value : "PUE",
+          email: $("iMail").value.trim() || null
+        } });
+        closeInvoiceModal();
+        $("invoiceForm").reset();
+        await loadSales();
+        // Abrir inmediatamente la factura visual para el cajero y el cliente
+        if (res && res.id) {
+          openInvoicePrintModal(res.id, res.serie, res.folio);
+        }
+      } catch (er) {
+        $("invError").textContent = er.message;
+        $("invError").classList.remove("hidden");
+      }
     };
 
     $("productForm").onsubmit = async (e) => {

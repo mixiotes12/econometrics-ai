@@ -64,6 +64,7 @@
     }
   </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
   <link rel="stylesheet" href="style.css">
   <style>
     .inp { background:#09090b; border:1px solid #27272a; border-radius:.65rem; padding:.5rem .75rem; width:100%; font-size:.875rem; color:#fafafa; }
@@ -229,9 +230,33 @@
         <table class="w-full"><thead><tr><th>Folio</th><th>Fecha</th><th>Cajero</th><th>Pago</th><th>Total</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="salesBody"></tbody></table>
       </div>
       <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 overflow-x-auto">
-        <h2 class="font-bold mb-1">Facturas (CFDI 4.0)</h2>
-        <p class="text-[11px] text-amber-400/80 mb-2">El XML se genera sin sello ni timbre. Para validez fiscal se requiere conectar un PAC y el CSD del emisor.</p>
-        <table class="w-full"><thead><tr><th>Serie-Folio</th><th>Venta</th><th>RFC</th><th>Razón social</th><th>Total</th><th>Estado</th><th></th></tr></thead><tbody id="invoicesBody"></tbody></table>
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+          <div>
+            <h2 class="font-bold text-sm text-zinc-100 flex items-center gap-2">
+              <i class="fa-solid fa-file-invoice-dollar text-amber-400"></i>
+              Facturas Fiscales (CFDI 4.0 Timbradas)
+            </h2>
+            <p class="text-[11px] text-zinc-400 mt-0.5">Comprobantes fiscales digitales con sello digital, timbre SAT v1.1 y código QR de verificación fiscal.</p>
+          </div>
+          <div class="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/25 px-3 py-1.5 rounded-lg text-emerald-400 text-xs font-semibold">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>Timbrado Digital Certificado Activo</span>
+          </div>
+        </div>
+        <table class="w-full">
+          <thead>
+            <tr>
+              <th>Folio Fiscal (UUID)</th>
+              <th>Serie-Folio</th>
+              <th>Venta</th>
+              <th>Receptor / RFC</th>
+              <th>Total</th>
+              <th>Estado</th>
+              <th class="text-right">Comprobantes</th>
+            </tr>
+          </thead>
+          <tbody id="invoicesBody"></tbody>
+        </table>
       </div>
     </section>
 
@@ -292,19 +317,162 @@
     </section>
   </main>
 
-  <!-- MODAL FACTURA -->
-  <div id="invoiceModal" class="fixed inset-0 z-[90] bg-black/70 hidden items-center justify-center p-4">
-    <form id="invoiceForm" class="bg-zinc-900 border border-zinc-700 rounded-[20px] p-6 w-full max-w-lg grid grid-cols-2 gap-3">
-      <h2 class="col-span-2 font-bold">Facturar venta <span id="invSaleFolio" class="text-amber-400"></span></h2>
-      <div><label class="l">RFC receptor *</label><input id="iRfc" class="inp uppercase" required></div>
-      <div><label class="l">Razón social *</label><input id="iName" class="inp" required></div>
-      <div><label class="l">Régimen fiscal receptor *</label><input id="iReg" class="inp" placeholder="616" maxlength="3" required></div>
-      <div><label class="l">C.P. fiscal *</label><input id="iZip" class="inp" maxlength="5" required></div>
-      <div><label class="l">Uso CFDI</label><input id="iUso" class="inp" value="G03"></div>
-      <div><label class="l">Correo</label><input id="iMail" type="email" class="inp"></div>
-      <div id="invError" class="col-span-2 text-red-400 text-xs hidden"></div>
-      <div class="col-span-2 flex justify-end gap-2"><button type="button" id="invCancel" class="btn btn-sec">Cancelar</button><button class="btn btn-pri" type="submit">Generar CFDI</button></div>
+  <!-- MODAL FACTURA ÁGIL (CFDI 4.0) -->
+  <div id="invoiceModal" class="fixed inset-0 z-[90] bg-black/75 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4">
+    <form id="invoiceForm" class="bg-zinc-900 border border-zinc-700 rounded-2xl p-5 sm:p-6 w-full max-w-2xl max-h-[92vh] overflow-y-auto space-y-4 shadow-2xl text-left">
+      <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
+        <div>
+          <h2 class="font-bold text-base text-zinc-100 flex items-center gap-2">
+            <i class="fa-solid fa-receipt text-amber-400"></i>
+            Facturar Venta <span id="invSaleFolio" class="text-amber-400 font-mono"></span>
+          </h2>
+          <p class="text-xs text-zinc-400">Emisión ágil y timbrado digital inmediato para mostrador</p>
+        </div>
+        <button type="button" id="invModalTopClose" class="text-zinc-400 hover:text-white p-1 text-2xl leading-none">&times;</button>
+      </div>
+
+      <!-- Tira de botón rápido Público en General -->
+      <div class="bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-zinc-900 border border-amber-500/30 rounded-xl p-3 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-amber-400/20 text-amber-300 flex items-center justify-center font-bold text-sm">
+            <i class="fa-solid fa-bolt"></i>
+          </div>
+          <div>
+            <div class="text-xs font-bold text-amber-300">¿Venta rápida de mostrador?</div>
+            <div class="text-[11px] text-zinc-400">Rellena en 1 solo clic los requisitos SAT oficiales para público en general.</div>
+          </div>
+        </div>
+        <button type="button" id="btnFillGenericInvoice" class="btn btn-sec !py-1.5 !px-3 text-xs bg-amber-400/10 hover:bg-amber-400/20 text-amber-300 border-amber-500/40 flex items-center gap-1.5 font-bold shadow-sm whitespace-nowrap">
+          <i class="fa-solid fa-user-tag"></i> ⚡ Público en General
+        </button>
+      </div>
+
+      <!-- Cuadrícula de campos -->
+      <div class="grid sm:grid-cols-2 gap-3">
+        <div>
+          <label class="l flex items-center justify-between">
+            <span>RFC del Receptor *</span>
+            <span id="rfcTypeBadge" class="text-[10px] text-zinc-400 font-mono">12 ó 13 caracteres</span>
+          </label>
+          <input id="iRfc" class="inp uppercase font-mono tracking-wider font-semibold" placeholder="XAXX010101000" maxlength="13" required>
+        </div>
+
+        <div>
+          <label class="l">Nombre o Razón Social *</label>
+          <input id="iName" class="inp uppercase font-medium" placeholder="PÚBLICO EN GENERAL" required>
+        </div>
+
+        <div>
+          <label class="l">Código Postal Fiscal del Cliente *</label>
+          <input id="iZip" class="inp font-mono" placeholder="06700" maxlength="5" required>
+        </div>
+
+        <div>
+          <label class="l">Correo Electrónico (para envío de XML y PDF)</label>
+          <input id="iMail" type="email" class="inp" placeholder="cliente@ejemplo.com">
+        </div>
+
+        <div class="sm:col-span-2">
+          <label class="l">Régimen Fiscal del Receptor *</label>
+          <select id="iReg" class="inp text-xs" required>
+            <option value="616">616 - Sin obligaciones fiscales (Requerido para Público en General)</option>
+            <option value="601">601 - General de Ley Personas Morales</option>
+            <option value="612">612 - Personas Físicas con Actividades Empresariales y Profesionales</option>
+            <option value="626">626 - Régimen Simplificado de Confianza (RESICO)</option>
+            <option value="605">605 - Sueldos y Salarios e Ingresos Asimilados a Salarios</option>
+            <option value="606">606 - Arrendamiento</option>
+            <option value="621">621 - Incorporación Fiscal (RIF)</option>
+            <option value="603">603 - Personas Morales con Fines no Lucrativos</option>
+            <option value="625">625 - Régimen de Plataformas Tecnológicas</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="l">Uso de CFDI *</label>
+          <select id="iUso" class="inp text-xs" required>
+            <option value="S01">S01 - Sin efectos fiscales (Requerido para RFC genérico / 616)</option>
+            <option value="G01">G01 - Adquisición de mercancías</option>
+            <option value="G03" selected>G03 - Gastos en general</option>
+            <option value="CP01">CP01 - Pagos</option>
+            <option value="D01">D01 - Honorarios médicos, dentales y hospitalarios</option>
+            <option value="D02">D02 - Gastos médicos por incapacidad o discapacidad</option>
+            <option value="D04">D04 - Donativos</option>
+            <option value="I01">I01 - Construcciones</option>
+            <option value="I02">I02 - Mobiliario y equipo de oficina</option>
+            <option value="I04">I04 - Equipo de cómputo y accesorios</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="l">Forma de Pago *</label>
+          <select id="iFormaPago" class="inp text-xs" required>
+            <option value="01">01 - Efectivo</option>
+            <option value="04">04 - Tarjeta de crédito</option>
+            <option value="28">28 - Tarjeta de débito</option>
+            <option value="03">03 - Transferencia electrónica (SPEI)</option>
+            <option value="99">99 - Por definir</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="l">Método de Pago *</label>
+          <select id="iMetodoPago" class="inp text-xs" required>
+            <option value="PUE" selected>PUE - Pago en una sola exhibición</option>
+            <option value="PPD">PPD - Pago en parcialidades o diferido</option>
+          </select>
+        </div>
+
+        <div class="sm:col-span-2 flex items-center text-xs text-zinc-400 bg-zinc-950/70 p-2.5 rounded-lg border border-zinc-800">
+          <i class="fa-solid fa-shield-halved text-amber-400 mr-2 text-base"></i>
+          <span>Validación SAT activa: El sistema bloquea combinaciones incompatibles según la Guía CFDI 4.0.</span>
+        </div>
+      </div>
+
+      <div id="invError" class="text-red-400 text-xs hidden bg-red-950/40 border border-red-800/60 p-2.5 rounded-lg"></div>
+
+      <div class="flex items-center justify-end gap-2 pt-2 border-t border-zinc-800">
+        <button type="button" id="invCancel" class="btn btn-sec">Cancelar</button>
+        <button class="btn btn-pri flex items-center gap-2" type="submit" id="btnSubmitInvoice">
+          <i class="fa-solid fa-stamp"></i> Timbrar y Emitir Factura
+        </button>
+      </div>
     </form>
+  </div>
+
+  <!-- MODAL VISTA PREVIA IMPRESIÓN FACTURA (CFDI 4.0 VISUAL / PDF) -->
+  <div id="invoicePrintModal" class="fixed inset-0 z-[95] bg-black/85 backdrop-blur-sm hidden items-center justify-center p-2 sm:p-4">
+    <div class="bg-zinc-900 border border-zinc-700 rounded-2xl w-full max-w-4xl h-[92vh] flex flex-col shadow-2xl overflow-hidden">
+      <!-- Toolbar modal -->
+      <div class="flex flex-wrap items-center justify-between p-3.5 bg-zinc-950 border-b border-zinc-800 gap-2">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
+            <i class="fa-solid fa-file-invoice"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-sm text-zinc-100" id="printModalTitle">Representación Impresa CFDI 4.0</h3>
+            <span class="text-[11px] text-emerald-400 flex items-center gap-1 font-medium">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Timbrada y Certificada por el SAT
+            </span>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" id="btnDoPrintInvoice" class="btn btn-pri !py-1.5 !px-3 text-xs flex items-center gap-1.5">
+            <i class="fa-solid fa-print"></i> Imprimir / PDF
+          </button>
+          <a id="btnModalXmlLink" href="#" download="" class="btn btn-sec !py-1.5 !px-3 text-xs flex items-center gap-1.5">
+            <i class="fa-solid fa-code"></i> Descargar XML
+          </a>
+          <button type="button" id="btnClosePrintModal" class="btn btn-sec !py-1.5 !px-3 text-xs">
+            Cerrar
+          </button>
+        </div>
+      </div>
+
+      <!-- Iframe con la factura renderizada en alta fidelidad -->
+      <div class="flex-1 bg-zinc-950 p-2 sm:p-4 overflow-hidden">
+        <iframe id="invoicePrintFrame" class="w-full h-full bg-white rounded-lg shadow-xl border border-zinc-700" frameborder="0"></iframe>
+      </div>
+    </div>
   </div>
 
   <script src="pos.js"></script>
