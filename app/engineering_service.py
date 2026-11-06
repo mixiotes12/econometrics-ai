@@ -9,11 +9,11 @@ from .models import (
 )
 
 async def _call_gemini(prompt: str, system_instruction: str, api_key: str, model_name: str) -> str:
-    clean_model = model_name.strip()
+    clean_model = model_name.strip() if model_name else "gemini-3.8-flash"
     if not clean_model:
-        clean_model = "gemini-3.5-flash"
+        clean_model = "gemini-3.8-flash"
         
-    ordered = [clean_model, "gemini-3.5-flash", "gemini-3.5-flash-lite"]
+    ordered = [clean_model, "gemini-3.8-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-2.5-flash"]
     candidate_models = []
     for m in ordered:
         if m not in candidate_models:
