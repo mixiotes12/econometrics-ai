@@ -271,8 +271,33 @@
         <div><label class="l">Costo</label><input id="pCost" type="number" step="0.01" min="0" class="inp" value="0"></div>
         <div><label class="l">IVA</label><select id="pIva" class="inp"><option value="iva16">16%</option><option value="iva0">Tasa 0%</option><option value="exento">Exento</option></select></div>
         <div><label class="l">Existencia</label><input id="pStock" type="number" step="0.01" class="inp" value="0"></div>
-        <div><label class="l">Clave SAT producto</label><input id="pSatP" class="inp" value="01010101"></div>
-        <div><label class="l">Clave SAT unidad</label><input id="pSatU" class="inp" value="H87"></div>
+        <div>
+          <label class="l">Clave SAT producto</label>
+          <select id="pSatP" class="inp text-xs">
+            <option value="01010101">01010101 - No existe en el catálogo (General)</option>
+            <option value="50201708">50201708 - Café y café preparado</option>
+            <option value="50202300">50202300 - Bebidas no alcohólicas</option>
+            <option value="50192100">50192100 - Dulces y botanas preparadas</option>
+            <option value="50181900">50181900 - Panadería, repostería y galletas</option>
+            <option value="90101501">90101501 - Restaurantes / Servicio de alimentos</option>
+            <option value="90101503">90101503 - Comida rápida y mostrador</option>
+            <option value="80141600">80141600 - Actividades de comercialización y ventas</option>
+            <option value="84111500">84111500 - Servicios contables y de auditoría</option>
+            <option value="43211500">43211500 - Computadoras y equipo electrónico</option>
+          </select>
+        </div>
+        <div>
+          <label class="l">Clave SAT unidad</label>
+          <select id="pSatU" class="inp text-xs">
+            <option value="H87">H87 - Pieza</option>
+            <option value="E48">E48 - Unidad de servicio</option>
+            <option value="KGM">KGM - Kilogramo</option>
+            <option value="LTR">LTR - Litro</option>
+            <option value="XBX">XBX - Caja</option>
+            <option value="XPK">XPK - Paquete</option>
+            <option value="ACT">ACT - Actividad</option>
+          </select>
+        </div>
         <div class="flex items-end gap-4 text-xs">
           <label><input type="checkbox" id="pTrack" checked> Controlar inventario</label>
           <label><input type="checkbox" id="pActive" checked> Activo</label>
@@ -305,7 +330,30 @@
         <div><label class="l">Nombre comercial</label><input id="s_business_name" class="inp"></div>
         <div><label class="l">Razón social (emisor)</label><input id="s_legal_name" class="inp"></div>
         <div><label class="l">RFC emisor</label><input id="s_rfc" class="inp uppercase"></div>
-        <div><label class="l">Régimen fiscal emisor (clave SAT)</label><input id="s_tax_regime" class="inp"></div>
+        <div>
+          <label class="l">Régimen fiscal emisor (clave SAT)</label>
+          <select id="s_tax_regime" class="inp text-xs">
+            <option value="601">601 - Régimen General de Ley Personas Morales</option>
+            <option value="603">603 - Personas Morales con Fines No Lucrativos</option>
+            <option value="605">605 - Régimen de Sueldos y Salarios e Ingresos Asimilados a Salarios</option>
+            <option value="606">606 - Régimen de Arrendamiento</option>
+            <option value="607">607 - Régimen de Enajenación o Adquisición de Bienes</option>
+            <option value="608">608 - Régimen de los Demás Ingresos</option>
+            <option value="610">610 - Régimen de Residentes en el Extranjero sin Establecimiento Permanente en México</option>
+            <option value="611">611 - Régimen de Ingresos por Dividendos (Socios y Accionistas)</option>
+            <option value="612">612 - Régimen de las Personas Físicas con Actividades Empresariales y Profesionales</option>
+            <option value="614">614 - Régimen de los Ingresos por Intereses</option>
+            <option value="615">615 - Régimen de los Ingresos por Obtención de Premios</option>
+            <option value="616">616 - Sin Obligaciones Fiscales</option>
+            <option value="620">620 - Sociedades Cooperativas de Producción que Optan por Diferir sus Ingresos</option>
+            <option value="621">621 - Régimen de Incorporación Fiscal</option>
+            <option value="622">622 - Régimen de Actividades Agrícolas, Ganaderas, Silvícolas y Pesqueras</option>
+            <option value="623">623 - Régimen Opcional para Grupos de Sociedades</option>
+            <option value="624">624 - Régimen de los Coordinados</option>
+            <option value="625">625 - Régimen de las Actividades Empresariales con Ingresos a través de Plataformas Tecnológicas</option>
+            <option value="626">626 - Régimen Simplificado de Confianza (RESICO)</option>
+          </select>
+        </div>
         <div class="sm:col-span-2"><label class="l">Dirección</label><input id="s_address" class="inp"></div>
         <div><label class="l">Código postal (lugar de expedición)</label><input id="s_zip_code" class="inp"></div>
         <div><label class="l">Teléfono</label><input id="s_phone" class="inp"></div>
@@ -375,15 +423,25 @@
         <div class="sm:col-span-2">
           <label class="l">Régimen Fiscal del Receptor *</label>
           <select id="iReg" class="inp text-xs" required>
-            <option value="616">616 - Sin obligaciones fiscales (Requerido para Público en General)</option>
-            <option value="601">601 - General de Ley Personas Morales</option>
-            <option value="612">612 - Personas Físicas con Actividades Empresariales y Profesionales</option>
+            <option value="616">616 - Sin Obligaciones Fiscales</option>
+            <option value="601">601 - Régimen General de Ley Personas Morales</option>
+            <option value="603">603 - Personas Morales con Fines No Lucrativos</option>
+            <option value="605">605 - Régimen de Sueldos y Salarios e Ingresos Asimilados a Salarios</option>
+            <option value="606">606 - Régimen de Arrendamiento</option>
+            <option value="607">607 - Régimen de Enajenación o Adquisición de Bienes</option>
+            <option value="608">608 - Régimen de los Demás Ingresos</option>
+            <option value="610">610 - Régimen de Residentes en el Extranjero sin Establecimiento Permanente en México</option>
+            <option value="611">611 - Régimen de Ingresos por Dividendos (Socios y Accionistas)</option>
+            <option value="612">612 - Régimen de las Personas Físicas con Actividades Empresariales y Profesionales</option>
+            <option value="614">614 - Régimen de los Ingresos por Intereses</option>
+            <option value="615">615 - Régimen de los Ingresos por Obtención de Premios</option>
+            <option value="620">620 - Sociedades Cooperativas de Producción que Optan por Diferir sus Ingresos</option>
+            <option value="621">621 - Régimen de Incorporación Fiscal</option>
+            <option value="622">622 - Régimen de Actividades Agrícolas, Ganaderas, Silvícolas y Pesqueras</option>
+            <option value="623">623 - Régimen Opcional para Grupos de Sociedades</option>
+            <option value="624">624 - Régimen de los Coordinados</option>
+            <option value="625">625 - Régimen de las Actividades Empresariales con Ingresos a través de Plataformas Tecnológicas</option>
             <option value="626">626 - Régimen Simplificado de Confianza (RESICO)</option>
-            <option value="605">605 - Sueldos y Salarios e Ingresos Asimilados a Salarios</option>
-            <option value="606">606 - Arrendamiento</option>
-            <option value="621">621 - Incorporación Fiscal (RIF)</option>
-            <option value="603">603 - Personas Morales con Fines no Lucrativos</option>
-            <option value="625">625 - Régimen de Plataformas Tecnológicas</option>
           </select>
         </div>
 

@@ -35,15 +35,25 @@ PAYMENT_METHODS = {"efectivo": "01", "tarjeta": "04", "transferencia": "03"}
 RFC_RE = re.compile(r"^[A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3}$")
 
 REGIMENES_FISCALES = {
-    "616": "Sin obligaciones fiscales (Público en General)",
-    "601": "General de Ley Personas Morales",
-    "612": "Personas Físicas con Actividades Empresariales y Profesionales",
+    "601": "Régimen General de Ley Personas Morales",
+    "603": "Personas Morales con Fines No Lucrativos",
+    "605": "Régimen de Sueldos y Salarios e Ingresos Asimilados a Salarios",
+    "606": "Régimen de Arrendamiento",
+    "607": "Régimen de Enajenación o Adquisición de Bienes",
+    "608": "Régimen de los Demás Ingresos",
+    "610": "Régimen de Residentes en el Extranjero sin Establecimiento Permanente en México",
+    "611": "Régimen de Ingresos por Dividendos (Socios y Accionistas)",
+    "612": "Régimen de las Personas Físicas con Actividades Empresariales y Profesionales",
+    "614": "Régimen de los Ingresos por Intereses",
+    "615": "Régimen de los Ingresos por Obtención de Premios",
+    "616": "Sin Obligaciones Fiscales",
+    "620": "Sociedades Cooperativas de Producción que Optan por Diferir sus Ingresos",
+    "621": "Régimen de Incorporación Fiscal",
+    "622": "Régimen de Actividades Agrícolas, Ganaderas, Silvícolas y Pesqueras",
+    "623": "Régimen Opcional para Grupos de Sociedades",
+    "624": "Régimen de los Coordinados",
+    "625": "Régimen de las Actividades Empresariales con Ingresos a través de Plataformas Tecnológicas",
     "626": "Régimen Simplificado de Confianza (RESICO)",
-    "605": "Sueldos y Salarios e Ingresos Asimilados a Salarios",
-    "606": "Arrendamiento",
-    "603": "Personas Morales con Fines no Lucrativos",
-    "625": "Actividades Empresariales con Plataformas Tecnológicas",
-    "621": "Incorporación Fiscal (RIF)",
 }
 
 USOS_CFDI = {
