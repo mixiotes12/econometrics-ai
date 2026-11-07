@@ -82,8 +82,8 @@
   <!-- Font Awesome & Chart.js -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="stylesheet" href="style.css?v=20261107_5">
-  <link rel="stylesheet" href="studio-theme.css?v=20261107_5">
+  <link rel="stylesheet" href="style.css?v=20261107_6">
+  <link rel="stylesheet" href="studio-theme.css?v=20261107_6">
 </head>
 <body class="bg-[#0a0a0b] text-zinc-100 flex flex-col min-h-screen">
 
@@ -362,10 +362,36 @@
       </div>
 
       <div id="flowOutput" class="hidden mt-6 space-y-6">
-         <!-- Diagrama -->
-         <div class="p-4 bg-zinc-950 rounded-xl border border-zinc-800 overflow-x-auto">
-            <h3 class="text-xs font-bold text-zinc-300 uppercase mb-3">Diagrama de Flujo (Simbología)</h3>
-            <div id="mermaidContainer" class="w-full"></div>
+         <!-- Diagrama con controles de Zoom y Arrastre -->
+         <div id="flowchartCardWrapper" class="p-4 bg-zinc-950 rounded-xl border border-zinc-800 transition-all">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-3 pb-2.5 border-b border-zinc-800/80">
+              <div>
+                <h3 class="text-xs font-bold text-zinc-200 uppercase flex items-center gap-2">
+                  <i class="fa-solid fa-diagram-project text-[#d4b26f]"></i>
+                  <span>Diagrama de Flujo (Simbología Industrial)</span>
+                </h3>
+                <p class="text-[11px] text-zinc-400 mt-0.5 no-print">Usa los botones de zoom, arrastra con el mouse para desplazarte o amplía a pantalla completa.</p>
+              </div>
+              <div class="flex items-center gap-1.5 no-print">
+                <button type="button" id="flowZoomOutBtn" title="Alejar diagrama (-25%)" class="px-2.5 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-200 text-xs font-bold transition-all cursor-pointer">
+                  <i class="fa-solid fa-magnifying-glass-minus"></i>
+                </button>
+                <span id="flowZoomLabel" class="px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-800 text-xs font-mono font-bold text-[#d4b26f] min-w-[56px] text-center">125%</span>
+                <button type="button" id="flowZoomInBtn" title="Acercar diagrama (+25%)" class="px-2.5 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-200 text-xs font-bold transition-all cursor-pointer">
+                  <i class="fa-solid fa-magnifying-glass-plus"></i>
+                </button>
+                <button type="button" id="flowZoomResetBtn" title="Restablecer tamaño óptimo" class="px-2.5 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs font-medium transition-all cursor-pointer">
+                  Restablecer
+                </button>
+                <button type="button" id="flowFullscreenBtn" title="Ver diagrama en pantalla completa" class="px-2.5 py-1.5 rounded-lg bg-[#c5a059]/15 hover:bg-[#c5a059]/25 border border-[#c5a059]/40 text-[#d4b26f] text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5">
+                  <i class="fa-solid fa-expand"></i>
+                  <span class="hidden sm:inline">Expandir</span>
+                </button>
+              </div>
+            </div>
+            <div id="mermaidViewport" class="w-full overflow-auto rounded-lg bg-zinc-950/90 p-4 min-h-[260px] max-h-[560px] cursor-grab active:cursor-grabbing select-none flex items-center">
+              <div id="mermaidContainer" class="min-w-max mx-auto transition-all duration-150"></div>
+            </div>
          </div>
 
          <!-- Tabla de Actividades -->
@@ -1388,7 +1414,16 @@ if (window.mermaid) {
     startOnLoad: false,
     securityLevel: 'loose',
     theme: 'base',
+    flowchart: {
+      useMaxWidth: false,
+      htmlLabels: true,
+      nodeSpacing: 50,
+      rankSpacing: 65,
+      padding: 18,
+      curve: 'basis'
+    },
     themeVariables: {
+      fontSize: '16px',
       primaryColor: '#18181b',
       primaryTextColor: '#fafafa',
       primaryBorderColor: '#c5a059',
@@ -1431,7 +1466,7 @@ if (window.mermaid) {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 </script>
-<script src="studio-engine.js?v=20261107_5"></script>
+<script src="studio-engine.js?v=20261107_6"></script>
   <!-- MODAL DE SUGERENCIAS DE ADQUISICIÓN POR GEOLOCALIZACIÓN -->
   <div id="geoAcquisitionModal" class="fixed inset-0 z-[100] bg-black/80 hidden items-center justify-center p-4 backdrop-blur-sm overflow-y-auto">
     <div class="bg-zinc-900 border border-zinc-700 rounded-[20px] w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl my-6">

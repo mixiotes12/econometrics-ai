@@ -1781,6 +1781,104 @@ function initEngineeringAndTrackerListeners() {
     `;
   }
 
+  let currentFlowZoomPct = 125;
+  let baseFlowSvgWidth = 1250;
+  let isFlowFullscreen = false;
+
+  function applyFlowchartZoom(newZoomPct) {
+    currentFlowZoomPct = Math.max(50, Math.min(350, Math.round(newZoomPct)));
+    const labelEl = document.getElementById("flowZoomLabel");
+    if (labelEl) labelEl.textContent = `${currentFlowZoomPct}%`;
+
+    const svgEl = mermaidContainer?.querySelector("svg");
+    if (svgEl) {
+      const scaledW = Math.round(baseFlowSvgWidth * (currentFlowZoomPct / 100));
+      svgEl.style.maxWidth = "none";
+      svgEl.style.width = `${scaledW}px`;
+      svgEl.style.height = "auto";
+      svgEl.style.margin = "0 auto";
+      svgEl.style.display = "block";
+    } else if (mermaidContainer?.firstElementChild) {
+      mermaidContainer.firstElementChild.style.transformOrigin = "left center";
+      mermaidContainer.firstElementChild.style.transform = `scale(${(currentFlowZoomPct / 100).toFixed(2)})`;
+    }
+  }
+
+  function initFlowchartZoomAndPanControls() {
+    const zoomInBtn = document.getElementById("flowZoomInBtn");
+    const zoomOutBtn = document.getElementById("flowZoomOutBtn");
+    const zoomResetBtn = document.getElementById("flowZoomResetBtn");
+    const fullscreenBtn = document.getElementById("flowFullscreenBtn");
+    const viewport = document.getElementById("mermaidViewport");
+    const cardWrapper = document.getElementById("flowchartCardWrapper");
+
+    zoomInBtn?.addEventListener("click", () => applyFlowchartZoom(currentFlowZoomPct + 25));
+    zoomOutBtn?.addEventListener("click", () => applyFlowchartZoom(currentFlowZoomPct - 25));
+    zoomResetBtn?.addEventListener("click", () => {
+      applyFlowchartZoom(125);
+      if (viewport) {
+        viewport.scrollLeft = 0;
+        viewport.scrollTop = 0;
+      }
+    });
+
+    fullscreenBtn?.addEventListener("click", () => {
+      if (!cardWrapper || !viewport) return;
+      isFlowFullscreen = !isFlowFullscreen;
+      if (isFlowFullscreen) {
+        cardWrapper.classList.add("fixed", "inset-4", "z-[120]", "flex", "flex-col", "shadow-2xl", "border-[#c5a059]");
+        viewport.classList.remove("max-h-[560px]");
+        viewport.classList.add("flex-1", "max-h-none");
+        fullscreenBtn.innerHTML = `<i class="fa-solid fa-compress"></i> <span class="hidden sm:inline">Salir</span>`;
+        applyFlowchartZoom(Math.max(currentFlowZoomPct, 150));
+      } else {
+        cardWrapper.classList.remove("fixed", "inset-4", "z-[120]", "flex", "flex-col", "shadow-2xl", "border-[#c5a059]");
+        viewport.classList.remove("flex-1", "max-h-none");
+        viewport.classList.add("max-h-[560px]");
+        fullscreenBtn.innerHTML = `<i class="fa-solid fa-expand"></i> <span class="hidden sm:inline">Expandir</span>`;
+      }
+    });
+
+    if (viewport) {
+      // Zoom con rueda del ratón al mantener Ctrl o Alt, o botones
+      viewport.addEventListener("wheel", (e) => {
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          const delta = e.deltaY < 0 ? 20 : -20;
+          applyFlowchartZoom(currentFlowZoomPct + delta);
+        }
+      }, { passive: false });
+
+      // Arrastrar con el mouse (Panning)
+      let isDragging = false;
+      let startX = 0;
+      let startY = 0;
+      let scrollLeft = 0;
+      let scrollTop = 0;
+
+      viewport.addEventListener("mousedown", (e) => {
+        if (e.button !== 0) return;
+        isDragging = true;
+        startX = e.pageX - viewport.offsetLeft;
+        startY = e.pageY - viewport.offsetTop;
+        scrollLeft = viewport.scrollLeft;
+        scrollTop = viewport.scrollTop;
+      });
+      window.addEventListener("mouseup", () => {
+        isDragging = false;
+      });
+      viewport.addEventListener("mousemove", (e) => {
+        if (!isDragging) return;
+        e.preventDefault();
+        const x = e.pageX - viewport.offsetLeft;
+        const y = e.pageY - viewport.offsetTop;
+        viewport.scrollLeft = scrollLeft - (x - startX) * 1.4;
+        viewport.scrollTop = scrollTop - (y - startY) * 1.4;
+      });
+    }
+  }
+  initFlowchartZoomAndPanControls();
+
   async function drawMermaid(rawCode, retryCount = 0) {
     const code = sanitizeMermaidCode(rawCode);
     pendingMermaidCode = code;
@@ -1803,17 +1901,13 @@ function initEngineeringAndTrackerListeners() {
       if (svgEl) {
         const vb = (svgEl.getAttribute("viewBox") || "").split(/\s+/).map(Number);
         const naturalW = vb.length === 4 ? vb[2] : 0;
-        const containerW = mermaidContainer.clientWidth || 800;
-        const targetW = naturalW > 0 ? Math.max(Math.min(naturalW, containerW), naturalW * 0.85) : containerW;
-        svgEl.style.maxWidth = "100%";
-        svgEl.style.width = `${Math.round(targetW)}px`;
-        svgEl.style.height = "auto";
-        svgEl.style.margin = "0 auto";
-        svgEl.style.display = "block";
+        baseFlowSvgWidth = naturalW > 0 ? Math.max(naturalW * 1.25, 1200) : 1350;
+        applyFlowchartZoom(currentFlowZoomPct);
       }
     } catch (e) {
       console.warn("Mermaid render fallback activado:", e);
       renderFallbackHtmlFlowchart(code);
+      applyFlowchartZoom(currentFlowZoomPct);
     }
   }
 
