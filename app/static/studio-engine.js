@@ -123,19 +123,29 @@ function getActiveGeminiApiKey() {
   return key;
 }
 
+const VALID_GEMINI_MODELS = [
+  "gemini-3.8-flash",
+  "gemini-3.6-flash",
+  "gemini-3.5-flash-lite",
+  "gemini-3.1-flash-lite",
+  "gemini-3-flash",
+  "gemini-2.5-flash",
+  "gemini-2.5-flash-lite"
+];
+
 function getActiveGeminiModel() {
-  const validModels = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.5-pro", "gemini-2.0-flash", "gemini-1.5-flash"];
-  const raw = document.getElementById("geminiModelSelect")?.value || localStorage.getItem("gemini_model") || "gemini-2.5-flash";
-  return validModels.includes(raw) ? raw : "gemini-2.5-flash";
+  let raw = document.getElementById("geminiModelSelect")?.value || localStorage.getItem("gemini_model") || "gemini-3.8-flash";
+  if (raw === "gemini-3.5-flash") raw = "gemini-3.5-flash-lite";
+  return VALID_GEMINI_MODELS.includes(raw) ? raw : "gemini-3.8-flash";
 }
 
 // ----------------- API KEY & SETTINGS -----------------
 async function initApiKey() {
   const savedKey = localStorage.getItem("gemini_api_key") || "";
-  let savedModel = localStorage.getItem("gemini_model") || "gemini-2.5-flash";
-  const validModels = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.5-pro", "gemini-2.0-flash", "gemini-1.5-flash"];
-  if (!validModels.includes(savedModel)) {
-    savedModel = "gemini-2.5-flash";
+  let savedModel = localStorage.getItem("gemini_model") || "gemini-3.8-flash";
+  if (savedModel === "gemini-3.5-flash") savedModel = "gemini-3.5-flash-lite";
+  if (!VALID_GEMINI_MODELS.includes(savedModel)) {
+    savedModel = "gemini-3.8-flash";
     localStorage.setItem("gemini_model", savedModel);
   }
 

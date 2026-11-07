@@ -326,15 +326,12 @@ async def get_acquisition_suggestions(
     if api_key and api_key not in ("tu_api_key_aqui", "tu_api_key_de_google_aistudio_aqui"):
         try:
             alias_map = {
-                "gemini-3.8-flash": "gemini-2.5-flash",
-                "gemini-3.5-flash": "gemini-2.5-flash",
-                "gemini-3.5-flash-lite": "gemini-2.5-flash-lite",
-                "gemini-3.6-flash": "gemini-2.5-pro",
+                "gemini-3.5-flash": "gemini-3.5-flash-lite",
             }
-            req_model = (req.gemini_model or "gemini-2.5-flash").strip()
-            req_model = alias_map.get(req_model, req_model) or "gemini-2.5-flash"
+            req_model = (req.gemini_model or "gemini-3.8-flash").strip()
+            req_model = alias_map.get(req_model, req_model) or "gemini-3.8-flash"
             candidate_models = []
-            for m in [req_model, "gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash", "gemini-1.5-flash"]:
+            for m in [req_model, "gemini-3.8-flash", "gemini-3.6-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-3-flash", "gemini-2.5-flash", "gemini-2.5-flash-lite"]:
                 if m not in candidate_models:
                     candidate_models.append(m)
             prompt = f"""

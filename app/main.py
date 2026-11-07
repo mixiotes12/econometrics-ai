@@ -253,7 +253,7 @@ def _get_valid_server_api_key() -> str:
 def get_config():
     return {
         "has_server_api_key": bool(_get_valid_server_api_key()),
-        "default_model": "gemini-2.5-flash"
+        "default_model": "gemini-3.8-flash"
     }
 
 @app.post("/api/calc-financials", response_model=FinancialReport)
@@ -291,7 +291,7 @@ async def perform_full_analysis(
 
     # 2. Call Gemini
     try:
-        model_name = req.gemini_model or "gemini-2.5-flash"
+        model_name = req.gemini_model or "gemini-3.8-flash"
         advice, raw_text = await generate_gemini_analysis(
             business=req.business,
             financials=req.financials,

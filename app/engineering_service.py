@@ -8,21 +8,28 @@ from .models import (
     ProcessRequest, FlowchartResponse, ActivityItem, ConsumableItem
 )
 
+ACTIVE_FREE_TIER_MODELS = [
+    "gemini-3.8-flash",
+    "gemini-3.6-flash",
+    "gemini-3.5-flash-lite",
+    "gemini-3.1-flash-lite",
+    "gemini-3-flash",
+    "gemini-2.5-flash",
+    "gemini-2.5-flash-lite",
+]
+
 MODEL_ALIASES = {
-    "gemini-3.8-flash": "gemini-2.5-flash",
-    "gemini-3.5-flash": "gemini-2.5-flash",
-    "gemini-3.5-flash-lite": "gemini-2.5-flash-lite",
-    "gemini-3.6-flash": "gemini-2.5-pro",
+    "gemini-3.5-flash": "gemini-3.5-flash-lite",
 }
 
 async def _call_gemini(prompt: str, system_instruction: str, api_key: str, model_name: str) -> str:
     clean_model = (model_name or "").strip()
-    clean_model = MODEL_ALIASES.get(clean_model, clean_model) or "gemini-2.5-flash"
+    clean_model = MODEL_ALIASES.get(clean_model, clean_model) or "gemini-3.8-flash"
 
-    ordered = [clean_model, "gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash", "gemini-1.5-flash"]
+    ordered = [clean_model] + ACTIVE_FREE_TIER_MODELS
     candidate_models = []
     for m in ordered:
-        if m not in candidate_models:
+        if m and m not in candidate_models:
             candidate_models.append(m)
 
     payload = {
@@ -34,7 +41,7 @@ async def _call_gemini(prompt: str, system_instruction: str, api_key: str, model
     last_err = "Fallo la comunicación con Gemini API"
     async with httpx.AsyncClient(timeout=90.0) as client:
         for model in candidate_models:
-            for api_version in ["v1beta", "v1"]:
+            for api_version in ["v1beta", "v1alpha"]:
                 url = f"https://generativelanguage.googleapis.com/{api_version}/models/{model}:generateContent?key={api_key}"
                 try:
                     response = await client.post(url, headers={"Content-Type": "application/json"}, json=payload)
@@ -45,14 +52,43 @@ async def _call_gemini(prompt: str, system_instruction: str, api_key: str, model
                             raw_text = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "")
                             if raw_text:
                                 return raw_text
-                    elif response.status_code in (400, 403):
+                    elif response.status_code == 404:
+                        continue
+                    elif response.status_code in (429, 503):
+                        last_err = f"Cuota o saturación en {model} ({response.status_code})"
+                        break
+                    else:
                         try:
-                            last_err = response.json().get("error", {}).get("message", response.text)
+                            err_msg = response.json().get("error", {}).get("message", response.text)
                         except Exception:
-                            last_err = response.text
+                            err_msg = response.text
+                        if "API_KEY_INVALID" in response.text or "API key not valid" in err_msg:
+                            raise Exception(f"API Key inválida: {err_msg}")
+                        last_err = err_msg
                         break
                 except Exception as exc:
+                    if "API Key inválida" in str(exc):
+                        raise
                     last_err = str(exc)
+
+        # Autodescubrimiento de respaldo si ningún candidato estático respondió
+        try:
+            models_resp = await client.get(f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}")
+            if models_resp.status_code == 200:
+                for m in models_resp.json().get("models", []):
+                    methods = m.get("supportedGenerationMethods", [])
+                    name = m.get("name", "").replace("models/", "")
+                    if "generateContent" in methods and "flash" in name.lower() and "tts" not in name.lower() and "image" not in name.lower() and "live" not in name.lower() and name not in candidate_models:
+                        url = f"https://generativelanguage.googleapis.com/v1beta/models/{name}:generateContent?key={api_key}"
+                        resp = await client.post(url, headers={"Content-Type": "application/json"}, json=payload)
+                        if resp.status_code == 200:
+                            cands = resp.json().get("candidates", [])
+                            if cands:
+                                raw_text = cands[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+                                if raw_text:
+                                    return raw_text
+        except Exception:
+            pass
     raise Exception(last_err)
 
 def _parse_json(raw_text: str) -> dict:
