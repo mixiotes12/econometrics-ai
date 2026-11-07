@@ -1093,16 +1093,20 @@ def _migrate_table_if_global_unique(conn):
             conn.execute(f"INSERT INTO auth_branches_migrated ({cols_csv}) SELECT {cols_csv} FROM auth_branches")
             conn.execute("DROP TABLE auth_branches")
             conn.execute("ALTER TABLE auth_branches_migrated RENAME TO auth_branches")
+        # 4. auth_sessions: si tiene schema legacy con 'user_type', recrear con 'actor_type'
+        s_cols = {r["name"] for r in conn.execute("PRAGMA table_info(auth_sessions)")}
+        if s_cols and "actor_type" not in s_cols:
+            conn.execute("DROP TABLE IF EXISTS auth_sessions")
     finally:
         conn.execute("PRAGMA foreign_keys = ON")
 
 
 def init_pos_db():
     with db() as conn:
+        _migrate_table_if_global_unique(conn)
         conn.executescript(SCHEMA)
         conn.executescript(SCHEMA_INVENTORY)
         conn.executescript(SCHEMA_HR)
-        _migrate_table_if_global_unique(conn)
 
         # Asegurar columnas adicionales en tablas existentes
         existing_p = {r["name"] for r in conn.execute("PRAGMA table_info(products)")}
