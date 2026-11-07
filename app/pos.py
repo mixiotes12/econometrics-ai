@@ -566,6 +566,18 @@ EMPLOYEE_EXTRA_COLUMNS = {
     "pin_plain": "TEXT NOT NULL DEFAULT '1234'",
 }
 
+BUSINESS_EXTRA_COLUMNS = {
+    "project_key": "TEXT NOT NULL DEFAULT 'EM-AURA-1001'",
+    "sector": "TEXT NOT NULL DEFAULT 'Comercio / Servicios'",
+    "state": "TEXT NOT NULL DEFAULT 'Ciudad de México'",
+    "municipality": "TEXT NOT NULL DEFAULT 'Cuauhtémoc'",
+    "studio_payload_json": "TEXT NOT NULL DEFAULT '{}'",
+    "baseline_financials_json": "TEXT NOT NULL DEFAULT '{}'",
+    "settings_json": "TEXT NOT NULL DEFAULT '{}'",
+    "active": "INTEGER NOT NULL DEFAULT 1",
+    "updated_at": "TEXT",
+}
+
 DEFAULT_AREAS = [
     ("Ventas / Caja", "Punto de venta, cajeros y atención al cliente"),
     ("Almacén", "Recepción, inventarios y mermas"),
@@ -1109,9 +1121,11 @@ def init_pos_db():
                 conn.execute(f"ALTER TABLE employees ADD COLUMN {col} {ddl}")
 
         existing_biz = {r["name"] for r in conn.execute("PRAGMA table_info(businesses)")}
-        if "project_key" not in existing_biz:
-            conn.execute("ALTER TABLE businesses ADD COLUMN project_key TEXT")
-            conn.execute("UPDATE businesses SET project_key = 'EM-AURA-1001' WHERE project_key IS NULL OR project_key = ''")
+        for col, ddl in BUSINESS_EXTRA_COLUMNS.items():
+            if col not in existing_biz:
+                conn.execute(f"ALTER TABLE businesses ADD COLUMN {col} {ddl}")
+        conn.execute("UPDATE businesses SET project_key = 'EM-AURA-1001' WHERE project_key IS NULL OR project_key = ''")
+        conn.execute("UPDATE businesses SET active = 1 WHERE active IS NULL")
 
         existing_b = {r["name"] for r in conn.execute("PRAGMA table_info(auth_branches)")}
         if "business_id" not in existing_b:
