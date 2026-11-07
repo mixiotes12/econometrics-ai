@@ -995,6 +995,7 @@ def _migrate_table_if_global_unique(conn):
         # 1. products: quitar sku TEXT UNIQUE / barcode TEXT UNIQUE
         p_sql_row = conn.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='products'").fetchone()
         if p_sql_row and p_sql_row["sql"] and ("sku TEXT UNIQUE" in p_sql_row["sql"] or "barcode TEXT UNIQUE" in p_sql_row["sql"]):
+            conn.execute("DROP TABLE IF EXISTS products_migrated")
             conn.execute("""
                 CREATE TABLE products_migrated (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1038,6 +1039,7 @@ def _migrate_table_if_global_unique(conn):
         # 2. areas: quitar name TEXT NOT NULL UNIQUE
         a_sql_row = conn.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='areas'").fetchone()
         if a_sql_row and a_sql_row["sql"] and "UNIQUE" in a_sql_row["sql"].upper():
+            conn.execute("DROP TABLE IF EXISTS areas_migrated")
             conn.execute("""
                 CREATE TABLE areas_migrated (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1059,6 +1061,7 @@ def _migrate_table_if_global_unique(conn):
         # 3. auth_branches: quitar code TEXT NOT NULL UNIQUE global
         b_sql_row = conn.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='auth_branches'").fetchone()
         if b_sql_row and b_sql_row["sql"] and "CODE TEXT NOT NULL UNIQUE" in b_sql_row["sql"].upper():
+            conn.execute("DROP TABLE IF EXISTS auth_branches_migrated")
             conn.execute("""
                 CREATE TABLE auth_branches_migrated (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
