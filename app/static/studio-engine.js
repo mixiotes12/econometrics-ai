@@ -1467,6 +1467,9 @@ function initEngineeringAndTrackerListeners() {
       return;
     }
 
+    const origBtnHtml = genBudgetsBtn.innerHTML;
+    genBudgetsBtn.disabled = true;
+    genBudgetsBtn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> <span>Cotizando 3 Presupuestos con IA...</span>`;
     budgetsOutput.classList.add("hidden");
     budgetsLoader.classList.remove("hidden");
     budgetsLoader.classList.add("flex");
@@ -1494,8 +1497,11 @@ function initEngineeringAndTrackerListeners() {
       renderBudgets(data);
       showToast("3 opciones de presupuesto generadas con Gemini AI.", true);
     } catch (e) {
+      if (lastBudgetsData) budgetsOutput.classList.remove("hidden");
       showToast("Error al cotizar con IA: " + e.message, false);
     } finally {
+      genBudgetsBtn.disabled = false;
+      genBudgetsBtn.innerHTML = origBtnHtml;
       budgetsLoader.classList.add("hidden");
       budgetsLoader.classList.remove("flex");
     }
@@ -1616,6 +1622,9 @@ function initEngineeringAndTrackerListeners() {
       return;
     }
 
+    const origFlowBtnHtml = genFlowchartBtn.innerHTML;
+    genFlowchartBtn.disabled = true;
+    genFlowchartBtn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> <span>Diseñando Proceso y Tabla Kw/h...</span>`;
     flowOutput.classList.add("hidden");
     flowLoader.classList.remove("hidden");
     flowLoader.classList.add("flex");
@@ -1643,8 +1652,11 @@ function initEngineeringAndTrackerListeners() {
       await renderFlowchart(data);
       showToast("Diagrama de procesos y tabla de suministros generados con IA.", true);
     } catch (e) {
+      if (lastFlowchartData) flowOutput.classList.remove("hidden");
       showToast("Error al generar ingeniería de procesos: " + e.message, false);
     } finally {
+      genFlowchartBtn.disabled = false;
+      genFlowchartBtn.innerHTML = origFlowBtnHtml;
       flowLoader.classList.add("hidden");
       flowLoader.classList.remove("flex");
     }

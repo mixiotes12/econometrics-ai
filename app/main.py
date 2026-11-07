@@ -320,6 +320,7 @@ async def api_generate_budgets(req: EquipmentRequest, x_gemini_api_key: str = He
         response = await generate_equipment_budgets(req)
         return response
     except Exception as e:
+        print(f">>> ERROR /api/generate-budgets: {e}", flush=True)
         raise HTTPException(status_code=500, detail=f"Error al generar presupuestos: {str(e)}")
 
 @app.post("/api/generate-flowchart", response_model=FlowchartResponse)
@@ -330,6 +331,7 @@ async def api_generate_flowchart(req: ProcessRequest, x_gemini_api_key: str = He
         response = await generate_production_flowchart(req)
         return response
     except Exception as e:
+        print(f">>> ERROR /api/generate-flowchart: {e}", flush=True)
         raise HTTPException(status_code=500, detail=f"Error al generar diagrama de flujo: {str(e)}")
 
 # Módulo POS & Ventas (Fase 1)
