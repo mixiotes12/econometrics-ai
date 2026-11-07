@@ -5,6 +5,10 @@ let breakEvenChartInstance = null;
 let currentFinancialReport = null;
 
 document.addEventListener("DOMContentLoaded", async () => {
+  if (window.Chart && window.Chart.defaults) {
+    window.Chart.defaults.font.size = 14;
+    window.Chart.defaults.color = "#d4d4d8";
+  }
   await initApiKey();
   initEventListeners();
   initEngineeringAndTrackerListeners();
