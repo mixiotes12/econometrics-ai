@@ -63,17 +63,17 @@ ENGINEERING_TEMPLATES = {
         },
         "flowchart": {
             "mermaid_code": (
-                "flowchart LR\n"
-                "  A([Inicio]) --> B[(Almacén de grano verde)]\n"
-                "  B --> C[Tueste por lote]\n"
-                "  C --> D{¿Curva de tueste correcta?}\n"
-                "  D -->|No| C\n"
-                "  D -->|Sí| E[(Reposo 24-48 h)]\n"
-                "  E --> F[Molienda al momento]\n"
-                "  F --> G[Extracción y preparación]\n"
-                "  G --> H[Entrega y cobro]\n"
-                "  H --> I[Limpieza de equipo]\n"
-                "  I --> J([Fin])"
+                'flowchart LR\n'
+                '  A(["Inicio"]) --> B[("Almacén de grano verde")]\n'
+                '  B --> C["Tueste por lote"]\n'
+                '  C --> D{"¿Curva de tueste correcta?"}\n'
+                '  D -->|No| C\n'
+                '  D -->|Sí| E[("Reposo 24-48 h")]\n'
+                '  E --> F["Molienda al momento"]\n'
+                '  F --> G["Extracción y preparación"]\n'
+                '  G --> H["Entrega y cobro"]\n'
+                '  H --> I["Limpieza de equipo"]\n'
+                '  I --> J(["Fin"])'
             ),
             "activities": [
                 {"step_number": 1, "activity": "Recepción e inspección de grano verde", "time_estimate": "15 min/lote", "movements": "Descarga de costales al almacén seco"},
@@ -145,17 +145,17 @@ ENGINEERING_TEMPLATES = {
         },
         "flowchart": {
             "mermaid_code": (
-                "flowchart LR\n"
-                "  A([Inicio]) --> B[(Insumos y envases)]\n"
-                "  B --> C[Pesaje por fórmula]\n"
-                "  C --> D[Mezcla y emulsión 70 °C]\n"
-                "  D --> E{¿pH y viscosidad OK?}\n"
-                "  E -->|No| D\n"
-                "  E -->|Sí| F[Llenado y sellado]\n"
-                "  F --> G[Etiquetado y loteado]\n"
-                "  G --> H[(Almacén 3PL)]\n"
-                "  H --> I[Despacho de pedidos]\n"
-                "  I --> J([Fin])"
+                'flowchart LR\n'
+                '  A(["Inicio"]) --> B[("Insumos y envases")]\n'
+                '  B --> C["Pesaje por fórmula"]\n'
+                '  C --> D["Mezcla y emulsión 70 °C"]\n'
+                '  D --> E{"¿pH y viscosidad OK?"}\n'
+                '  E -->|No| D\n'
+                '  E -->|Sí| F["Llenado y sellado"]\n'
+                '  F --> G["Etiquetado y loteado"]\n'
+                '  G --> H[("Almacén 3PL")]\n'
+                '  H --> I["Despacho de pedidos"]\n'
+                '  I --> J(["Fin"])'
             ),
             "activities": [
                 {"step_number": 1, "activity": "Recepción de insumos", "time_estimate": "30 min", "movements": "Andén → almacén de materia prima"},
@@ -223,18 +223,18 @@ ENGINEERING_TEMPLATES = {
         },
         "flowchart": {
             "mermaid_code": (
-                "flowchart LR\n"
-                "  A([Prospecto]) --> B[Campaña digital]\n"
-                "  B --> C[Demo en línea]\n"
-                "  C --> D{¿Contrata?}\n"
-                "  D -->|No| B\n"
-                "  D -->|Sí| E[Alta y onboarding]\n"
-                "  E --> F[(Base de datos de pacientes)]\n"
-                "  F --> G[Uso diario y recordatorios]\n"
-                "  G --> H{¿Incidencia?}\n"
-                "  H -->|Sí| I[Soporte 24/7]\n"
-                "  I --> G\n"
-                "  H -->|No| J([Renovación mensual])"
+                'flowchart LR\n'
+                '  A(["Prospecto"]) --> B["Campaña digital"]\n'
+                '  B --> C["Demo en línea"]\n'
+                '  C --> D{"¿Contrata?"}\n'
+                '  D -->|No| B\n'
+                '  D -->|Sí| E["Alta y onboarding"]\n'
+                '  E --> F[("Base de datos de pacientes")]\n'
+                '  F --> G["Uso diario y recordatorios"]\n'
+                '  G --> H{"¿Incidencia?"}\n'
+                '  H -->|Sí| I["Soporte 24/7"]\n'
+                '  I --> G\n'
+                '  H -->|No| J(["Renovación mensual"])'
             ),
             "activities": [
                 {"step_number": 1, "activity": "Captación de prospectos", "time_estimate": "Continuo", "movements": "Ninguno (digital)"},
@@ -302,16 +302,16 @@ ENGINEERING_TEMPLATES = {
         },
         "flowchart": {
             "mermaid_code": (
-                "flowchart LR\n"
-                "  A([Reserva en app]) --> B[Check-in en recepción]\n"
-                "  B --> C[Calentamiento guiado]\n"
-                "  C --> D[Clase Reformer o HIIT]\n"
-                "  D --> E[Estiramiento y cierre]\n"
-                "  E --> F{¿Le quedan créditos?}\n"
-                "  F -->|No| G[Renovación de membresía]\n"
-                "  F -->|Sí| H[Limpieza de equipo]\n"
-                "  G --> H\n"
-                "  H --> I([Siguiente clase])"
+                'flowchart LR\n'
+                '  A(["Reserva en app"]) --> B["Check-in en recepción"]\n'
+                '  B --> C["Calentamiento guiado"]\n'
+                '  C --> D["Clase Reformer o HIIT"]\n'
+                '  D --> E["Estiramiento y cierre"]\n'
+                '  E --> F{"¿Le quedan créditos?"}\n'
+                '  F -->|No| G["Renovación de membresía"]\n'
+                '  F -->|Sí| H["Limpieza de equipo"]\n'
+                '  G --> H\n'
+                '  H --> I(["Siguiente clase"])'
             ),
             "activities": [
                 {"step_number": 1, "activity": "Reserva de clase", "time_estimate": "1 min", "movements": "Ninguno (app)"},

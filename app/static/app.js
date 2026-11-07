@@ -1640,35 +1640,129 @@ function initEngineeringAndTrackerListeners() {
     }
   });
 
-  async function drawMermaid(code) {
-    const holder = document.createElement("div");
-    holder.className = "mermaid w-full";
-    holder.textContent = code;
-    mermaidContainer.innerHTML = "";
-    mermaidContainer.appendChild(holder);
+  function sanitizeMermaidCode(raw) {
+    let code = String(raw || "").trim();
+    if (code.startsWith("```mermaid")) code = code.substring(10);
+    if (code.startsWith("```")) code = code.substring(3);
+    if (code.endsWith("```")) code = code.substring(0, code.length - 3);
+    code = code.trim();
+
+    // Asegurar encabezado válido
+    if (!/^(flowchart|graph)\s+(LR|TD|TB|RL|BT)/i.test(code)) {
+      code = "flowchart LR\n" + code;
+    }
+
+    // Envolver etiquetas de nodos sin comillas en comillas dobles para que signos como ¿ ? ° ( ) / no rompan Mermaid
+    // 1. ([texto]) -> (["texto"])
+    code = code.replace(/(\b[A-Za-z0-9_]+)\(\[\s*(?!"|')([^\]]+?)\s*\]\)/g, (_, id, lbl) => `${id}(["${lbl.replace(/"/g, "'")}"])`);
+    // 2. [(texto)] -> [("texto")]
+    code = code.replace(/(\b[A-Za-z0-9_]+)\[\(\s*(?!"|')([^\)]+?)\s*\)\]/g, (_, id, lbl) => `${id}[("${lbl.replace(/"/g, "'")}")]`);
+    // 3. ((texto)) -> (("texto"))
+    code = code.replace(/(\b[A-Za-z0-9_]+)\(\(\s*(?!"|')([^\)]+?)\s*\)\)/g, (_, id, lbl) => `${id}(("${lbl.replace(/"/g, "'")}"))`);
+    // 4. {texto} -> {"texto"}
+    code = code.replace(/(\b[A-Za-z0-9_]+)\{\s*(?!"|')([^\}]+?)\s*\}/g, (_, id, lbl) => `${id}{"${lbl.replace(/"/g, "'")}"}`);
+    // 5. [texto] -> ["texto"] (evitando tocar [("../..")] ya procesados)
+    code = code.replace(/(\b[A-Za-z0-9_]+)\[\s*(?!"|'|\()([^\]]+?)\s*\]/g, (_, id, lbl) => `${id}["${lbl.replace(/"/g, "'")}"]`);
+
+    return code;
+  }
+
+  function renderFallbackHtmlFlowchart(code) {
+    // Extraer pasos desde lastFlowchartData.activities o desde los nodos del código Mermaid
+    const acts = Array.isArray(lastFlowchartData?.activities) ? lastFlowchartData.activities : [];
+    const nodes = [];
+    if (acts.length > 0) {
+      nodes.push({ type: "terminal", label: "Inicio" });
+      acts.forEach((a) => {
+        const isDecision = /\?|¿|verifica|control|calidad|ok|correct/i.test(a.activity);
+        const isStorage = /almac[eé]n|reposo|inventario|base de datos|insumo/i.test(a.activity);
+        nodes.push({
+          type: isDecision ? "decision" : (isStorage ? "storage" : "process"),
+          label: a.activity,
+          sub: a.time_estimate || ""
+        });
+      });
+      nodes.push({ type: "terminal", label: "Fin" });
+    } else {
+      const regex = /\b([A-Za-z0-9_]+)\s*(?:\(\[|\[|\{|\(\()\s*"?([^"\]\}\)]+)"?/g;
+      const seen = new Set();
+      let m;
+      while ((m = regex.exec(code)) !== null) {
+        if (!seen.has(m[1])) {
+          seen.add(m[1]);
+          nodes.push({ type: "process", label: m[2].trim(), sub: "" });
+        }
+      }
+    }
+
+    const htmlItems = nodes.map((n, idx) => {
+      let shapeClass = "rounded-xl border-[#c5a059] bg-zinc-900 text-zinc-100";
+      let badge = "Operación";
+      if (n.type === "terminal") {
+        shapeClass = "rounded-full border-emerald-500/70 bg-emerald-950/30 text-emerald-300";
+        badge = idx === 0 ? "Inicio" : "Cierre";
+      } else if (n.type === "decision") {
+        shapeClass = "rounded-xl border-amber-400/80 bg-amber-950/20 text-amber-200 ring-1 ring-amber-500/20";
+        badge = "Decisión / Control";
+      } else if (n.type === "storage") {
+        shapeClass = "rounded-xl border-cyan-500/60 bg-zinc-900/90 text-zinc-100";
+        badge = "Almacenamiento";
+      }
+      const arrow = idx < nodes.length - 1
+        ? `<div class="flex items-center justify-center text-[#d4b26f] px-1"><i class="fa-solid fa-arrow-right text-sm"></i></div>`
+        : "";
+      return `
+        <div class="flex items-center">
+          <div class="border-2 ${shapeClass} px-3.5 py-2.5 min-w-[135px] max-w-[190px] text-center shadow-md">
+            <div class="text-[9px] uppercase tracking-wider font-mono opacity-75 mb-0.5">${badge}</div>
+            <div class="text-xs font-bold leading-snug">${escapeHtml(n.label)}</div>
+            ${n.sub ? `<div class="text-[10px] font-mono text-[#d4b26f] mt-1">${escapeHtml(n.sub)}</div>` : ""}
+          </div>
+          ${arrow}
+        </div>
+      `;
+    }).join("");
+
+    mermaidContainer.innerHTML = `
+      <div class="w-full overflow-x-auto py-3 px-2">
+        <div class="inline-flex items-center gap-1 min-w-max mx-auto">${htmlItems}</div>
+      </div>
+    `;
+  }
+
+  async function drawMermaid(rawCode, retryCount = 0) {
+    const code = sanitizeMermaidCode(rawCode);
+    pendingMermaidCode = code;
+
+    if (!window.mermaid) {
+      if (retryCount < 15) {
+        setTimeout(() => drawMermaid(code, retryCount + 1), 200);
+        return;
+      }
+      renderFallbackHtmlFlowchart(code);
+      return;
+    }
+
     try {
-      if (!window.mermaid) throw new Error("Mermaid aún no está cargado");
-      await window.mermaid.run({ nodes: [holder] });
-      pendingMermaidCode = null;
-      const svg = holder.querySelector("svg");
-      if (svg) {
-        const vb = (svg.getAttribute("viewBox") || "").split(/\s+/).map(Number);
+      const renderId = "mermaidSvg_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
+      const { svg } = await window.mermaid.render(renderId, code);
+      mermaidContainer.innerHTML = svg;
+      pendingMermaidCode = code;
+      const svgEl = mermaidContainer.querySelector("svg");
+      if (svgEl) {
+        const vb = (svgEl.getAttribute("viewBox") || "").split(/\s+/).map(Number);
         const naturalW = vb.length === 4 ? vb[2] : 0;
         const containerW = mermaidContainer.clientWidth || 800;
-        const targetW = Math.max(Math.min(naturalW, containerW), naturalW * 0.85);
-        svg.style.maxWidth = "none";
-        svg.style.width = `${Math.round(targetW)}px`;
-        svg.style.height = "auto";
-        svg.style.margin = "0 auto";
-        svg.style.display = "block";
+        const targetW = naturalW > 0 ? Math.max(Math.min(naturalW, containerW), naturalW * 0.85) : containerW;
+        svgEl.style.maxWidth = "100%";
+        svgEl.style.width = `${Math.round(targetW)}px`;
+        svgEl.style.height = "auto";
+        svgEl.style.margin = "0 auto";
+        svgEl.style.display = "block";
       }
-    } catch(e) {
-      console.error("Mermaid error:", e);
-      const pre = document.createElement("pre");
-      pre.className = "text-[10px] text-rose-400 whitespace-pre-wrap";
-      pre.textContent = "Error renderizando diagrama. Código:\n" + code;
-      mermaidContainer.innerHTML = "";
-      mermaidContainer.appendChild(pre);
+    } catch (e) {
+      console.warn("Mermaid render fallback activado:", e);
+      renderFallbackHtmlFlowchart(code);
     }
   }
 
@@ -1678,21 +1772,15 @@ function initEngineeringAndTrackerListeners() {
 
   async function renderFlowchart(data) {
     lastFlowchartData = data;
-    // Mermaid
-    let code = data.mermaid_code || "";
-    if(code.startsWith("```mermaid")) code = code.substring(10);
-    if(code.startsWith("```")) code = code.substring(3);
-    if(code.endsWith("```")) code = code.substring(0, code.length-3);
-    code = code.trim();
+    const code = sanitizeMermaidCode(data.mermaid_code || "");
+    pendingMermaidCode = code;
+    flowOutput.classList.remove("hidden");
 
     const tab2 = document.getElementById("tab2");
-    if (tab2 && tab2.classList.contains("hidden")) {
-      // Se dibuja al abrir la pestaña Procesos
-      pendingMermaidCode = code;
-      mermaidContainer.innerHTML = "";
+    if (!tab2 || !tab2.classList.contains("hidden")) {
+      await drawMermaid(code);
     } else {
-      pendingMermaidCode = code;
-      flowOutput.classList.remove("hidden");
+      // Incluso si tab2 está oculta, renderizar con mermaid.render para que esté listo al abrir o imprimir PDF
       await drawMermaid(code);
     }
 

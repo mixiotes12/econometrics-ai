@@ -116,13 +116,13 @@ async def generate_production_flowchart(req: ProcessRequest) -> FlowchartRespons
     system_inst = """
     Eres un Ingeniero Industrial experto en Mejora Continua, Diagramas de Flujo y Eficiencia Energética.
     Tu tarea es analizar una descripción de proceso de producción y generar:
-    1. Un código en Mermaid.js válido para un diagrama de flujo de forma horizontal (usando flowchart LR). Usa figuras variadas de Mermaid.js para mejorar la estética y legibilidad: usa ([Inicio/Fin]) para los límites del proceso, {Decisión} para ramas o verificaciones, [(Almacén/Inventario)] para almacenamiento, y rectángulos redondeados o normales para las actividades.
+    1. Un código en Mermaid.js válido para un diagrama de flujo de forma horizontal (usando flowchart LR). SIEMPRE envuelve el texto de cada nodo entre comillas dobles para evitar errores de sintaxis con signos de interrogación o acentos: usa A(["Inicio"]) para límites, B{"¿Decisión?"} para verificaciones, C[("Almacén")] para almacenamiento y D["Actividad"] para operaciones.
     2. Una lista de actividades describiendo paso a paso con tiempos estimados y movimientos clave.
     3. Una estimación de consumo mensual de energía (Kw/h) y de cualquier otro consumible (agua, gas, materias primas indirectas) involucrado en el proceso.
     
     Devuelve estrictamente un JSON con esta estructura:
     {
-      "mermaid_code": "flowchart LR\\n A([Inicio]) --> B{Decisión}\\n B -->|Sí| C[Actividad 1]\\n ...",
+      "mermaid_code": "flowchart LR\\n A([\"Inicio\"]) --> B{\"¿Decisión?\"}\\n B -->|Sí| C[\"Actividad 1\"]\\n ...",
       "activities": [
         {"step_number": 1, "activity": "Descripción", "time_estimate": "5 min", "movements": "Traslado a zona X"}
       ],
