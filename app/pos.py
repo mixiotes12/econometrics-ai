@@ -969,7 +969,7 @@ def sync_employee_and_cashier(
         "role": role,
         "role_label": ROLES.get(role, {}).get("label", role),
         "employee_code": emp_code,
-        "project_key": biz["project_key"],
+        "project_key": (biz["project_key"] if "project_key" in biz.keys() and biz["project_key"] else "EM-AURA-1001"),
         "business_id": business_id,
         "business_name": biz["name"],
         "branch_id": branch_id,
@@ -1107,6 +1107,11 @@ def init_pos_db():
         for col, ddl in EMPLOYEE_EXTRA_COLUMNS.items():
             if col not in existing_e:
                 conn.execute(f"ALTER TABLE employees ADD COLUMN {col} {ddl}")
+
+        existing_biz = {r["name"] for r in conn.execute("PRAGMA table_info(businesses)")}
+        if "project_key" not in existing_biz:
+            conn.execute("ALTER TABLE businesses ADD COLUMN project_key TEXT")
+            conn.execute("UPDATE businesses SET project_key = 'EM-AURA-1001' WHERE project_key IS NULL OR project_key = ''")
 
         existing_b = {r["name"] for r in conn.execute("PRAGMA table_info(auth_branches)")}
         if "business_id" not in existing_b:
@@ -1447,7 +1452,7 @@ def _enrich_cashier_session_dict(
     user["owner_id"] = biz.get("owner_id") or owner_id
     user["business_id"] = biz_id
     user["business_name"] = biz["name"]
-    user["project_key"] = biz["project_key"]
+    user["project_key"] = (biz["project_key"] if "project_key" in biz.keys() and biz["project_key"] else "EM-AURA-1001")
     user["branch_id"] = br_id
     user["branch_name"] = br_row["name"]
     user["branch_code"] = br_row["code"]
