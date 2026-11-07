@@ -90,8 +90,8 @@
   <!-- Font Awesome & Chart.js -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="stylesheet" href="style.css?v=20261107_8">
-  <link rel="stylesheet" href="studio-theme.css?v=20261107_8">
+  <link rel="stylesheet" href="style.css?v=20261107_9">
+  <link rel="stylesheet" href="studio-theme.css?v=20261107_9">
 </head>
 <body class="bg-[#0a0a0b] text-zinc-100 flex flex-col min-h-screen">
 
@@ -142,6 +142,15 @@
           <i class="fa-solid fa-cloud-arrow-up"></i>
           <span class="hidden lg:inline">Publicar Plan al ERP</span>
         </button>
+
+        <!-- Project Key Badge (Multi-tenant ERP) -->
+        <div id="projectKeyBadgeContainer" class="hidden items-center gap-1.5 bg-zinc-950 border border-[#c5a059]/50 rounded-xl px-2.5 py-1.5 text-xs">
+          <span class="text-[10px] text-zinc-400 font-mono">CLAVE ERP:</span>
+          <span id="projectKeyDisplay" class="font-mono font-bold text-[#d4b26f]">EM-XXXX</span>
+          <button type="button" id="copyProjectKeyBtn" title="Copiar Clave para ERP y Empleados" class="text-zinc-400 hover:text-white ml-1 p-0.5">
+            <i class="fa-regular fa-copy"></i>
+          </button>
+        </div>
 
         <div class="h-5 w-px bg-zinc-800 hidden sm:block"></div>
 
@@ -1474,7 +1483,7 @@ if (window.mermaid) {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 </script>
-<script src="studio-engine.js?v=20261107_8"></script>
+<script src="studio-engine.js?v=20261107_9"></script>
   <!-- MODAL DE SUGERENCIAS DE ADQUISICIÓN POR GEOLOCALIZACIÓN -->
   <div id="geoAcquisitionModal" class="fixed inset-0 z-[100] bg-black/80 hidden items-center justify-center p-4 backdrop-blur-sm overflow-y-auto">
     <div class="bg-zinc-900 border border-zinc-700 rounded-[20px] w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl my-6">

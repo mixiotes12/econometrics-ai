@@ -1,30 +1,44 @@
 """
 Módulo de Operaciones y Puente ERP para el Portal del Dueño (/api/ops)
-Conecta EconoMetrics Studio (Plan Base y Presupuestos de IA) con la operación real
-(Maquinaria/Activos Fijos, Gastos Fijos, Nómina de RRHH, Catálogo e Inventario POS).
+Conecta EconoMetrics Studio (Plan Base, Presupuestos y Catálogo) con la operación real
+(Maquinaria/Activos Fijos, Gastos Fijos, Nómina de RRHH, Catálogo e Inventario POS)
+con soporte Multi-Negocio y Multi-Sucursal.
 """
 import json
+import sqlite3
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
 from .financial_engine import analyze_financials
 from .hr import _costs, _payroll_cfg
 from .models import FinancialInputs
-from .pos import IVA_TYPES, db, init_pos_db, money, now
+from .pos import (
+    IVA_TYPES,
+    db,
+    ensure_business_structure,
+    generate_project_key,
+    init_pos_db,
+    log_movement,
+    money,
+    now,
+    sync_employee_and_cashier,
+)
 
 router = APIRouter(prefix="/api/ops", tags=["Operaciones y ERP del Dueño"])
 
 OPS_SCHEMA = """
 CREATE TABLE IF NOT EXISTS ops_baseline (
-    id INTEGER PRIMARY KEY CHECK (id = 1),
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    business_id INTEGER NOT NULL DEFAULT 1,
     project_name TEXT NOT NULL,
     business_type TEXT NOT NULL,
     financials_json TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
+CREATE UNIQUE INDEX IF NOT EXISTS idx_ops_baseline_biz ON ops_baseline(business_id);
 
 CREATE TABLE IF NOT EXISTS ops_assets (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -35,7 +49,9 @@ CREATE TABLE IF NOT EXISTS ops_assets (
     useful_life_years REAL NOT NULL DEFAULT 5,
     monthly_maintenance REAL NOT NULL DEFAULT 0,
     purchase_date TEXT NOT NULL,
-    notes TEXT DEFAULT ''
+    notes TEXT DEFAULT '',
+    business_id INTEGER NOT NULL DEFAULT 1,
+    branch_id INTEGER NOT NULL DEFAULT 1
 );
 
 CREATE TABLE IF NOT EXISTS ops_expenses (
@@ -44,7 +60,9 @@ CREATE TABLE IF NOT EXISTS ops_expenses (
     category TEXT NOT NULL DEFAULT 'Renta / Local',
     monthly_amount REAL NOT NULL DEFAULT 0,
     active INTEGER NOT NULL DEFAULT 1,
-    notes TEXT DEFAULT ''
+    notes TEXT DEFAULT '',
+    business_id INTEGER NOT NULL DEFAULT 1,
+    branch_id INTEGER NOT NULL DEFAULT 1
 );
 """
 
@@ -70,10 +88,27 @@ def init_ops_db() -> None:
     init_pos_db()
     with db() as conn:
         conn.executescript(OPS_SCHEMA)
-        row = conn.execute("SELECT id FROM ops_baseline WHERE id = 1").fetchone()
+        # Migrar columnas en ops_baseline si no existen
+        b_cols = {r["name"] for r in conn.execute("PRAGMA table_info(ops_baseline)")}
+        if "business_id" not in b_cols:
+            conn.execute("ALTER TABLE ops_baseline ADD COLUMN business_id INTEGER NOT NULL DEFAULT 1")
+
+        a_cols = {r["name"] for r in conn.execute("PRAGMA table_info(ops_assets)")}
+        if "business_id" not in a_cols:
+            conn.execute("ALTER TABLE ops_assets ADD COLUMN business_id INTEGER NOT NULL DEFAULT 1")
+        if "branch_id" not in a_cols:
+            conn.execute("ALTER TABLE ops_assets ADD COLUMN branch_id INTEGER NOT NULL DEFAULT 1")
+
+        e_cols = {r["name"] for r in conn.execute("PRAGMA table_info(ops_expenses)")}
+        if "business_id" not in e_cols:
+            conn.execute("ALTER TABLE ops_expenses ADD COLUMN business_id INTEGER NOT NULL DEFAULT 1")
+        if "branch_id" not in e_cols:
+            conn.execute("ALTER TABLE ops_expenses ADD COLUMN branch_id INTEGER NOT NULL DEFAULT 1")
+
+        row = conn.execute("SELECT id FROM ops_baseline WHERE business_id = 1").fetchone()
         if not row:
             conn.execute(
-                "INSERT INTO ops_baseline (id, project_name, business_type, financials_json, updated_at) VALUES (1, ?, ?, ?, ?)",
+                "INSERT INTO ops_baseline (business_id, project_name, business_type, financials_json, updated_at) VALUES (1, ?, ?, ?, ?)",
                 (
                     "Aura Café & Roastery",
                     "Cafetería de Especialidad y Panadería Artesanal",
@@ -81,42 +116,60 @@ def init_ops_db() -> None:
                     now(),
                 ),
             )
-        assets_count = conn.execute("SELECT COUNT(*) FROM ops_assets").fetchone()[0]
+        assets_count = conn.execute("SELECT COUNT(*) FROM ops_assets WHERE business_id=1").fetchone()[0]
         if assets_count == 0:
             today = datetime.now().strftime("%Y-%m-%d")
             seed_assets = [
-                ("Máquina de Espresso 2 Grupos Comercial", "Maquinaria", "activo", 115000.0, 5.0, 1200.0, today, "Equipo principal de barra"),
-                ("Molino Dosificador On-Demand (x2)", "Maquinaria", "activo", 32000.0, 5.0, 350.0, today, "Molienda de especialidad"),
-                ("Horno Convector y Vitrina Refrigerada", "Maquinaria", "activo", 68000.0, 5.0, 800.0, today, "Panadería y repostería"),
-                ("Mobiliario, Barra y Adecuación de Local", "Mobiliario", "activo", 95000.0, 7.0, 650.0, today, "Mesas, sillas e interiorismo"),
-                ("Sistema POS, Red y Equipo de Cómputo", "Cómputo / POS", "activo", 25000.0, 4.0, 500.0, today, "Terminal de cobro e impresora"),
+                ("Máquina de Espresso 2 Grupos Comercial", "Maquinaria", "activo", 115000.0, 5.0, 1200.0, today, "Equipo principal de barra", 1, 1),
+                ("Molino Dosificador On-Demand (x2)", "Maquinaria", "activo", 32000.0, 5.0, 350.0, today, "Molienda de especialidad", 1, 1),
+                ("Horno Convector y Vitrina Refrigerada", "Maquinaria", "activo", 68000.0, 5.0, 800.0, today, "Panadería y repostería", 1, 1),
+                ("Mobiliario, Barra y Adecuación de Local", "Mobiliario", "activo", 95000.0, 7.0, 650.0, today, "Mesas, sillas e interiorismo", 1, 1),
+                ("Sistema POS, Red y Equipo de Cómputo", "Cómputo / POS", "activo", 25000.0, 4.0, 500.0, today, "Terminal de cobro e impresora", 1, 1),
             ]
             conn.executemany(
-                "INSERT INTO ops_assets (name, category, status, purchase_cost, useful_life_years, monthly_maintenance, purchase_date, notes) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO ops_assets (name, category, status, purchase_cost, useful_life_years, monthly_maintenance, purchase_date, notes, business_id, branch_id) VALUES (?,?,?,?,?,?,?,?,?,?)",
                 seed_assets,
             )
-        exp_count = conn.execute("SELECT COUNT(*) FROM ops_expenses").fetchone()[0]
+        exp_count = conn.execute("SELECT COUNT(*) FROM ops_expenses WHERE business_id=1").fetchone()[0]
         if exp_count == 0:
             seed_expenses = [
-                ("Renta de Local Comercial", "Renta / Local", 28000.0, 1, "Contrato vigente"),
-                ("Energía Eléctrica CFE y Agua", "Servicios (Luz/Agua/Internet)", 6500.0, 1, "Tarifa comercial"),
-                ("Internet Fibra Óptica y Licencias Software", "Servicios (Luz/Agua/Internet)", 1800.0, 1, "POS y WiFi clientes"),
-                ("Publicidad Digital y Redes Sociales", "Marketing", 4200.0, 1, "Campañas locales"),
-                ("Contabilidad, Seguros y Permisos", "Administrativos", 3500.0, 1, "Honorarios mensuales"),
+                ("Renta de Local Comercial", "Renta / Local", 28000.0, 1, "Contrato vigente", 1, 1),
+                ("Energía Eléctrica CFE y Agua", "Servicios (Luz/Agua/Internet)", 6500.0, 1, "Tarifa comercial", 1, 1),
+                ("Internet Fibra Óptica y Licencias Software", "Servicios (Luz/Agua/Internet)", 1800.0, 1, "POS y WiFi clientes", 1, 1),
+                ("Publicidad Digital y Redes Sociales", "Marketing", 4200.0, 1, "Campañas locales", 1, 1),
+                ("Contabilidad, Seguros y Permisos", "Administrativos", 3500.0, 1, "Honorarios mensuales", 1, 1),
             ]
             conn.executemany(
-                "INSERT INTO ops_expenses (concept, category, monthly_amount, active, notes) VALUES (?,?,?,?,?)",
+                "INSERT INTO ops_expenses (concept, category, monthly_amount, active, notes, business_id, branch_id) VALUES (?,?,?,?,?,?,?)",
                 seed_expenses,
             )
 
 
-def _get_baseline_record(conn) -> Dict[str, Any]:
-    row = conn.execute("SELECT * FROM ops_baseline WHERE id = 1").fetchone()
+def _resolve_biz_id(conn, business_id: Optional[int] = None, project_key: Optional[str] = None) -> int:
+    if project_key:
+        pk = project_key.strip().upper()
+        b_row = conn.execute("SELECT id FROM businesses WHERE UPPER(project_key)=?", (pk,)).fetchone()
+        if b_row:
+            return b_row["id"]
+    if business_id and business_id > 0:
+        b_row = conn.execute("SELECT id FROM businesses WHERE id=?", (business_id,)).fetchone()
+        if b_row:
+            return b_row["id"]
+    first = conn.execute("SELECT id FROM businesses ORDER BY id ASC LIMIT 1").fetchone()
+    return first["id"] if first else 1
+
+
+def _get_baseline_record(conn, business_id: int = 1) -> Dict[str, Any]:
+    row = conn.execute("SELECT * FROM ops_baseline WHERE business_id = ? ORDER BY id DESC LIMIT 1", (business_id,)).fetchone()
     if not row:
+        biz = conn.execute("SELECT * FROM businesses WHERE id=?", (business_id,)).fetchone()
+        pname = biz["name"] if biz else "Mi Negocio"
+        btype = biz["business_type"] if biz else "Comercio / Servicios"
         fin = dict(DEFAULT_BASELINE_FINANCIALS)
         return {
-            "project_name": "Aura Café & Roastery",
-            "business_type": "Cafetería de Especialidad",
+            "business_id": business_id,
+            "project_name": pname,
+            "business_type": btype,
             "financials": fin,
             "updated_at": now(),
             **fin,
@@ -127,6 +180,7 @@ def _get_baseline_record(conn) -> Dict[str, Any]:
         fin = dict(DEFAULT_BASELINE_FINANCIALS)
     merged = {**DEFAULT_BASELINE_FINANCIALS, **fin}
     return {
+        "business_id": business_id,
         "project_name": row["project_name"],
         "business_type": row["business_type"],
         "financials": merged,
@@ -135,12 +189,20 @@ def _get_baseline_record(conn) -> Dict[str, Any]:
     }
 
 
-def _compute_live_snapshot(conn, days: int = 30) -> Dict[str, Any]:
-    baseline = _get_baseline_record(conn)
+def _compute_live_snapshot(conn, business_id: int = 1, branch_id: Optional[int] = None, days: int = 30) -> Dict[str, Any]:
+    business_id = _resolve_biz_id(conn, business_id)
+    baseline = _get_baseline_record(conn, business_id=business_id)
     base_fin = baseline["financials"]
 
     # 1. Activos Fijos / Maquinaria
-    asset_rows = conn.execute("SELECT * FROM ops_assets ORDER BY id").fetchall()
+    sql_a = "SELECT * FROM ops_assets WHERE business_id = ? "
+    args_a = [business_id]
+    if branch_id:
+        sql_a += "AND branch_id = ? "
+        args_a.append(branch_id)
+    sql_a += "ORDER BY id"
+    asset_rows = conn.execute(sql_a, args_a).fetchall()
+
     assets = []
     total_assets_value = 0.0
     monthly_dep_real = 0.0
@@ -164,7 +226,13 @@ def _compute_live_snapshot(conn, days: int = 30) -> Dict[str, Any]:
     monthly_maint_real = money(monthly_maint_real)
 
     # 2. Catálogo e Inventario del POS
-    prod_rows = conn.execute("SELECT * FROM products WHERE active = 1").fetchall()
+    sql_p = "SELECT * FROM products WHERE business_id = ? AND active = 1 "
+    args_p = [business_id]
+    if branch_id:
+        sql_p += "AND branch_id = ? "
+        args_p.append(branch_id)
+    prod_rows = conn.execute(sql_p, args_p).fetchall()
+
     inventory_cost_value = 0.0
     net_prices = []
     unit_costs = []
@@ -192,7 +260,13 @@ def _compute_live_snapshot(conn, days: int = 30) -> Dict[str, Any]:
 
     # 3. Nómina activa de RRHH
     cfg = _payroll_cfg(conn)
-    emp_rows = conn.execute("SELECT * FROM employees WHERE status = 'activo'").fetchall()
+    sql_e = "SELECT * FROM employees WHERE business_id = ? AND status = 'activo' "
+    args_e = [business_id]
+    if branch_id:
+        sql_e += "AND branch_id = ? "
+        args_e.append(branch_id)
+    emp_rows = conn.execute(sql_e, args_e).fetchall()
+
     monthly_payroll_total = 0.0
     for e in emp_rows:
         sal = float(e["monthly_salary"] or 0.0)
@@ -202,22 +276,32 @@ def _compute_live_snapshot(conn, days: int = 30) -> Dict[str, Any]:
     labor_headcount = len(emp_rows)
 
     # 4. Gastos fijos no laborales
-    exp_rows = conn.execute("SELECT * FROM ops_expenses ORDER BY id").fetchall()
+    sql_x = "SELECT * FROM ops_expenses WHERE business_id = ? "
+    args_x = [business_id]
+    if branch_id:
+        sql_x += "AND branch_id = ? "
+        args_x.append(branch_id)
+    sql_x += "ORDER BY id"
+    exp_rows = conn.execute(sql_x, args_x).fetchall()
+
     expenses = [dict(r) for r in exp_rows]
     monthly_non_payroll = money(sum(float(r["monthly_amount"] or 0.0) for r in exp_rows if r["active"]))
     monthly_fixed_total = money(monthly_payroll_total + monthly_non_payroll)
 
     # 5. Volumen de ventas reales en la ventana (extrapolado a 30 días)
     since = (datetime.now() - timedelta(days=max(days, 1))).strftime("%Y-%m-%d %H:%M:%S")
-    sales_row = conn.execute(
-        """
+    sql_s = """
         SELECT COALESCE(SUM(si.qty), 0) AS total_qty
         FROM sale_items si
         JOIN sales s ON s.id = si.sale_id
-        WHERE s.status = 'completada' AND s.created_at >= ?
-        """,
-        (since,),
-    ).fetchone()
+        WHERE s.status = 'completada' AND s.business_id = ? AND s.created_at >= ?
+    """
+    args_s = [business_id, since]
+    if branch_id:
+        sql_s += " AND s.branch_id = ? "
+        args_s.append(branch_id)
+    sales_row = conn.execute(sql_s, args_s).fetchone()
+
     raw_qty = float(sales_row["total_qty"] if sales_row else 0.0)
     real_monthly_units = round((raw_qty / max(days, 1)) * 30.0, 1) if raw_qty > 0 else float(base_fin.get("monthly_units", 2800.0))
 
@@ -246,6 +330,8 @@ def _compute_live_snapshot(conn, days: int = 30) -> Dict[str, Any]:
     }
 
     breakdown = {
+        "business_id": business_id,
+        "branch_id": branch_id,
         "assets_count": active_assets_count,
         "total_assets_value": total_assets_value,
         "inventory_cost_value": inventory_cost_value,
@@ -264,12 +350,13 @@ def _compute_live_snapshot(conn, days: int = 30) -> Dict[str, Any]:
     }
 
     return {
+        "business_id": business_id,
+        "branch_id": branch_id,
         "baseline": baseline,
         "breakdown": breakdown,
         "live_inputs": live_inputs,
         "assets": assets,
         "expenses": expenses,
-        # Campos adicionales para compatibilidad directa con hub.html
         "hr": {
             "headcount": labor_headcount,
             "monthly_total_payroll": monthly_payroll_total,
@@ -283,20 +370,29 @@ def _compute_live_snapshot(conn, days: int = 30) -> Dict[str, Any]:
 
 
 class BaselineIn(BaseModel):
+    project_key: Optional[str] = None
     project_name: str = "Mi Negocio"
     business_type: str = "Comercio / Servicios"
+    business_id: Optional[int] = None
+    branch_id: Optional[int] = None
     financials: Dict[str, Any]
     replace_assets: bool = False
     assets: Optional[List[Dict[str, Any]]] = None
+    engineering: Optional[Dict[str, Any]] = None
+    catalog: Optional[List[Dict[str, Any]]] = None
 
 
 class RecalcIn(BaseModel):
-    days_window: int = 30
-    use_real_sales_volume: bool = False
+    business_id: Optional[int] = None
+    branch_id: Optional[int] = None
+    days_window: int = Field(default=30, ge=1, le=365)
+    use_real_sales_volume: bool = True
     custom_financials: Optional[Dict[str, Any]] = None
 
 
 class AssetIn(BaseModel):
+    business_id: Optional[int] = 1
+    branch_id: Optional[int] = 1
     name: str = Field(min_length=1)
     category: str = "Maquinaria"
     status: str = "activo"
@@ -308,6 +404,8 @@ class AssetIn(BaseModel):
 
 
 class ExpenseIn(BaseModel):
+    business_id: Optional[int] = 1
+    branch_id: Optional[int] = 1
     concept: str = Field(min_length=1)
     category: str = "Renta / Local"
     monthly_amount: float = Field(default=0, ge=0)
@@ -316,19 +414,30 @@ class ExpenseIn(BaseModel):
 
 
 @router.get("/baseline")
-def get_ops_baseline():
+def get_ops_baseline(
+    business_id: Optional[int] = Query(None),
+    project_key: Optional[str] = Query(None),
+):
     init_ops_db()
     with db() as conn:
-        b = _get_baseline_record(conn)
+        biz_id = _resolve_biz_id(conn, business_id, project_key)
+        b = _get_baseline_record(conn, business_id=biz_id)
+        biz_row = conn.execute("SELECT * FROM businesses WHERE id=?", (biz_id,)).fetchone()
+        pkey = biz_row["project_key"] if biz_row else "EM-AURA-1001"
+
     fin_inputs = FinancialInputs(**b["financials"])
     rep = analyze_financials(fin_inputs)
     return {
         "exists": True,
+        "business_id": biz_id,
+        "project_key": pkey,
         "project_name": b["project_name"],
         "business_type": b["business_type"],
         "financials": b["financials"],
         "updated_at": b["updated_at"],
         "baseline": {
+            "business_id": biz_id,
+            "project_key": pkey,
             "project_name": b["project_name"],
             "business_type": b["business_type"],
             "financial_input": b["financials"],
@@ -348,6 +457,9 @@ def get_ops_baseline():
 
 
 @router.post("/baseline")
+@router.post("/save_ops_baseline")
+@router.post("/save-ops-baseline")
+@router.post("/sync-from-studio")
 def save_ops_baseline(req: BaselineIn):
     init_ops_db()
     clean_fin = {**DEFAULT_BASELINE_FINANCIALS}
@@ -362,70 +474,176 @@ def save_ops_baseline(req: BaselineIn):
 
     today = datetime.now().strftime("%Y-%m-%d")
     with db() as conn:
-        conn.execute(
-            """
-            INSERT INTO ops_baseline (id, project_name, business_type, financials_json, updated_at)
-            VALUES (1, ?, ?, ?, ?)
-            ON CONFLICT(id) DO UPDATE SET
-                project_name = excluded.project_name,
-                business_type = excluded.business_type,
-                financials_json = excluded.financials_json,
-                updated_at = excluded.updated_at
-            """,
-            (req.project_name.strip() or "Mi Proyecto", req.business_type.strip() or "Comercio / Servicios", json.dumps(clean_fin), now()),
-        )
-        if req.replace_assets and req.assets:
-            conn.execute("DELETE FROM ops_assets")
-            for a in req.assets:
-                conn.execute(
-                    """
-                    INSERT INTO ops_assets (name, category, status, purchase_cost, useful_life_years, monthly_maintenance, purchase_date, notes)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                    """,
-                    (
-                        str(a.get("name") or "Equipo Presupuestado"),
-                        str(a.get("category") or "Maquinaria Presupuestada"),
-                        str(a.get("status") or "activo"),
-                        float(a.get("purchase_cost") or 0.0),
-                        float(a.get("useful_life_years") or clean_fin["depreciation_years"]),
-                        float(a.get("monthly_maintenance") or 0.0),
-                        str(a.get("purchase_date") or today),
-                        str(a.get("notes") or f"Importado de {req.project_name}"),
-                    ),
-                )
-        elif req.replace_assets and not req.assets and clean_fin.get("initial_investment", 0) > 0:
-            # Si se aplicó un presupuesto global sin partidas individuales, reflejar la inversión en activos
-            conn.execute("DELETE FROM ops_assets")
+        # 1. Crear o actualizar registro en businesses
+        biz_id = req.business_id
+        pkey = (req.project_key or "").strip().upper()
+        if pkey:
+            biz_row = conn.execute("SELECT id FROM businesses WHERE UPPER(project_key)=?", (pkey,)).fetchone()
+            if biz_row:
+                biz_id = biz_row["id"]
+
+        pname = req.project_name.strip() or "Mi Proyecto"
+        btype = req.business_type.strip() or "Comercio / Servicios"
+
+        if not pkey:
+            pkey = generate_project_key(conn, pname)
+
+        if biz_id:
             conn.execute(
-                """
-                INSERT INTO ops_assets (name, category, status, purchase_cost, useful_life_years, monthly_maintenance, purchase_date, notes)
-                VALUES (?, ?, 'activo', ?, ?, ?, ?, ?)
-                """,
-                (
-                    f"Inversión en Equipamiento y Apertura ({req.project_name})",
-                    "Maquinaria Presupuestada",
-                    float(clean_fin["initial_investment"]),
-                    float(clean_fin["depreciation_years"]),
-                    float(clean_fin.get("monthly_maintenance_cost") or 0.0),
-                    today,
-                    "Presupuesto cargado desde EconoMetrics Studio",
-                ),
+                """UPDATE businesses SET
+                    name=?, business_type=?, project_key=?, baseline_financials_json=?, updated_at=?
+                    WHERE id=?""",
+                (pname, btype, pkey, json.dumps(clean_fin), now(), biz_id),
             )
-    return get_ops_baseline()
+        else:
+            cur_biz = conn.execute(
+                """INSERT INTO businesses (
+                    owner_id, project_key, name, business_type, sector, state, municipality,
+                    studio_payload_json, baseline_financials_json, settings_json, active, created_at, updated_at
+                ) VALUES (1, ?, ?, ?, 'Comercio / Servicios', 'Ciudad de México', 'Cuauhtémoc', '{}', ?, '{}', 1, ?, ?)""",
+                (pkey, pname, btype, json.dumps(clean_fin), now(), now()),
+            )
+            biz_id = cur_biz.lastrowid
+
+        # 2. Asegurar estructura de sucursal matriz y terminal para este negocio
+        struct = ensure_business_structure(conn, biz_id)
+        br_id = req.branch_id or struct["branches"][0]["id"]
+        br_code = struct["branches"][0]["code"]
+
+        # 3. Guardar en ops_baseline
+        existing_base = conn.execute("SELECT id FROM ops_baseline WHERE business_id=?", (biz_id,)).fetchone()
+        if existing_base:
+            conn.execute(
+                """UPDATE ops_baseline SET
+                    project_name=?, business_type=?, financials_json=?, updated_at=?
+                    WHERE business_id=?""",
+                (pname, btype, json.dumps(clean_fin), now(), biz_id),
+            )
+        else:
+            conn.execute(
+                """INSERT INTO ops_baseline (business_id, project_name, business_type, financials_json, updated_at)
+                   VALUES (?, ?, ?, ?, ?)""",
+                (biz_id, pname, btype, json.dumps(clean_fin), now()),
+            )
+
+        # 4. Sincronizar Activos (Maquinaria) y Gastos Fijos (Servicios)
+        if req.replace_assets and req.assets:
+            conn.execute("DELETE FROM ops_assets WHERE business_id=?", (biz_id,))
+            for a in req.assets:
+                cat = str(a.get("category") or "Maquinaria")
+                cost = float(a.get("purchase_cost") or 0.0)
+                maint = float(a.get("monthly_maintenance") or 0.0)
+                life = float(a.get("useful_life_years") or clean_fin["depreciation_years"])
+                p_date = str(a.get("purchase_date") or today)
+                notes = str(a.get("notes") or f"Importado de {pname}")
+
+                if "servicio" in cat.lower() or "gasto" in cat.lower() or "renta" in cat.lower():
+                    # Es un servicio / gasto recurrente
+                    conn.execute(
+                        "INSERT INTO ops_expenses (concept, category, monthly_amount, active, notes, business_id, branch_id) VALUES (?,?,?,1,?,?,?)",
+                        (str(a.get("name") or "Servicio Planeado"), cat, cost, notes, biz_id, br_id),
+                    )
+                else:
+                    # Es activo fijo / maquinaria
+                    conn.execute(
+                        """INSERT INTO ops_assets (name, category, status, purchase_cost, useful_life_years, monthly_maintenance, purchase_date, notes, business_id, branch_id)
+                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                        (str(a.get("name") or "Equipo"), cat, str(a.get("status") or "activo"), cost, life, maint, p_date, notes, biz_id, br_id),
+                    )
+        elif req.replace_assets and not req.assets and clean_fin.get("initial_investment", 0) > 0:
+            conn.execute("DELETE FROM ops_assets WHERE business_id=?", (biz_id,))
+            conn.execute(
+                """INSERT INTO ops_assets (name, category, status, purchase_cost, useful_life_years, monthly_maintenance, purchase_date, notes, business_id, branch_id)
+                   VALUES (?, 'Maquinaria Presupuestada', 'activo', ?, ?, ?, ?, 'Presupuesto Studio', ?, ?)""",
+                (f"Equipamiento de Apertura ({pname})", float(clean_fin["initial_investment"]), float(clean_fin["depreciation_years"]), float(clean_fin.get("monthly_maintenance_cost") or 0.0), today, biz_id, br_id),
+            )
+
+        # 5. Si viene Catálogo Multiproducto desde Studio, aprovisionarlo en la tabla `products` de esta sucursal
+        if req.catalog:
+            for item in req.catalog:
+                sku = str(item.get("sku") or "").strip() or None
+                name = str(item.get("name") or "Producto").strip()
+                price = float(item.get("price") or 0.0)
+                cost = float(item.get("cost") or 0.0)
+                initial_stock = float(item.get("initial_stock") or item.get("stock") or 50.0)
+                cat_name = str(item.get("category") or "General").strip()
+
+                existing_prod = None
+                if sku:
+                    existing_prod = conn.execute("SELECT id FROM products WHERE business_id=? AND branch_id=? AND sku=?", (biz_id, br_id, sku)).fetchone()
+                if not existing_prod:
+                    existing_prod = conn.execute("SELECT id FROM products WHERE business_id=? AND branch_id=? AND name=?", (biz_id, br_id, name)).fetchone()
+
+                if existing_prod:
+                    conn.execute(
+                        "UPDATE products SET price=?, cost=?, category=?, active=1 WHERE id=?",
+                        (price, cost, cat_name, existing_prod["id"]),
+                    )
+                else:
+                    conn.execute(
+                        """INSERT INTO products (sku, name, price, cost, stock, track_stock, active, category, business_id, branch_id)
+                           VALUES (?, ?, ?, ?, ?, 1, 1, ?, ?, ?)""",
+                        (sku, name, price, cost, initial_stock, cat_name, biz_id, br_id),
+                    )
+                    pid = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+                    log_movement(conn, pid, "entrada", initial_stock, cost, "Aprovisionamiento inicial de Studio", "STUDIO_SYNC", 1, biz_id, br_id)
+
+        # 6. Si vienen Empleados Planeados desde Studio, aprovisionarlos con sus códigos y PIN 1234
+        if req.engineering and "staff" in req.engineering and isinstance(req.engineering["staff"], list):
+            for st in req.engineering["staff"]:
+                role_cand = str(st.get("role") or "cajero").lower()
+                role_key = "cajero"
+                if "gerent" in role_cand or "admin" in role_cand:
+                    role_key = "gerente"
+                elif "almac" in role_cand or "logist" in role_cand or "inven" in role_cand:
+                    role_key = "almacenista"
+                elif "rrhh" in role_cand or "recurs" in role_cand or "personal" in role_cand:
+                    role_key = "rrhh"
+                elif "cont" in role_cand or "finan" in role_cand:
+                    role_key = "contador"
+
+                sync_employee_and_cashier(
+                    conn,
+                    name=str(st.get("name") or "Colaborador"),
+                    role=role_key,
+                    business_id=biz_id,
+                    branch_id=br_id,
+                    pin="1234",
+                    position=str(st.get("position") or st.get("name") or "Colaborador"),
+                    monthly_salary=float(st.get("salary") or st.get("monthly_salary") or 10000.0),
+                )
+
+    return {
+        "ok": True,
+        "success": True,
+        "business_id": biz_id,
+        "project_key": pkey,
+        "project_name": pname,
+        "branch_id": br_id,
+        "branch_code": br_code,
+        "message": f"Proyecto '{pname}' sincronizado exitosamente con el ERP bajo la clave {pkey}.",
+    }
 
 
 @router.get("/live-parameters")
-def get_live_parameters(days: int = Query(30, ge=1, le=365)):
+def get_live_parameters(
+    business_id: Optional[int] = Query(None),
+    branch_id: Optional[int] = Query(None),
+    project_key: Optional[str] = Query(None),
+    days: int = Query(30, ge=1, le=365),
+):
     init_ops_db()
     with db() as conn:
-        return _compute_live_snapshot(conn, days=days)
+        biz_id = _resolve_biz_id(conn, business_id, project_key)
+        return _compute_live_snapshot(conn, business_id=biz_id, branch_id=branch_id, days=days)
 
 
 @router.post("/recalculate")
 def recalculate_ops(req: RecalcIn):
     init_ops_db()
     with db() as conn:
-        snap = _compute_live_snapshot(conn, days=req.days_window)
+        biz_id = _resolve_biz_id(conn, req.business_id)
+        snap = _compute_live_snapshot(conn, business_id=biz_id, branch_id=req.branch_id, days=req.days_window)
 
     base_fin_dict = snap["baseline"]["financials"]
     cur_fin_dict = dict(snap["live_inputs"])
@@ -507,6 +725,7 @@ def recalculate_ops(req: RecalcIn):
 
     return {
         "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "business_id": biz_id,
         "baseline_inputs": base_inputs.model_dump(),
         "current_inputs": cur_inputs.model_dump(),
         "baseline_report": base_rep.model_dump(),
@@ -521,12 +740,14 @@ def create_ops_asset(asset: AssetIn):
     init_ops_db()
     pdate = asset.purchase_date or datetime.now().strftime("%Y-%m-%d")
     with db() as conn:
+        b_id = asset.business_id or 1
+        br_id = asset.branch_id or 1
         cur = conn.execute(
             """
-            INSERT INTO ops_assets (name, category, status, purchase_cost, useful_life_years, monthly_maintenance, purchase_date, notes)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO ops_assets (name, category, status, purchase_cost, useful_life_years, monthly_maintenance, purchase_date, notes, business_id, branch_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (asset.name.strip(), asset.category, asset.status, asset.purchase_cost, asset.useful_life_years, asset.monthly_maintenance, pdate, asset.notes),
+            (asset.name.strip(), asset.category, asset.status, asset.purchase_cost, asset.useful_life_years, asset.monthly_maintenance, pdate, asset.notes, b_id, br_id),
         )
         return {"id": cur.lastrowid, "ok": True}
 
@@ -562,12 +783,14 @@ def delete_ops_asset(aid: int):
 def create_ops_expense(exp: ExpenseIn):
     init_ops_db()
     with db() as conn:
+        b_id = exp.business_id or 1
+        br_id = exp.branch_id or 1
         cur = conn.execute(
             """
-            INSERT INTO ops_expenses (concept, category, monthly_amount, active, notes)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO ops_expenses (concept, category, monthly_amount, active, notes, business_id, branch_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
-            (exp.concept.strip(), exp.category, exp.monthly_amount, int(exp.active), exp.notes),
+            (exp.concept.strip(), exp.category, exp.monthly_amount, int(exp.active), exp.notes, b_id, br_id),
         )
         return {"id": cur.lastrowid, "ok": True}
 

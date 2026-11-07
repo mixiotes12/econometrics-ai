@@ -93,11 +93,17 @@
         <span class="font-bold">Inventarios y Catálogo</span>
         <span id="alertBadge" class="pill bg-slate-700 hidden cursor-pointer"></span>
       </div>
-      <div class="flex items-center gap-2 text-xs">
-        <a href="owner.html" class="btn btn-sec !border-emerald-500/40 !text-emerald-300"><i class="fa-solid fa-building-user mr-1"></i>Portal del Dueño</a>
-        <a href="personal.html" class="btn btn-sec"><i class="fa-solid fa-user-shield mr-1"></i>Personal</a>
+      <div class="flex items-center gap-2 text-xs flex-wrap">
+        <div class="flex items-center gap-1.5 bg-zinc-900 border border-zinc-700 rounded-lg px-2 py-1">
+          <i class="fa-solid fa-store text-sky-400 text-xs"></i>
+          <span class="text-zinc-400 text-[11px]">Sucursal:</span>
+          <select id="invBranchSelect" class="bg-transparent text-white font-medium text-xs focus:outline-none cursor-pointer"></select>
+        </div>
+        <a href="owner.html" id="invOwnerLink" class="btn btn-sec !border-emerald-500/40 !text-emerald-300"><i class="fa-solid fa-building-user mr-1"></i>Portal del Dueño</a>
+        <a href="personal.html" id="invHrLink" class="btn btn-sec"><i class="fa-solid fa-user-shield mr-1"></i>Personal</a>
         <a href="pos.html" class="btn btn-sec"><i class="fa-solid fa-cash-register mr-1"></i>Punto de Venta</a>
         <span id="whoami" class="text-zinc-300"></span>
+        <button id="invLogoutBtn" class="btn btn-sec">Salir</button>
       </div>
     </div>
     <nav id="tabs" class="max-w-7xl mx-auto px-4 flex gap-1 overflow-x-auto">
@@ -125,6 +131,7 @@
         <div><label class="l">Origen</label><select id="fImp" class="inp"><option value="">Todos</option><option value="true">Importados</option><option value="false">Nacionales</option></select></div>
         <label class="text-xs flex items-center gap-1 pb-2"><input type="checkbox" id="fInactive"> Inactivos</label>
         <button id="newProductBtn" class="btn btn-pri admin-only"><i class="fa-solid fa-plus mr-1"></i>Nuevo producto</button>
+        <button id="btnTransferModal" class="btn btn-sec admin-only"><i class="fa-solid fa-truck-ramp-box mr-1 text-[#d4b26f]"></i>Transferir a otra Sucursal</button>
       </div>
       <div class="card overflow-x-auto">
         <table class="w-full">
@@ -273,6 +280,47 @@
       <div id="mError" class="text-red-400 text-xs hidden"></div>
       <div class="flex justify-end gap-2"><button type="button" id="mCancel" class="btn btn-sec">Cancelar</button><button class="btn btn-pri" type="submit">Registrar</button></div>
     </form>
+  </div>
+
+  <!-- MODAL: TRANSFERIR STOCK ENTRE SUCURSALES -->
+  <div id="modalTransferStock" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-[20px] max-w-md w-full p-6 shadow-2xl">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-truck-ramp-box text-[#d4b26f]"></i> Transferencia Inter-Sucursal
+        </h3>
+        <button type="button" id="closeTransferModal" class="text-zinc-400 hover:text-white">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <p class="text-xs text-zinc-400 mb-4">
+        Mueve unidades físicas de producto desde la sucursal activa hacia otra sucursal del negocio. El sistema registrará el movimiento en ambos kardex.
+      </p>
+      <form id="formTransferStock" class="space-y-4">
+        <div>
+          <label class="l">Producto a Transferir *</label>
+          <select id="transProductSelect" required class="inp"></select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="l">Sucursal Destino *</label>
+            <select id="transDestBranch" required class="inp"></select>
+          </div>
+          <div>
+            <label class="l">Cantidad a Mover *</label>
+            <input type="number" id="transQty" required min="0.01" step="0.01" value="10" class="inp font-mono">
+          </div>
+        </div>
+        <div>
+          <label class="l">Motivo / Notas de Envío</label>
+          <input type="text" id="transNotes" placeholder="Ej. Reabastecimiento semanal" class="inp">
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" id="cancelTransferBtn" class="btn btn-sec">Cancelar</button>
+          <button type="submit" class="btn btn-pri">Confirmar Transferencia</button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <script src="inventario.js"></script>

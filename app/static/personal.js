@@ -96,7 +96,7 @@
     if (can("users.manage")) users = await api("/users");
     $("eUser").innerHTML = '<option value="">— Sin usuario —</option>' + users.filter((u) => u.active).map((u) => `<option value="${u.id}">${esc(u.name)}</option>`).join("");
     $("iEmp").innerHTML = employees.filter((e) => e.status === "activo").map((e) => `<option value="${e.id}">${esc(e.name)}</option>`).join("");
-    $("empBody").innerHTML = employees.map((e) => `<tr class="${e.status === "activo" ? "" : "opacity-50"}"><td><b>${esc(e.name)}</b></td><td>${esc(e.position)}</td><td>${esc(e.area_name || "—")}</td>
+    $("empBody").innerHTML = employees.map((e) => `<tr class="${e.status === "activo" ? "" : "opacity-50"}"><td><b>${esc(e.name)}</b></td><td><span class="font-mono text-amber-300 font-bold text-xs bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800">${esc(e.employee_code || "—")}</span></td><td>${esc(e.position)}</td><td>${esc(e.area_name || "—")}</td>
       <td>${esc(e.user_name || "—")}</td><td>${fmt(e.monthly_salary)}</td><td>${esc(e.hire_date || "—")}</td><td>${esc(e.status)}</td>
       <td>${canEdit ? `<button class="btn btn-sec !py-0.5" data-editemp="${e.id}">Editar</button>` : ""}</td></tr>`).join("");
     const inc = await api("/incidences");
@@ -232,6 +232,13 @@
       catch (er) { alert(er.message); }
     };
     $("bRefresh").onclick = () => loadAudit().catch((e) => alert(e.message));
+    if ($("personalLogoutBtn")) {
+      $("personalLogoutBtn").onclick = () => {
+        sessionStorage.removeItem("pos_token");
+        sessionStorage.removeItem("pos_me");
+        window.location.href = "index.html";
+      };
+    }
   }
 
   document.addEventListener("DOMContentLoaded", async () => {

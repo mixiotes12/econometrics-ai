@@ -34,7 +34,7 @@
     }
   </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="style.css?v=20261107_8">
+  <link rel="stylesheet" href="style.css?v=20261107_9">
   <style>
     .inp { background:#09090b; border:1px solid #27272a; border-radius:.65rem; padding:.68rem .9rem; width:100%; font-size:1.02rem; color:#f4f4f5; transition: border-color .15s; }
     .inp:focus { outline:none; border-color:#c5a059; }
@@ -121,6 +121,47 @@
           <span class="hidden sm:inline">Terminal POS</span>
         </a>
         <span id="whoamiBadge" class="text-xs text-zinc-400 hidden lg:inline pl-2 border-l border-zinc-800"></span>
+      </div>
+    </div>
+
+    <!-- BARRA MULTI-TENANT: NEGOCIO / PROYECTO Y SUCURSAL ACTIVA -->
+    <div class="border-t border-zinc-800/80 bg-zinc-950/80 px-4 sm:px-6 py-2.5">
+      <div class="max-w-7xl mx-auto flex items-center justify-between gap-3 flex-wrap">
+        <div class="flex items-center gap-2.5 flex-wrap">
+          <!-- Selector de Negocio / Proyecto -->
+          <div class="flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 rounded-xl px-2.5 py-1.5">
+            <i class="fa-solid fa-briefcase text-[#d4b26f] text-xs"></i>
+            <span class="text-[11px] text-zinc-400 font-semibold">Proyecto:</span>
+            <select id="ownerBusinessSelect" class="bg-transparent text-xs font-bold text-white focus:outline-none cursor-pointer pr-1">
+              <option value="1">Aura Café & Roastery (EM-AURA-1001)</option>
+            </select>
+          </div>
+
+          <button id="btnOpenByProjectKey" type="button" title="Cargar proyecto ingresando su clave EM-XXXX" class="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 hover:border-[#c5a059]/40 text-xs px-2.5 py-1.5 rounded-xl transition-all flex items-center gap-1 font-mono">
+            <i class="fa-solid fa-key text-[#d4b26f]"></i>
+            <span>Buscar Clave</span>
+          </button>
+
+          <!-- Selector de Sucursal -->
+          <div class="flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 rounded-xl px-2.5 py-1.5">
+            <i class="fa-solid fa-store text-emerald-400 text-xs"></i>
+            <span class="text-[11px] text-zinc-400 font-semibold">Sucursal:</span>
+            <select id="ownerBranchSelect" class="bg-transparent text-xs font-semibold text-white focus:outline-none cursor-pointer pr-1">
+              <option value="1">Sucursal Matriz (SUC-01)</option>
+            </select>
+          </div>
+
+          <button id="btnNewBranchOwner" type="button" title="Crear nueva sucursal en este negocio" class="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 text-xs px-2.5 py-1.5 rounded-xl transition-all flex items-center gap-1">
+            <i class="fa-solid fa-plus text-[#d4b26f] text-[10px]"></i>
+            <span class="hidden sm:inline">Nueva Sucursal</span>
+          </button>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button id="ownerLogoutBtn" type="button" class="text-xs text-zinc-400 hover:text-white px-2 py-1 rounded-lg hover:bg-zinc-800 transition-all">
+            <i class="fa-solid fa-right-from-bracket mr-1"></i>Salir
+          </button>
+        </div>
       </div>
     </div>
 
@@ -559,6 +600,38 @@
 
   </main>
 
-  <script src="owner.js?v=20261107_8"></script>
+  <!-- MODAL: NUEVA SUCURSAL -->
+  <div id="modalOwnerNewBranch" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[110] hidden flex items-center justify-center p-4">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-[20px] max-w-md w-full p-6 shadow-2xl">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-store text-[#d4b26f]"></i> Nueva Sucursal
+        </h3>
+        <button type="button" id="closeOwnerBranchModal" class="text-zinc-400 hover:text-white">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <form id="formOwnerNewBranch" class="space-y-4">
+        <div>
+          <label class="l">Nombre de la Sucursal *</label>
+          <input type="text" id="ownerNewBranchName" required placeholder="Ej. Sucursal Condesa" class="inp">
+        </div>
+        <div>
+          <label class="l">Código Interno *</label>
+          <input type="text" id="ownerNewBranchCode" required placeholder="Ej. SUC-02" class="inp font-mono uppercase">
+        </div>
+        <div>
+          <label class="l">Dirección / Ubicación</label>
+          <input type="text" id="ownerNewBranchAddress" placeholder="Ej. Av. Mazatlán 14, Condesa, CDMX" class="inp">
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" id="cancelOwnerBranchBtn" class="btn btn-sec">Cancelar</button>
+          <button type="submit" class="btn btn-pri">Crear Sucursal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="owner.js?v=20261107_9"></script>
 </body>
 </html>

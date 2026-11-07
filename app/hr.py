@@ -15,7 +15,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from .pos import (PERMISSIONS, ROLES, SESSIONS, audit, current_cashier, db, get_settings, has_perm, hash_pin,
-                  money, now, require, require_any, user_permissions)
+                  money, now, require, require_any, sync_employee_and_cashier, user_permissions)
 
 router = APIRouter(prefix="/api/hr", tags=["Personal y Seguridad"])
 
@@ -203,6 +203,11 @@ def audit_log(days: int = Query(7, ge=1, le=365), user_id: Optional[int] = None,
 # ------------------------------------------------------------------ empleados
 class EmployeeIn(BaseModel):
     name: str = Field(min_length=2)
+    role: str = "cajero"
+    business_id: Optional[int] = 1
+    branch_id: Optional[int] = 1
+    pos_terminal_id: Optional[int] = None
+    pin: Optional[str] = "1234"
     user_id: Optional[int] = None
     position: str = ""
     area_id: Optional[int] = None
@@ -220,7 +225,8 @@ class EmployeeIn(BaseModel):
 
 
 EMP_COLS = ["user_id", "name", "position", "area_id", "hire_date", "termination_date", "status", "monthly_salary",
-            "pay_frequency", "rfc", "curp", "nss", "phone", "email", "notes"]
+            "pay_frequency", "rfc", "curp", "nss", "phone", "email", "notes", "business_id", "branch_id", "role",
+            "pos_terminal_id", "employee_code", "pin_plain"]
 
 
 def _emp_clean(conn, e: EmployeeIn, emp_id: Optional[int] = None) -> dict:
@@ -247,36 +253,113 @@ def _emp_out(r) -> dict:
 
 
 @router.get("/employees")
-def list_employees(include_inactive: bool = False, _: dict = Depends(require_any("hr.manage", "hr.payroll"))):
-    sql = "SELECT e.*, a.name area_name, c.name user_name FROM employees e LEFT JOIN areas a ON a.id=e.area_id LEFT JOIN cashiers c ON c.id=e.user_id "
+def list_employees(
+    include_inactive: bool = False,
+    branch_id: Optional[int] = Query(None),
+    business_id: Optional[int] = Query(None),
+    me: dict = Depends(require_any("hr.manage", "hr.payroll")),
+):
+    biz_id = business_id or me.get("business_id", 1)
+    br_id = branch_id or me.get("branch_id")
+    sql = ("SELECT e.*, a.name area_name, c.name user_name, b.project_key, br.code as branch_code, br.name as branch_name "
+           "FROM employees e "
+           "LEFT JOIN areas a ON a.id=e.area_id "
+           "LEFT JOIN cashiers c ON c.id=e.user_id "
+           "LEFT JOIN businesses b ON b.id=e.business_id "
+           "LEFT JOIN auth_branches br ON br.id=e.branch_id "
+           "WHERE e.business_id=? ")
+    args: list = [biz_id]
+    if br_id:
+        sql += "AND e.branch_id=? "
+        args.append(br_id)
     if not include_inactive:
-        sql += "WHERE e.status='activo' "
+        sql += "AND e.status='activo' "
     sql += "ORDER BY e.name"
     with db() as conn:
-        return [_emp_out(r) for r in conn.execute(sql)]
+        return [_emp_out(r) for r in conn.execute(sql, args)]
 
 
 @router.post("/employees")
 def create_employee(e: EmployeeIn, me: dict = Depends(require("hr.manage"))):
+    biz_id = e.business_id or me.get("business_id", 1)
+    br_id = e.branch_id or me.get("branch_id", 1)
     with db() as conn:
-        d = _emp_clean(conn, e)
-        d["created_at"] = now()
-        cols = EMP_COLS + ["created_at"]
-        cur = conn.execute(f"INSERT INTO employees({','.join(cols)}) VALUES ({','.join(':' + c for c in cols)})", d)
-        audit(conn, me, "empleado_creado", d["name"], "empleado")
-        return {"id": cur.lastrowid}
+        res = sync_employee_and_cashier(
+            conn,
+            name=e.name.strip(),
+            role=e.role if e.role in ROLES else "cajero",
+            business_id=biz_id,
+            branch_id=br_id,
+            pos_terminal_id=e.pos_terminal_id,
+            pin=e.pin or "1234",
+            position=e.position,
+            area_id=e.area_id,
+            monthly_salary=e.monthly_salary,
+            pay_frequency=e.pay_frequency,
+            hire_date=e.hire_date,
+            termination_date=e.termination_date,
+            status=e.status,
+            rfc=e.rfc,
+            curp=e.curp,
+            nss=e.nss,
+            phone=e.phone,
+            email=e.email,
+            notes=e.notes,
+        )
+        audit(conn, me, "empleado_creado", f"{e.name} ({res['employee_code']})", "empleado")
+        return {
+            "id": res["employee_id"],
+            "cashier_id": res["cashier_id"],
+            "employee_code": res["employee_code"],
+            "project_key": res["project_key"],
+            "pin": res["pin"],
+            "role": res["role"],
+            "role_label": res["role_label"],
+            "redirect_url": res["redirect_url"],
+            "ok": True,
+        }
 
 
 @router.put("/employees/{eid}")
 def update_employee(eid: int, e: EmployeeIn, me: dict = Depends(require("hr.manage"))):
+    biz_id = e.business_id or me.get("business_id", 1)
+    br_id = e.branch_id or me.get("branch_id", 1)
     with db() as conn:
-        if not conn.execute("SELECT 1 FROM employees WHERE id=?", (eid,)).fetchone():
+        row = conn.execute("SELECT * FROM employees WHERE id=?", (eid,)).fetchone()
+        if not row:
             raise HTTPException(404, "Empleado no encontrado.")
-        d = _emp_clean(conn, e, eid)
-        d["id"] = eid
-        conn.execute(f"UPDATE employees SET {','.join(c + '=:' + c for c in EMP_COLS)} WHERE id=:id", d)
-        audit(conn, me, "empleado_editado", d["name"], "empleado")
-    return {"ok": True}
+        res = sync_employee_and_cashier(
+            conn,
+            name=e.name.strip(),
+            role=e.role if e.role in ROLES else (row["role"] or "cajero"),
+            business_id=biz_id,
+            branch_id=br_id,
+            pos_terminal_id=e.pos_terminal_id,
+            pin=e.pin if e.pin else None,
+            position=e.position,
+            area_id=e.area_id,
+            monthly_salary=e.monthly_salary,
+            pay_frequency=e.pay_frequency,
+            hire_date=e.hire_date,
+            termination_date=e.termination_date,
+            status=e.status,
+            rfc=e.rfc,
+            curp=e.curp,
+            nss=e.nss,
+            phone=e.phone,
+            email=e.email,
+            notes=e.notes,
+            employee_id=eid,
+            cashier_id=row["user_id"],
+        )
+        audit(conn, me, "empleado_editado", f"{e.name} ({res['employee_code']})", "empleado")
+        return {
+            "id": res["employee_id"],
+            "employee_code": res["employee_code"],
+            "project_key": res["project_key"],
+            "ok": True,
+        }
+
 
 
 # ------------------------------------------------------------------ asistencia

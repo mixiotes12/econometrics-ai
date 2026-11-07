@@ -588,6 +588,9 @@ function saveNamedProject(name) {
     business: data.business,
     financials: data.financials,
     engineering: data.engineering,
+    product_catalog: data.product_catalog,
+    catalog_mode: data.catalog_mode,
+    project_key: window.currentProjectKey || null,
     savedAt: new Date().toISOString()
   };
 
@@ -657,12 +660,22 @@ async function initTemplatesAndSavedProjects() {
       const savedList = getSavedProjects();
       const proj = savedList.find(p => p.id === val);
       if (proj) {
+        if (proj.project_key) {
+          window.currentProjectKey = proj.project_key;
+          localStorage.setItem("econometrics_current_project_key", proj.project_key);
+          if (typeof updateProjectKeyBadge === "function") updateProjectKeyBadge(proj.project_key);
+        } else {
+          window.currentProjectKey = null;
+          if (typeof updateProjectKeyBadge === "function") updateProjectKeyBadge(null);
+        }
         applyFormData(proj);
         runQuickCalculation();
         scheduleAutoSave();
         showToast(`Proyecto cargado: "${proj.name}"`, true);
       }
     } else {
+      window.currentProjectKey = null;
+      if (typeof updateProjectKeyBadge === "function") updateProjectKeyBadge(null);
       const tmpl = serverTemplates.find(t => t.id === val);
       if (tmpl) {
         applyFormData(tmpl);
@@ -757,6 +770,9 @@ function initProjectPersistence() {
         scheduleAutoSave();
         const tmplSel = document.getElementById("templateSelect");
         if (tmplSel) tmplSel.value = "";
+        window.currentProjectKey = null;
+        localStorage.removeItem("econometrics_current_project_key");
+        if (typeof updateProjectKeyBadge === "function") updateProjectKeyBadge(null);
         showToast("Formulario listo para nuevo proyecto", true);
         switchTab(1);
       }
@@ -2038,27 +2054,29 @@ function initEngineeringAndTrackerListeners() {
   const copyKeyBtn = document.getElementById("copyKeyBtn");
   
   if (generateKeyBtn) {
-    generateKeyBtn.addEventListener("click", () => {
-      const data = {
-        name: document.getElementById("businessName").value,
-        type: document.getElementById("businessType").value,
-        investment: document.getElementById("initialInvestment").value,
-        monthlyFixedCosts: document.getElementById("monthlyFixedCosts").value,
-        price: document.getElementById("monthlyPrice").value,
-        units: document.getElementById("monthlyUnits").value,
-        varCost: document.getElementById("unitVariableCost").value,
-        shrinkageLossPct: document.getElementById("shrinkageLossPct") ? document.getElementById("shrinkageLossPct").value : 2.0
-      };
-      const key = btoa(JSON.stringify(data));
-      exportKeyInput.value = key;
+    generateKeyBtn.addEventListener("click", async () => {
+      const origHtml = generateKeyBtn.innerHTML;
+      generateKeyBtn.disabled = true;
+      generateKeyBtn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin text-xs"></i><span>Generando...</span>`;
+      try {
+        const res = await window.syncPlanToErpBaseline({ replaceAssets: true, silent: false });
+        if (res && res.project_key && exportKeyInput) {
+          exportKeyInput.value = res.project_key;
+        }
+      } catch (err) {
+        showToast(err.message || "Error al generar clave de proyecto", false);
+      } finally {
+        generateKeyBtn.disabled = false;
+        generateKeyBtn.innerHTML = origHtml;
+      }
     });
   }
 
   if (copyKeyBtn) {
     copyKeyBtn.addEventListener("click", () => {
-      if (exportKeyInput.value) {
+      if (exportKeyInput && exportKeyInput.value) {
         navigator.clipboard.writeText(exportKeyInput.value);
-        alert("Clave copiada al portapapeles.");
+        showToast(`Clave ${exportKeyInput.value} copiada al portapapeles`, true);
       }
     });
   }
@@ -2598,38 +2616,94 @@ function buildAssetsToExportFromStudio(f, eng) {
   return [];
 }
 
+function updateProjectKeyBadge(key) {
+  const container = document.getElementById("projectKeyBadgeContainer");
+  const display = document.getElementById("projectKeyDisplay");
+  const exportInput = document.getElementById("exportKeyInput");
+  if (key) {
+    if (display) display.textContent = key;
+    if (container) {
+      container.classList.remove("hidden");
+      container.classList.add("flex");
+    }
+    if (exportInput) exportInput.value = key;
+  } else {
+    if (container) {
+      container.classList.add("hidden");
+      container.classList.remove("flex");
+    }
+    if (exportInput && exportInput.value.startsWith("EM-")) exportInput.value = "";
+  }
+}
+window.updateProjectKeyBadge = updateProjectKeyBadge;
+
 window.syncPlanToErpBaseline = async function({ replaceAssets = true, silent = false } = {}) {
   const data = getFormData();
   const b = data.business || {};
   const f = data.financials || {};
   const eng = data.engineering || {};
+  const cat = typeof getMultiProductCatalogData === "function" ? getMultiProductCatalogData() : (data.product_catalog || []);
   const assetsToExport = buildAssetsToExportFromStudio(f, eng);
   const shouldReplace = Boolean(replaceAssets && assetsToExport.length > 0);
 
-  const res = await fetch("/api/ops/baseline", {
+  const payload = {
+    project_key: window.currentProjectKey || localStorage.getItem("econometrics_current_project_key") || null,
+    business: b,
+    financials: f,
+    engineering: eng,
+    catalog: cat,
+    replace_assets: shouldReplace,
+    assets: shouldReplace ? assetsToExport : null
+  };
+
+  const res = await fetch("/api/ops/sync-from-studio", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      project_name: b.name || "Mi Negocio",
-      business_type: b.business_type || "Comercio / Servicios",
-      financials: f,
-      replace_assets: shouldReplace,
-      assets: shouldReplace ? assetsToExport : null
-    })
+    body: JSON.stringify(payload)
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(formatApiError(err) || "No se pudo publicar el Plan Base al ERP.");
+    throw new Error(formatApiError(err) || "No se pudo sincronizar el proyecto con el ERP.");
   }
   const result = await res.json();
+  if (result.project_key) {
+    window.currentProjectKey = result.project_key;
+    localStorage.setItem("econometrics_current_project_key", result.project_key);
+    if (result.business_id) {
+      localStorage.setItem("econometrics_active_business_id", String(result.business_id));
+    }
+    if (result.branch_id) {
+      localStorage.setItem("econometrics_active_branch_id", String(result.branch_id));
+    }
+    updateProjectKeyBadge(result.project_key);
+  }
   if (!silent) {
-    showToast(`Plan Base "${b.name || 'Mi Proyecto'}" publicado en el Portal del Dueño exitosamente.`, true);
+    showToast(`¡Proyecto "${result.project_name || b.name || 'Mi Proyecto'}" aprovisionado con clave ${result.project_key || ''}!`, true);
   }
   return result;
 };
 
 function initOpsBridgeListeners() {
   const publishBtn = document.getElementById("publishBaselineBtn");
+  const copyBtn = document.getElementById("copyProjectKeyBtn");
+
+  if (copyBtn) {
+    copyBtn.addEventListener("click", () => {
+      const key = window.currentProjectKey || localStorage.getItem("econometrics_current_project_key");
+      if (key) {
+        navigator.clipboard.writeText(key);
+        showToast(`Clave ${key} copiada al portapapeles`, true);
+      }
+    });
+  }
+
+  // Restore badge if project key was previously active
+  const storedKey = localStorage.getItem("econometrics_current_project_key");
+  if (storedKey) {
+    window.currentProjectKey = storedKey;
+    updateProjectKeyBadge(storedKey);
+  }
+
   if (!publishBtn) return;
 
   publishBtn.addEventListener("click", async () => {
@@ -2642,13 +2716,13 @@ function initOpsBridgeListeners() {
     let replaceAssets = false;
     if (assetsToExport.length > 0) {
       replaceAssets = confirm(
-        `¿Deseas actualizar también el inventario de maquinaria del Portal del Dueño con las ${assetsToExport.length} partidas de equipo registradas en "${b.name || 'Mi Proyecto'}"?\n\n• Aceptar: Actualiza metas financieras + inventario de maquinaria.\n• Cancelar: Actualiza únicamente las metas financieras del Plan Base.`
+        `¿Deseas aprovisionar y actualizar el inventario y maquinaria del Portal del Dueño con las ${assetsToExport.length} partidas registradas en "${b.name || 'Mi Proyecto'}"?\n\n• Aceptar: Sincroniza metas financieras + activos + catálogo + personal.\n• Cancelar: Actualiza únicamente las metas financieras del Plan Base.`
       );
     }
 
     const originalHtml = publishBtn.innerHTML;
     publishBtn.disabled = true;
-    publishBtn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin text-xs"></i><span>Publicando...</span>`;
+    publishBtn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin text-xs"></i><span>Sincronizando...</span>`;
 
     try {
       await window.syncPlanToErpBaseline({ replaceAssets, silent: false });

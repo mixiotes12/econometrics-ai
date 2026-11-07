@@ -101,14 +101,17 @@ class ProductFull(BaseModel):
     sat_product_key: str = "01010101"
     sat_unit_key: str = "H87"
     active: bool = True
+    business_id: Optional[int] = 1
+    branch_id: Optional[int] = 1
 
 
 COLS = ["sku", "barcode", "name", "category", "supplier", "price", "cost", "iva_type", "stock", "track_stock",
         "min_stock", "max_stock", "reorder_qty", "is_imported", "currency", "foreign_cost", "exchange_rate",
-        "duties_pct", "freight_cost", "other_cost", "origin_country", "sat_product_key", "sat_unit_key", "active"]
+        "duties_pct", "freight_cost", "other_cost", "origin_country", "sat_product_key", "sat_unit_key", "active",
+        "business_id", "branch_id"]
 
 
-def prepare(conn, p: ProductFull) -> dict:
+def prepare(conn, p: ProductFull, default_biz: int = 1, default_br: int = 1) -> dict:
     if p.iva_type not in IVA_TYPES:
         raise HTTPException(400, "Tipo de IVA inválido (iva16, iva0, exento).")
     if p.currency not in CURRENCIES:
@@ -117,6 +120,8 @@ def prepare(conn, p: ProductFull) -> dict:
     d["sku"] = (p.sku or "").strip() or None
     d["barcode"] = (p.barcode or "").strip() or None
     d["name"] = p.name.strip()
+    d["business_id"] = p.business_id or default_biz or 1
+    d["branch_id"] = p.branch_id or default_br or 1
     if p.is_imported:
         rate = p.exchange_rate or get_rate(conn, p.currency)
         d["exchange_rate"] = rate
@@ -131,8 +136,15 @@ def prepare(conn, p: ProductFull) -> dict:
 
 @router.get("/products")
 def list_products(q: str = "", category: str = "", status: str = "", imported: Optional[bool] = None,
-                  include_inactive: bool = False, _: dict = Depends(current_cashier)):
-    sql, args = "SELECT * FROM products WHERE 1=1 ", []
+                  include_inactive: bool = False, branch_id: Optional[int] = Query(None),
+                  business_id: Optional[int] = Query(None), me: dict = Depends(current_cashier)):
+    biz_id = business_id or me.get("business_id", 1)
+    br_id = branch_id or me.get("branch_id")
+    sql = "SELECT * FROM products WHERE business_id=? "
+    args: list = [biz_id]
+    if br_id:
+        sql += "AND branch_id=? "
+        args.append(br_id)
     if not include_inactive:
         sql += "AND active=1 "
     if q:
@@ -153,7 +165,7 @@ def list_products(q: str = "", category: str = "", status: str = "", imported: O
 
 
 @router.get("/products/{pid}")
-def get_product(pid: int, _: dict = Depends(current_cashier)):
+def get_product(pid: int, me: dict = Depends(current_cashier)):
     with db() as conn:
         r = conn.execute("SELECT * FROM products WHERE id=?", (pid,)).fetchone()
     if not r:
@@ -162,35 +174,47 @@ def get_product(pid: int, _: dict = Depends(current_cashier)):
 
 
 @router.get("/categories")
-def categories(_: dict = Depends(current_cashier)):
+def categories(branch_id: Optional[int] = Query(None), business_id: Optional[int] = Query(None), me: dict = Depends(current_cashier)):
+    biz_id = business_id or me.get("business_id", 1)
+    br_id = branch_id or me.get("branch_id")
+    sql = "SELECT DISTINCT category FROM products WHERE business_id=? AND category<>'' "
+    args = [biz_id]
+    if br_id:
+        sql += "AND branch_id=? "
+        args.append(br_id)
+    sql += "ORDER BY category"
     with db() as conn:
-        return [r[0] for r in conn.execute("SELECT DISTINCT category FROM products WHERE category<>'' ORDER BY category")]
+        return [r[0] for r in conn.execute(sql, args)]
 
 
 @router.post("/products")
 def create_product(p: ProductFull, me: dict = Depends(require("products.manage"))):
+    biz_id = p.business_id or me.get("business_id", 1)
+    br_id = p.branch_id or me.get("branch_id", 1)
     try:
         with db() as conn:
-            d = prepare(conn, p)
+            d = prepare(conn, p, biz_id, br_id)
             stock0 = d["stock"]
             conn.execute(f"INSERT INTO products({','.join(COLS)}) VALUES ({','.join(':' + c for c in COLS)})", d)
             pid = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
             audit(conn, me, "producto_creado", d["name"], "producto")
             if d["track_stock"] and stock0:
-                log_movement(conn, pid, "entrada", stock0, d["cost"], "Existencia inicial", "", me["id"])
+                log_movement(conn, pid, "entrada", stock0, d["cost"], "Existencia inicial", "", me["id"], biz_id, br_id)
             return enrich(conn.execute("SELECT * FROM products WHERE id=?", (pid,)).fetchone())
     except sqlite3.IntegrityError:
-        raise HTTPException(400, "SKU o código de barras duplicado.")
+        raise HTTPException(400, "SKU o código de barras duplicado para esta sucursal.")
 
 
 @router.put("/products/{pid}")
 def update_product(pid: int, p: ProductFull, me: dict = Depends(require("products.manage"))):
+    biz_id = p.business_id or me.get("business_id", 1)
+    br_id = p.branch_id or me.get("branch_id", 1)
     try:
         with db() as conn:
-            old = conn.execute("SELECT stock FROM products WHERE id=?", (pid,)).fetchone()
+            old = conn.execute("SELECT stock, business_id, branch_id FROM products WHERE id=?", (pid,)).fetchone()
             if not old:
                 raise HTTPException(404, "Producto no encontrado.")
-            d = prepare(conn, p)
+            d = prepare(conn, p, old["business_id"] or biz_id, old["branch_id"] or br_id)
             d["stock"] = old["stock"]          # la existencia solo cambia con movimientos (kardex)
             d["id"] = pid
             sets = ",".join(f"{c}=:{c}" for c in COLS)
@@ -198,7 +222,75 @@ def update_product(pid: int, p: ProductFull, me: dict = Depends(require("product
             audit(conn, me, "producto_editado", d["name"], "producto")
             return enrich(conn.execute("SELECT * FROM products WHERE id=?", (pid,)).fetchone())
     except sqlite3.IntegrityError:
-        raise HTTPException(400, "SKU o código de barras duplicado.")
+        raise HTTPException(400, "SKU o código de barras duplicado para esta sucursal.")
+
+
+class TransferReq(BaseModel):
+    product_id: int
+    from_branch_id: int
+    to_branch_id: int
+    quantity: float = Field(gt=0)
+    notes: str = ""
+
+
+@router.post("/transfer")
+def transfer_stock(req: TransferReq, me: dict = Depends(require("inventory.move"))):
+    if req.from_branch_id == req.to_branch_id:
+        raise HTTPException(400, "La sucursal de origen y destino no pueden ser la misma.")
+
+    with db() as conn:
+        src = conn.execute("SELECT * FROM products WHERE id=? AND branch_id=?", (req.product_id, req.from_branch_id)).fetchone()
+        if not src:
+            raise HTTPException(404, "Producto origen no encontrado en la sucursal de salida.")
+
+        biz_id = src["business_id"] or me.get("business_id", 1)
+        to_br = conn.execute("SELECT * FROM auth_branches WHERE id=? AND business_id=?", (req.to_branch_id, biz_id)).fetchone()
+        if not to_br:
+            raise HTTPException(404, "Sucursal destino no encontrada en este negocio.")
+
+        if src["stock"] < req.quantity:
+            raise HTTPException(400, f"Existencias insuficientes en sucursal origen (disponible: {src['stock']}).")
+
+        # 1. Decrementar origen
+        conn.execute("UPDATE products SET stock = stock - ? WHERE id=?", (req.quantity, src["id"]))
+        log_movement(
+            conn, src["id"], "merma", -req.quantity, src["cost"],
+            f"Transferencia a {to_br['name']} ({to_br['code']}): {req.notes}".strip(),
+            f"TRANS-OUT-{req.from_branch_id}-{req.to_branch_id}",
+            me["id"], biz_id, req.from_branch_id
+        )
+
+        # 2. Incrementar o crear en destino
+        dst = None
+        if src["sku"]:
+            dst = conn.execute("SELECT * FROM products WHERE business_id=? AND branch_id=? AND sku=?", (biz_id, req.to_branch_id, src["sku"])).fetchone()
+        if not dst:
+            dst = conn.execute("SELECT * FROM products WHERE business_id=? AND branch_id=? AND name=?", (biz_id, req.to_branch_id, src["name"])).fetchone()
+
+        if dst:
+            conn.execute("UPDATE products SET stock = stock + ? WHERE id=?", (req.quantity, dst["id"]))
+            dst_id = dst["id"]
+        else:
+            cur = conn.execute(
+                """INSERT INTO products (sku, barcode, name, category, supplier, price, cost, iva_type, stock, track_stock,
+                   min_stock, max_stock, reorder_qty, active, business_id, branch_id)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)""",
+                (src["sku"], src["barcode"], src["name"], src["category"], src["supplier"], src["price"], src["cost"],
+                 src["iva_type"], req.quantity, src["track_stock"], src["min_stock"], src["max_stock"], src["reorder_qty"],
+                 biz_id, req.to_branch_id),
+            )
+            dst_id = cur.lastrowid
+
+        log_movement(
+            conn, dst_id, "entrada", req.quantity, src["cost"],
+            f"Transferencia desde sucursal {req.from_branch_id}: {req.notes}".strip(),
+            f"TRANS-IN-{req.from_branch_id}-{req.to_branch_id}",
+            me["id"], biz_id, req.to_branch_id
+        )
+
+        audit(conn, me, "transferencia_inventario", f"{req.quantity} uds de '{src['name']}' de sucursal {req.from_branch_id} a {req.to_branch_id}", "inventario")
+        return {"ok": True, "message": f"Se transfirieron {req.quantity} unidades de '{src['name']}' exitosamente."}
+
 
 
 # ------------------------------------------------------------------ fotos
@@ -251,9 +343,17 @@ def delete_image(pid: int, _: dict = Depends(require("products.manage"))):
 
 # ------------------------------------------------------------------ alertas de reorden
 @router.get("/alerts")
-def reorder_alerts(_: dict = Depends(current_cashier)):
+def reorder_alerts(branch_id: Optional[int] = Query(None), business_id: Optional[int] = Query(None), me: dict = Depends(current_cashier)):
+    biz_id = business_id or me.get("business_id", 1)
+    br_id = branch_id or me.get("branch_id")
+    sql = "SELECT * FROM products WHERE business_id=? AND active=1 AND track_stock=1 "
+    args = [biz_id]
+    if br_id:
+        sql += "AND branch_id=? "
+        args.append(br_id)
+    sql += "ORDER BY name"
     with db() as conn:
-        rows = [enrich(r) for r in conn.execute("SELECT * FROM products WHERE active=1 AND track_stock=1 ORDER BY name")]
+        rows = [enrich(r) for r in conn.execute(sql, args)]
     alerts = [r for r in rows if r["stock_status"] in ("agotado", "reorden")]
     for a in alerts:
         a["reorder_cost"] = money(a["reorder_suggest"] * a["cost"])
@@ -286,6 +386,8 @@ def add_movement(pid: int, m: MovementIn, me: dict = Depends(require("inventory.
         if m.type in ("merma", "ajuste") and len(m.reason.strip()) < 3:
             raise HTTPException(400, "Indica el motivo (caducidad, robo, daño, conteo físico...).")
         unit_cost = p["cost"]
+        biz_id = p["business_id"] or me.get("business_id", 1)
+        br_id = p["branch_id"] or me.get("branch_id", 1)
         if m.type == "entrada":
             delta = m.qty
             if m.unit_cost is not None and not p["is_imported"]:
@@ -301,18 +403,25 @@ def add_movement(pid: int, m: MovementIn, me: dict = Depends(require("inventory.
         else:
             delta = m.qty - p["stock"]
         conn.execute("UPDATE products SET stock = stock + ? WHERE id=?", (delta, pid))
-        log_movement(conn, pid, m.type, delta, unit_cost, m.reason.strip(), "", me["id"])
+        log_movement(conn, pid, m.type, delta, unit_cost, m.reason.strip(), "", me["id"], biz_id, br_id)
         audit(conn, me, "inventario_" + m.type, f"{p['name']}: {delta:+g} (motivo: {m.reason.strip() or '-'})", "inventario")
         return enrich(conn.execute("SELECT * FROM products WHERE id=?", (pid,)).fetchone())
 
 
 @router.get("/movements")
-def movements(product_id: Optional[int] = None, type: str = "", days: int = 90, limit: int = 300,
-              _: dict = Depends(current_cashier)):
+def movements(product_id: Optional[int] = None, type: str = "", branch_id: Optional[int] = Query(None),
+              business_id: Optional[int] = Query(None), days: int = 90, limit: int = 300,
+              me: dict = Depends(current_cashier)):
+    biz_id = business_id or me.get("business_id", 1)
+    br_id = branch_id or me.get("branch_id")
     since = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d %H:%M:%S")
     sql = ("SELECT m.*, p.name product_name, p.sku, c.name cashier_name FROM stock_movements m "
-           "JOIN products p ON p.id=m.product_id LEFT JOIN cashiers c ON c.id=m.cashier_id WHERE m.created_at>=? ")
-    args: list = [since]
+           "JOIN products p ON p.id=m.product_id LEFT JOIN cashiers c ON c.id=m.cashier_id "
+           "WHERE m.created_at>=? AND (m.business_id=? OR p.business_id=?) ")
+    args: list = [since, biz_id, biz_id]
+    if br_id:
+        sql += "AND (m.branch_id=? OR p.branch_id=?) "
+        args.extend([br_id, br_id])
     if product_id:
         sql += "AND m.product_id=? "
         args.append(product_id)
@@ -381,20 +490,43 @@ def apply_rates(_: dict = Depends(require("rates.manage"))):
 
 # ------------------------------------------------------------------ análisis de inventarios
 @router.get("/analysis")
-def analysis(days: int = Query(90, ge=7, le=730), _: dict = Depends(current_cashier)):
+def analysis(days: int = Query(90, ge=7, le=730), branch_id: Optional[int] = Query(None),
+             business_id: Optional[int] = Query(None), me: dict = Depends(current_cashier)):
+    biz_id = business_id or me.get("business_id", 1)
+    br_id = branch_id or me.get("branch_id")
     since = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d %H:%M:%S")
+
+    sql_prod = "SELECT * FROM products WHERE business_id=? AND active=1 "
+    args_prod = [biz_id]
+    if br_id:
+        sql_prod += "AND branch_id=? "
+        args_prod.append(br_id)
+
+    sql_sold = ("SELECT si.product_id, SUM(si.qty) units, SUM(si.total - si.iva) revenue "
+                "FROM sale_items si JOIN sales s ON s.id=si.sale_id "
+                "WHERE s.status='completada' AND s.business_id=? AND s.created_at>=? ")
+    args_sold = [biz_id, since]
+    if br_id:
+        sql_sold += "AND s.branch_id=? "
+        args_sold.append(br_id)
+    sql_sold += "GROUP BY si.product_id"
+
+    sql_merma = ("SELECT COALESCE(SUM(-m.delta),0) units, COALESCE(SUM(-m.delta * m.unit_cost),0) value "
+                 "FROM stock_movements m WHERE m.type='merma' AND m.business_id=? AND m.created_at>=? ")
+    args_merma = [biz_id, since]
+    if br_id:
+        sql_merma += "AND m.branch_id=? "
+        args_merma.append(br_id)
+
     with db() as conn:
-        products = [enrich(r) for r in conn.execute("SELECT * FROM products WHERE active=1")]
-        sold = {r["product_id"]: r for r in conn.execute(
-            "SELECT si.product_id, SUM(si.qty) units, SUM(si.total - si.iva) revenue "
-            "FROM sale_items si JOIN sales s ON s.id=si.sale_id "
-            "WHERE s.status='completada' AND s.created_at>=? GROUP BY si.product_id", (since,))}
-        mermas = conn.execute(
-            "SELECT COALESCE(SUM(-m.delta),0) units, COALESCE(SUM(-m.delta * m.unit_cost),0) value "
-            "FROM stock_movements m WHERE m.type='merma' AND m.created_at>=?", (since,)).fetchone()
+        products = [enrich(r) for r in conn.execute(sql_prod, args_prod)]
+        sold = {r["product_id"]: r for r in conn.execute(sql_sold, args_sold)}
+        mermas = conn.execute(sql_merma, args_merma).fetchone()
         merma_by_reason = [dict(r) for r in conn.execute(
             "SELECT reason, SUM(-delta) units, SUM(-delta*unit_cost) value FROM stock_movements "
-            "WHERE type='merma' AND created_at>=? GROUP BY reason ORDER BY value DESC LIMIT 10", (since,))]
+            "WHERE type='merma' AND business_id=? AND created_at>=? GROUP BY reason ORDER BY value DESC LIMIT 10",
+            (biz_id, since)
+        )]
 
     rows, total_rev, total_cogs = [], 0.0, 0.0
     for p in products:

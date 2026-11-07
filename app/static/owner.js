@@ -9,6 +9,10 @@
   let me = JSON.parse(sessionStorage.getItem("pos_me") || "null");
   let lastLiveData = null;
   let lastRecalcData = null;
+  let activeBusinessId = Number(localStorage.getItem("econometrics_active_business_id") || (me && me.business_id) || 1);
+  let activeBranchId = Number(localStorage.getItem("econometrics_active_branch_id") || (me && me.branch_id) || 1);
+  let businessesList = [];
+  let branchesList = [];
 
   async function api(path, opts = {}) {
     const res = await fetch(path, {
@@ -93,11 +97,21 @@
       const days = +($("daysWindowSelect")?.value || 30);
       const useRealVol = Boolean($("useRealSalesVolumeChk")?.checked);
 
+      let urlParams = `days=${days}&business_id=${activeBusinessId}`;
+      if (activeBranchId) {
+        urlParams += `&branch_id=${activeBranchId}`;
+      }
+
       const [liveData, recalcData] = await Promise.all([
-        api(`/api/ops/live-parameters?days=${days}`),
+        api(`/api/ops/live-parameters?${urlParams}`),
         api(`/api/ops/recalculate`, {
           method: "POST",
-          body: { days_window: days, use_real_sales_volume: useRealVol },
+          body: {
+            days_window: days,
+            use_real_sales_volume: useRealVol,
+            business_id: activeBusinessId,
+            branch_id: activeBranchId || null
+          },
         }),
       ]);
 
@@ -505,6 +519,8 @@
         monthly_maintenance: +$("assetMaint").value,
         purchase_date: $("assetDate").value || new Date().toISOString().slice(0, 10),
         notes: $("assetNotes").value,
+        business_id: activeBusinessId,
+        branch_id: activeBranchId,
       };
       try {
         if (id) {
@@ -530,6 +546,8 @@
         monthly_amount: +$("expAmount").value,
         notes: $("expNotes").value,
         active: $("expActive").checked,
+        business_id: activeBusinessId,
+        branch_id: activeBranchId,
       };
       try {
         if (id) {
@@ -556,7 +574,12 @@
         const days = +$("daysWindowSelect").value || 30;
         const recalcData = await api(`/api/ops/recalculate`, {
           method: "POST",
-          body: { days_window: days, custom_financials: customFin },
+          body: {
+            days_window: days,
+            custom_financials: customFin,
+            business_id: activeBusinessId,
+            branch_id: activeBranchId || null
+          },
         });
         lastRecalcData = recalcData;
         renderDashboardAndComparison(lastLiveData, recalcData);
@@ -578,6 +601,8 @@
             business_type: b.business_type || "Comercio / Servicios",
             financials: customFin,
             replace_assets: false,
+            business_id: activeBusinessId,
+            branch_id: activeBranchId,
           },
         });
         await loadAll();
@@ -621,7 +646,12 @@
           const days = +$("daysWindowSelect").value || 30;
           const simRes = await api(`/api/ops/recalculate`, {
             method: "POST",
-            body: { days_window: days, custom_financials: baseFin },
+            body: {
+              days_window: days,
+              custom_financials: baseFin,
+              business_id: activeBusinessId,
+              branch_id: activeBranchId || null
+            },
           });
           lastRecalcData = simRes;
           populateSimulatorInputs(baseFin);
@@ -633,6 +663,159 @@
       });
     }
 
+    // ---------- Gestión de Proyectos / Negocios y Sucursales (Multi-tenant)
+    async function loadBranchesForActiveBusiness() {
+      try {
+        const branchesRes = await fetch(`/api/auth/branches?business_id=${activeBusinessId}`).then(r => r.json()).catch(() => []);
+        branchesList = Array.isArray(branchesRes) ? branchesRes : [];
+        const branchSelect = $("ownerBranchSelect");
+        if (branchSelect) {
+          if (branchesList.length > 0) {
+            const savedBranch = Number(localStorage.getItem("econometrics_active_branch_id") || branchesList[0].id);
+            branchSelect.innerHTML = branchesList.map(br =>
+              `<option value="${br.id}" ${br.id === savedBranch ? "selected" : ""}>${esc(br.name)} (${esc(br.code || "SUC-01")})</option>`
+            ).join("");
+            activeBranchId = branchesList.some(br => br.id === savedBranch) ? savedBranch : branchesList[0].id;
+            localStorage.setItem("econometrics_active_branch_id", String(activeBranchId));
+          } else {
+            branchSelect.innerHTML = '<option value="">Sin sucursales</option>';
+            activeBranchId = null;
+          }
+        }
+      } catch (e) {
+        console.warn("Error loading branches in owner:", e);
+      }
+    }
+
+    async function loadBusinessesAndBranches() {
+      try {
+        const bizRes = await fetch("/api/auth/businesses").then(r => r.json()).catch(() => []);
+        businessesList = Array.isArray(bizRes) ? bizRes : [];
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlKey = urlParams.get("project_key") || urlParams.get("key");
+        const urlBizId = urlParams.get("business_id");
+
+        if (urlKey) {
+          const found = businessesList.find(b => (b.project_key || "").toUpperCase() === urlKey.toUpperCase());
+          if (found) {
+            activeBusinessId = found.id;
+            localStorage.setItem("econometrics_active_business_id", String(found.id));
+          }
+        } else if (urlBizId) {
+          activeBusinessId = Number(urlBizId);
+          localStorage.setItem("econometrics_active_business_id", String(urlBizId));
+        }
+
+        const bizSelect = $("ownerBusinessSelect");
+        if (bizSelect && businessesList.length > 0) {
+          bizSelect.innerHTML = businessesList.map(b => 
+            `<option value="${b.id}" ${b.id === activeBusinessId ? "selected" : ""}>${esc(b.name)} (${esc(b.project_key || "EM-" + b.id)})</option>`
+          ).join("");
+          if (!businessesList.some(b => b.id === activeBusinessId)) {
+            activeBusinessId = businessesList[0].id;
+            localStorage.setItem("econometrics_active_business_id", String(activeBusinessId));
+          }
+        }
+
+        await loadBranchesForActiveBusiness();
+      } catch (e) {
+        console.warn("Error loading businesses in owner:", e);
+      }
+    }
+
+    // Selectores de cambio de negocio y sucursal
+    if ($("ownerBusinessSelect")) {
+      $("ownerBusinessSelect").addEventListener("change", async (e) => {
+        activeBusinessId = Number(e.target.value);
+        localStorage.setItem("econometrics_active_business_id", String(activeBusinessId));
+        await loadBranchesForActiveBusiness();
+        await loadAll(true);
+      });
+    }
+
+    if ($("ownerBranchSelect")) {
+      $("ownerBranchSelect").addEventListener("change", async (e) => {
+        activeBranchId = Number(e.target.value);
+        localStorage.setItem("econometrics_active_branch_id", String(activeBranchId));
+        await loadAll(true);
+      });
+    }
+
+    if ($("btnOpenByProjectKey")) {
+      $("btnOpenByProjectKey").addEventListener("click", async () => {
+        const key = prompt("Ingresa la Clave de Proyecto (ej. EM-AURA-1001 o EM-XXXX):");
+        if (!key) return;
+        const cleanKey = key.trim().toUpperCase();
+        const found = businessesList.find(b => (b.project_key || "").toUpperCase() === cleanKey);
+        if (found) {
+          activeBusinessId = found.id;
+          localStorage.setItem("econometrics_active_business_id", String(found.id));
+          if ($("ownerBusinessSelect")) $("ownerBusinessSelect").value = String(found.id);
+          await loadBranchesForActiveBusiness();
+          await loadAll(true);
+          alert(`Proyecto "${found.name}" (${cleanKey}) activado en el ERP.`);
+        } else {
+          alert(`No se encontró ningún proyecto con la clave "${cleanKey}". Asegúrate de haber presionado "Publicar Plan al ERP" en Studio.`);
+        }
+      });
+    }
+
+    if ($("btnNewBranchOwner")) {
+      $("btnNewBranchOwner").addEventListener("click", () => {
+        $("modalOwnerNewBranch")?.classList.remove("hidden");
+      });
+    }
+    if ($("closeOwnerBranchModal")) {
+      $("closeOwnerBranchModal").addEventListener("click", () => {
+        $("modalOwnerNewBranch")?.classList.add("hidden");
+      });
+    }
+    if ($("cancelOwnerBranchBtn")) {
+      $("cancelOwnerBranchBtn").addEventListener("click", () => {
+        $("modalOwnerNewBranch")?.classList.add("hidden");
+      });
+    }
+    if ($("formOwnerNewBranch")) {
+      $("formOwnerNewBranch").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const name = $("ownerNewBranchName").value.trim();
+        const code = $("ownerNewBranchCode").value.trim().toUpperCase();
+        const address = $("ownerNewBranchAddress").value.trim();
+        try {
+          const res = await fetch("/api/auth/branches", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ business_id: activeBusinessId, name, code, address })
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || "Error al crear la sucursal");
+          $("modalOwnerNewBranch")?.classList.add("hidden");
+          $("formOwnerNewBranch")?.reset();
+          await loadBranchesForActiveBusiness();
+          if (data.id) {
+            activeBranchId = data.id;
+            localStorage.setItem("econometrics_active_branch_id", String(data.id));
+            if ($("ownerBranchSelect")) $("ownerBranchSelect").value = String(data.id);
+          }
+          await loadAll(true);
+          alert(`Sucursal "${name}" (${code}) creada exitosamente.`);
+        } catch (err) {
+          alert(err.message);
+        }
+      });
+    }
+
+    if ($("ownerLogoutBtn")) {
+      $("ownerLogoutBtn").addEventListener("click", () => {
+        sessionStorage.removeItem("pos_token");
+        sessionStorage.removeItem("pos_me");
+        localStorage.removeItem("econometrics_owner_session");
+        window.location.href = "index.html";
+      });
+    }
+
+    await loadBusinessesAndBranches();
     await loadAll();
   });
 })();

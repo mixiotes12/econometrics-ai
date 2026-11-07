@@ -9,6 +9,9 @@
 
   let token = sessionStorage.getItem("pos_token") || "";
   let me = JSON.parse(sessionStorage.getItem("pos_me") || "null");
+  let activeBranchId = Number(localStorage.getItem("econometrics_active_branch_id") || (me && me.branch_id) || 1);
+  let activeBusinessId = Number(localStorage.getItem("econometrics_active_business_id") || (me && me.business_id) || 1);
+  let branchesList = [];
   let rates = {};
   let products = [];
   let pendingImage = null;   // dataURL pendiente de subir (producto nuevo o foto cambiada)
@@ -16,6 +19,10 @@
   let charts = {};
 
   async function api(path, opts = {}) {
+    if (opts.body && typeof opts.body === "object") {
+      if (opts.body.business_id === undefined) opts.body.business_id = activeBusinessId;
+      if (opts.body.branch_id === undefined) opts.body.branch_id = activeBranchId;
+    }
     const res = await fetch("/api/inv" + path, {
       method: opts.method || "GET",
       headers: { "Content-Type": "application/json", "X-POS-Token": token },
@@ -47,9 +54,37 @@
     loaders[name]().catch((e) => alert(e.message));
   }
 
+  // ---------- Sucursales & Multi-tenant
+  async function loadBranches() {
+    try {
+      const res = await fetch(`/api/auth/branches?business_id=${activeBusinessId}`);
+      if (res.ok) {
+        branchesList = await res.json();
+        const sel = $("invBranchSelect");
+        if (sel && branchesList.length > 0) {
+          sel.innerHTML = branchesList.map((b) => `<option value="${b.id}" ${b.id === activeBranchId ? "selected" : ""}>${esc(b.name)} (${esc(b.code)})</option>`).join("");
+          if (!branchesList.some(b => b.id === activeBranchId)) {
+            activeBranchId = branchesList[0].id;
+            localStorage.setItem("econometrics_active_branch_id", String(activeBranchId));
+          }
+          sel.onchange = async () => {
+            activeBranchId = Number(sel.value);
+            localStorage.setItem("econometrics_active_branch_id", String(activeBranchId));
+            const activeTab = document.querySelector(".tab-btn.active")?.dataset.tab || "catalogo";
+            switchTab(activeTab);
+          };
+        }
+      }
+    } catch (e) {
+      console.warn("Could not load branches in inventory:", e);
+    }
+  }
+
   // ---------- Catálogo
   async function loadCatalog() {
     const p = new URLSearchParams();
+    p.set("branch_id", String(activeBranchId));
+    p.set("business_id", String(activeBusinessId));
     if ($("fQ").value) p.set("q", $("fQ").value);
     if ($("fCat").value) p.set("category", $("fCat").value);
     if ($("fStatus").value) p.set("status", $("fStatus").value);
@@ -77,7 +112,7 @@
   }
   async function refreshAlertBadge() {
     try {
-      const a = await api("/alerts");
+      const a = await api(`/alerts?branch_id=${activeBranchId}&business_id=${activeBusinessId}`);
       const b = $("alertBadge");
       b.classList.toggle("hidden", a.count === 0);
       b.textContent = `${a.count} por reordenar`;
@@ -196,7 +231,7 @@
 
   // ---------- Alertas
   async function loadAlerts() {
-    const a = await api("/alerts");
+    const a = await api(`/alerts?branch_id=${activeBranchId}&business_id=${activeBusinessId}`);
     $("alertCards").innerHTML = [
       ["Productos por reordenar", a.count, "text-amber-300"], ["Agotados", a.out_of_stock, "text-red-400"], ["Inversión estimada de reposición", fmt(a.estimated_cost), "text-sky-300"],
     ].map(([l, v, c]) => `<div class="card"><div class="text-[11px] text-zinc-400">${l}</div><div class="text-2xl font-bold ${c}">${v}</div></div>`).join("");
@@ -210,7 +245,7 @@
 
   // ---------- Kardex
   async function loadKardex() {
-    const p = new URLSearchParams({ days: $("kDays").value || 30 });
+    const p = new URLSearchParams({ days: $("kDays").value || 30, branch_id: activeBranchId, business_id: activeBusinessId });
     if ($("kType").value) p.set("type", $("kType").value);
     const list = await api("/movements?" + p);
     $("kardexBody").innerHTML = list.map((m) => `<tr><td>${esc(m.created_at)}</td><td>${esc(m.product_name)}</td>
@@ -246,7 +281,7 @@
 
   // ---------- Análisis
   async function loadAnalysis() {
-    const a = await api("/analysis?days=" + $("aDays").value);
+    const a = await api(`/analysis?days=${$("aDays").value}&branch_id=${activeBranchId}&business_id=${activeBusinessId}`);
     const s = a.summary;
     const card = (l, v, c = "") => `<div class="card"><div class="text-[11px] text-zinc-400">${l}</div><div class="text-xl font-bold ${c}">${v}</div></div>`;
     $("aCards").innerHTML = card("Valor del inventario (costo)", fmt(s.inventory_value_cost), "text-sky-300") + card("Valor a precio de venta", fmt(s.inventory_value_sale)) +
@@ -319,12 +354,69 @@
     };
     $("aRefresh").onclick = () => loadAnalysis().catch((e) => alert(e.message));
     $("aDays").onchange = $("aRefresh").onclick;
+
+    if ($("btnTransferModal")) {
+      $("btnTransferModal").onclick = () => {
+        if (!products.length) return alert("No hay productos disponibles en esta sucursal para transferir.");
+        $("transProductSelect").innerHTML = products.map((p) => `<option value="${p.id}">${esc(p.name)} (Stock actual: ${num(p.stock)})</option>`).join("");
+        const otherBranches = branchesList.filter((b) => b.id !== activeBranchId);
+        if (!otherBranches.length) return alert("Debes tener al menos 2 sucursales registradas para realizar transferencias inter-sucursales.");
+        $("transDestBranch").innerHTML = otherBranches.map((b) => `<option value="${b.id}">${esc(b.name)} (${esc(b.code)})</option>`).join("");
+        $("modalTransferStock")?.classList.remove("hidden");
+        $("modalTransferStock")?.classList.add("flex");
+      };
+    }
+    if ($("closeTransferModal")) {
+      $("closeTransferModal").onclick = () => {
+        $("modalTransferStock")?.classList.add("hidden");
+        $("modalTransferStock")?.classList.remove("flex");
+      };
+    }
+    if ($("cancelTransferBtn")) {
+      $("cancelTransferBtn").onclick = () => {
+        $("modalTransferStock")?.classList.add("hidden");
+        $("modalTransferStock")?.classList.remove("flex");
+      };
+    }
+    if ($("formTransferStock")) {
+      $("formTransferStock").onsubmit = async (e) => {
+        e.preventDefault();
+        try {
+          const body = {
+            product_id: +$("transProductSelect").value,
+            from_branch_id: activeBranchId,
+            to_branch_id: +$("transDestBranch").value,
+            quantity: parseFloat($("transQty").value) || 0,
+            notes: $("transNotes").value.trim(),
+          };
+          const res = await api("/transfer", { method: "POST", body });
+          $("modalTransferStock")?.classList.add("hidden");
+          $("modalTransferStock")?.classList.remove("flex");
+          $("formTransferStock").reset();
+          await loadCatalog();
+          alert(res.message || "Transferencia inter-sucursal completada exitosamente.");
+        } catch (err) {
+          alert(err.message);
+        }
+      };
+    }
+    if ($("invLogoutBtn")) {
+      $("invLogoutBtn").onclick = () => {
+        sessionStorage.removeItem("pos_token");
+        sessionStorage.removeItem("pos_me");
+        window.location.href = "index.html";
+      };
+    }
   }
 
   document.addEventListener("DOMContentLoaded", async () => {
     if (!token || !me) return showNoSession();
     $("whoami").textContent = `${me.name} · ${me.role_label || (me.is_admin ? "Administrador" : "Cajero")}`;
     bind();
-    try { await loadRates(); await loadCatalog(); } catch {}
+    try {
+      await loadBranches();
+      await loadRates();
+      await loadCatalog();
+    } catch {}
   });
 })();
