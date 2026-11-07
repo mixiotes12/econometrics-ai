@@ -1422,13 +1422,35 @@ function initEngineeringAndTrackerListeners() {
   let pendingMermaidCode = null;
   window.getSelectedBudgetOption = () => selectedBudgetOption;
 
+  function invalidateBudgetsOutput() {
+    lastBudgetsData = null;
+    selectedBudgetCost = 0;
+    selectedBudgetOption = null;
+    if (budgetsGrid) budgetsGrid.innerHTML = "";
+    if (budgetsSummary) budgetsSummary.textContent = "";
+    budgetsOutput?.classList.add("hidden");
+    useInvestmentBtn?.classList.add("hidden");
+  }
+
+  function invalidateFlowchartOutput() {
+    lastFlowchartData = null;
+    pendingMermaidCode = null;
+    if (mermaidContainer) mermaidContainer.innerHTML = "";
+    if (activitiesTable) activitiesTable.innerHTML = "";
+    if (consumablesTable) consumablesTable.innerHTML = "";
+    if (totalConsumablesCost) totalConsumablesCost.textContent = "$0";
+    flowOutput?.classList.add("hidden");
+  }
+  window.invalidateBudgetsOutput = invalidateBudgetsOutput;
+  window.invalidateFlowchartOutput = invalidateFlowchartOutput;
+
   function createEquipmentRow(item = {}) {
     const div = document.createElement("div");
     div.className = "flex gap-2 equipment-item mt-2";
     div.innerHTML = `
       <select class="eq-category w-1/4 bg-zinc-900 border border-zinc-700 rounded-lg px-2 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"><option value="Maquinaria">Maquinaria</option><option value="Servicios">Servicios</option><option value="Empleados">Empleados</option></select><input type="text" placeholder="Ej: Equipo" class="eq-name w-1/3 bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
       <input type="text" placeholder="Especificaciones" class="eq-desc flex-1 bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
-      <button type="button" class="text-rose-400 hover:text-rose-300 px-2" onclick="this.parentElement.remove(); scheduleAutoSave();"><i class="fa-solid fa-xmark"></i></button>
+      <button type="button" class="text-rose-400 hover:text-rose-300 px-2" onclick="this.parentElement.remove(); if(window.invalidateBudgetsOutput) window.invalidateBudgetsOutput(); scheduleAutoSave();"><i class="fa-solid fa-xmark"></i></button>
     `;
     div.querySelector(".eq-category").value = item.category || "Maquinaria";
     div.querySelector(".eq-name").value = item.name || "";
@@ -1439,12 +1461,19 @@ function initEngineeringAndTrackerListeners() {
 
   addEqBtn?.addEventListener("click", () => {
     createEquipmentRow();
+    invalidateBudgetsOutput();
     scheduleAutoSave();
   });
 
-  // Autosave de las pestañas 1 y 2
-  equipmentList?.addEventListener("input", () => scheduleAutoSave());
-  equipmentList?.addEventListener("change", () => scheduleAutoSave());
+  // Autosave de las pestañas 1 y 2; si cambian los equipos, limpiar presupuestos desactualizados
+  equipmentList?.addEventListener("input", () => {
+    invalidateBudgetsOutput();
+    scheduleAutoSave();
+  });
+  equipmentList?.addEventListener("change", () => {
+    invalidateBudgetsOutput();
+    scheduleAutoSave();
+  });
 
   genBudgetsBtn?.addEventListener("click", async () => {
     const items = [];
@@ -1838,7 +1867,10 @@ function initEngineeringAndTrackerListeners() {
     scheduleAutoSave();
   }
 
-  processDesc?.addEventListener("input", () => scheduleAutoSave());
+  processDesc?.addEventListener("input", () => {
+    invalidateFlowchartOutput();
+    scheduleAutoSave();
+  });
 
   // --- Estado de Presupuestos/Procesos para plantillas y proyectos guardados ---
   window.getEngineeringData = () => {
@@ -1860,7 +1892,7 @@ function initEngineeringAndTrackerListeners() {
 
   window.applyEngineeringData = (eng) => {
     if (!eng) return;
-    // Pestaña 1: renglones de equipo
+    // Pestaña 3: renglones de equipo
     equipmentList.innerHTML = "";
     const items = Array.isArray(eng.equipment_items) ? eng.equipment_items : [];
     if (items.length === 0) {
@@ -1871,28 +1903,20 @@ function initEngineeringAndTrackerListeners() {
         if (i === 0) row.classList.remove("mt-2");
       });
     }
-    // Resultados de presupuestos
-    if (eng.budgets && Array.isArray(eng.budgets.budgets) && eng.budgets.budgets.length) {
+    // Resultados de presupuestos: descartar predefinidos estáticos de plantilla ("Plantilla de ejemplo")
+    const isRealBudgets = eng.budgets && Array.isArray(eng.budgets.budgets) && eng.budgets.budgets.length > 0 && eng.budgets.generated_at !== "Plantilla de ejemplo";
+    if (isRealBudgets) {
       renderBudgets(eng.budgets);
     } else {
-      lastBudgetsData = null;
-      budgetsGrid.innerHTML = "";
-      budgetsSummary.textContent = "";
-      budgetsOutput.classList.add("hidden");
-      useInvestmentBtn.classList.add("hidden");
+      invalidateBudgetsOutput();
     }
-    // Pestaña 2: proceso y diagrama
+    // Pestaña 2: proceso y diagrama: descartar predefinidos estáticos de plantilla ("Plantilla de ejemplo")
     processDesc.value = eng.process_description || "";
-    if (eng.flowchart && eng.flowchart.mermaid_code) {
+    const isRealFlowchart = eng.flowchart && eng.flowchart.mermaid_code && eng.flowchart.generated_at !== "Plantilla de ejemplo";
+    if (isRealFlowchart) {
       renderFlowchart(eng.flowchart);
     } else {
-      lastFlowchartData = null;
-      pendingMermaidCode = null;
-      mermaidContainer.innerHTML = "";
-      activitiesTable.innerHTML = "";
-      consumablesTable.innerHTML = "";
-      totalConsumablesCost.textContent = "$0";
-      flowOutput.classList.add("hidden");
+      invalidateFlowchartOutput();
     }
   };
 
