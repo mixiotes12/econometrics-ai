@@ -1783,6 +1783,7 @@ function initEngineeringAndTrackerListeners() {
 
   let currentFlowZoomPct = 125;
   let baseFlowSvgWidth = 1250;
+  let baseFlowSvgHeight = 320;
   let isFlowFullscreen = false;
 
   function applyFlowchartZoom(newZoomPct) {
@@ -1790,17 +1791,20 @@ function initEngineeringAndTrackerListeners() {
     const labelEl = document.getElementById("flowZoomLabel");
     if (labelEl) labelEl.textContent = `${currentFlowZoomPct}%`;
 
+    const scale = currentFlowZoomPct / 100;
     const svgEl = mermaidContainer?.querySelector("svg");
     if (svgEl) {
-      const scaledW = Math.round(baseFlowSvgWidth * (currentFlowZoomPct / 100));
+      const scaledW = Math.round(baseFlowSvgWidth * scale);
+      const scaledH = Math.round(baseFlowSvgHeight * scale);
       svgEl.style.maxWidth = "none";
+      svgEl.style.maxHeight = "none";
       svgEl.style.width = `${scaledW}px`;
-      svgEl.style.height = "auto";
-      svgEl.style.margin = "0 auto";
+      svgEl.style.height = `${scaledH}px`;
+      svgEl.style.margin = "0";
       svgEl.style.display = "block";
     } else if (mermaidContainer?.firstElementChild) {
-      mermaidContainer.firstElementChild.style.transformOrigin = "left center";
-      mermaidContainer.firstElementChild.style.transform = `scale(${(currentFlowZoomPct / 100).toFixed(2)})`;
+      mermaidContainer.firstElementChild.style.zoom = `${currentFlowZoomPct}%`;
+      mermaidContainer.firstElementChild.style.transformOrigin = "top left";
     }
   }
 
@@ -1827,14 +1831,14 @@ function initEngineeringAndTrackerListeners() {
       isFlowFullscreen = !isFlowFullscreen;
       if (isFlowFullscreen) {
         cardWrapper.classList.add("fixed", "inset-4", "z-[120]", "flex", "flex-col", "shadow-2xl", "border-[#c5a059]");
-        viewport.classList.remove("max-h-[560px]");
+        viewport.classList.remove("max-h-[600px]");
         viewport.classList.add("flex-1", "max-h-none");
         fullscreenBtn.innerHTML = `<i class="fa-solid fa-compress"></i> <span class="hidden sm:inline">Salir</span>`;
         applyFlowchartZoom(Math.max(currentFlowZoomPct, 150));
       } else {
         cardWrapper.classList.remove("fixed", "inset-4", "z-[120]", "flex", "flex-col", "shadow-2xl", "border-[#c5a059]");
         viewport.classList.remove("flex-1", "max-h-none");
-        viewport.classList.add("max-h-[560px]");
+        viewport.classList.add("max-h-[600px]");
         fullscreenBtn.innerHTML = `<i class="fa-solid fa-expand"></i> <span class="hidden sm:inline">Expandir</span>`;
       }
     });
@@ -1849,31 +1853,31 @@ function initEngineeringAndTrackerListeners() {
         }
       }, { passive: false });
 
-      // Arrastrar con el mouse (Panning)
+      // Arrastrar con el mouse (Panning) en todas las direcciones (arriba, abajo, izquierda, derecha)
       let isDragging = false;
-      let startX = 0;
-      let startY = 0;
-      let scrollLeft = 0;
-      let scrollTop = 0;
+      let startClientX = 0;
+      let startClientY = 0;
+      let startScrollLeft = 0;
+      let startScrollTop = 0;
 
       viewport.addEventListener("mousedown", (e) => {
         if (e.button !== 0) return;
         isDragging = true;
-        startX = e.pageX - viewport.offsetLeft;
-        startY = e.pageY - viewport.offsetTop;
-        scrollLeft = viewport.scrollLeft;
-        scrollTop = viewport.scrollTop;
+        startClientX = e.clientX;
+        startClientY = e.clientY;
+        startScrollLeft = viewport.scrollLeft;
+        startScrollTop = viewport.scrollTop;
       });
       window.addEventListener("mouseup", () => {
         isDragging = false;
       });
-      viewport.addEventListener("mousemove", (e) => {
+      window.addEventListener("mousemove", (e) => {
         if (!isDragging) return;
         e.preventDefault();
-        const x = e.pageX - viewport.offsetLeft;
-        const y = e.pageY - viewport.offsetTop;
-        viewport.scrollLeft = scrollLeft - (x - startX) * 1.4;
-        viewport.scrollTop = scrollTop - (y - startY) * 1.4;
+        const dx = e.clientX - startClientX;
+        const dy = e.clientY - startClientY;
+        viewport.scrollLeft = startScrollLeft - dx * 1.25;
+        viewport.scrollTop = startScrollTop - dy * 1.25;
       });
     }
   }
@@ -1900,9 +1904,19 @@ function initEngineeringAndTrackerListeners() {
       const svgEl = mermaidContainer.querySelector("svg");
       if (svgEl) {
         const vb = (svgEl.getAttribute("viewBox") || "").split(/\s+/).map(Number);
-        const naturalW = vb.length === 4 ? vb[2] : 0;
-        baseFlowSvgWidth = naturalW > 0 ? Math.max(naturalW * 1.25, 1200) : 1350;
+        const naturalW = vb.length === 4 && vb[2] > 0 ? vb[2] : 1000;
+        const naturalH = vb.length === 4 && vb[3] > 0 ? vb[3] : 260;
+        const aspect = naturalH / naturalW;
+        baseFlowSvgWidth = Math.max(naturalW * 1.25, 1100);
+        baseFlowSvgHeight = Math.max(Math.round(baseFlowSvgWidth * aspect), 220);
+        svgEl.removeAttribute("width");
+        svgEl.removeAttribute("height");
         applyFlowchartZoom(currentFlowZoomPct);
+        const viewport = document.getElementById("mermaidViewport");
+        if (viewport) {
+          viewport.scrollTop = 0;
+          viewport.scrollLeft = 0;
+        }
       }
     } catch (e) {
       console.warn("Mermaid render fallback activado:", e);
