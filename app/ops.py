@@ -38,7 +38,6 @@ CREATE TABLE IF NOT EXISTS ops_baseline (
     financials_json TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
-CREATE UNIQUE INDEX IF NOT EXISTS idx_ops_baseline_biz ON ops_baseline(business_id);
 
 CREATE TABLE IF NOT EXISTS ops_assets (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -92,6 +91,7 @@ def init_ops_db() -> None:
         b_cols = {r["name"] for r in conn.execute("PRAGMA table_info(ops_baseline)")}
         if "business_id" not in b_cols:
             conn.execute("ALTER TABLE ops_baseline ADD COLUMN business_id INTEGER NOT NULL DEFAULT 1")
+        conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_ops_baseline_biz ON ops_baseline(business_id)")
 
         a_cols = {r["name"] for r in conn.execute("PRAGMA table_info(ops_assets)")}
         if "business_id" not in a_cols:
