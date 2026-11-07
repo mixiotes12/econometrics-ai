@@ -114,24 +114,29 @@ Genera un dictamen financiero y estratégico completo y profundo en formato JSON
 }}
 """
 
+MODEL_ALIASES = {
+    "gemini-3.8-flash": "gemini-2.5-flash",
+    "gemini-3.5-flash": "gemini-2.5-flash",
+    "gemini-3.5-flash-lite": "gemini-2.5-flash-lite",
+    "gemini-3.6-flash": "gemini-2.5-pro",
+}
+
 async def generate_gemini_analysis(
     business: BusinessProfile,
     financials: FinancialInputs,
     report: FinancialReport,
-    model_name: str = "gemini-3.5-flash",
+    model_name: str = "gemini-2.5-flash",
     custom_api_key: Optional[str] = None
 ) -> Tuple[Optional[StrategicAdvice], str]:
-    api_key = custom_api_key or os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        raise ValueError("No se proporcionó una API Key de Gemini. Ingrésala en la interfaz o configúrala en el servidor.")
+    api_key = (custom_api_key or os.getenv("GEMINI_API_KEY") or "").strip()
+    if not api_key or api_key in ("tu_api_key_aqui", "tu_api_key_de_google_aistudio_aqui"):
+        raise ValueError("No se proporcionó una API Key válida de Gemini. Ingrésala en el botón 'API Key Gemini' de la barra superior.")
 
-    # Sanitize model name if needed
-    clean_model = model_name.strip()
-    if not clean_model:
-        clean_model = "gemini-3.8-flash"
-    
-    # Priority order: selected model first, then guaranteed working flash models (free tier support)
-    ordered = [clean_model, "gemini-3.8-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.6-flash", "gemini-2.5-flash"]
+    clean_model = (model_name or "").strip()
+    clean_model = MODEL_ALIASES.get(clean_model, clean_model) or "gemini-2.5-flash"
+
+    # Priority order: selected real model first, then guaranteed working free-tier Gemini models
+    ordered = [clean_model, "gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash", "gemini-1.5-flash"]
     candidate_models = []
     for m in ordered:
         if m not in candidate_models:
@@ -226,19 +231,7 @@ async def generate_gemini_analysis(
                     last_error = f"El modelo '{model}' no está disponible (Error 404)."
 
     if not raw_text:
-        # Fallback Mock Response for when Gemini API fails completely (e.g. 503 Outage)
-        print(f"WARNING: Gemini API completely failed. Falling back to Mock. Last error: {last_error}")
-        raw_text = """{
-            "viability_score": 85,
-            "verdict": "Proyecto Viable (Generado Automáticamente por Caída de API)",
-            "executive_summary": "No pudimos conectar con los servidores de inteligencia artificial debido a una saturación en Google (Error 503). Sin embargo, con base en tus números, el proyecto es matemáticamente rentable. Te recomendamos revisar el VAN y el Punto de Equilibrio.",
-            "location_analysis": "Análisis pendiente (Servidores de IA no disponibles).",
-            "competition_analysis": "Análisis pendiente (Servidores de IA no disponibles).",
-            "cost_structure_analysis": "Tus márgenes matemáticos son positivos. Intenta generar el reporte más tarde para obtener un análisis profundo de tu estructura de costos.",
-            "risks_matrix": [],
-            "action_plan_steps": ["Reintentar el análisis en unos minutos", "Revisar flujos mensuales manualmente"],
-            "growth_tactics": ["Fidelización de clientes actuales"]
-        }"""
+        raise ValueError(last_error or "No se pudo conectar con Gemini API. Verifica que tu API Key sea válida y tenga cuota disponible.")
 
     # Parse JSON from raw_text
     clean_json_str = raw_text.strip()

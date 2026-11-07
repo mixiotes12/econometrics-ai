@@ -82,8 +82,8 @@
   <!-- Font Awesome & Chart.js -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="stylesheet" href="style.css?v=20261106_3">
-  <link rel="stylesheet" href="studio-theme.css?v=20261106_3">
+  <link rel="stylesheet" href="style.css?v=20261107_1">
+  <link rel="stylesheet" href="studio-theme.css?v=20261107_1">
 </head>
 <body class="bg-[#0a0a0b] text-zinc-100 flex flex-col min-h-screen">
 
@@ -148,14 +148,9 @@
           <span id="apiKeyStatusLabel">API Key</span>
         </button>
 
-        <button id="exportPdfBtn" class="hidden flex items-center gap-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs px-3 py-2 rounded-xl transition-all text-zinc-300 cursor-pointer">
+        <button id="exportPdfBtn" type="button" class="flex items-center gap-2 bg-zinc-900 hover:bg-zinc-800 border border-[#c5a059]/40 text-xs px-3 py-2 rounded-xl transition-all text-[#d4b26f] font-semibold cursor-pointer">
           <i class="fa-solid fa-print"></i>
-          <span class="hidden sm:inline">Imprimir / PDF</span>
-        </button>
-
-        <button id="exportCsvBtn" class="hidden flex items-center gap-2 bg-zinc-900 hover:bg-zinc-800 border border-[#c5a059]/40 text-xs px-3 py-2 rounded-xl transition-all text-[#d4b26f] font-medium cursor-pointer">
-          <i class="fa-solid fa-file-excel"></i>
-          <span class="hidden sm:inline">Exportar CSV</span>
+          <span class="hidden sm:inline">Imprimir / PDF Completo</span>
         </button>
       </div>
     </div>
@@ -185,13 +180,13 @@
       <div class="mb-5">
         <label class="block text-xs font-medium text-zinc-300 mb-1">Modelo de Gemini (Cuota Gratuita AI Studio)</label>
         <select id="geminiModelSelect" class="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#c5a059]">
-          <option value="gemini-3.8-flash" selected>gemini-3.8-flash (Recomendado • Última Generación)</option>
-          <option value="gemini-3.5-flash">gemini-3.5-flash (Alta Disponibilidad)</option>
-          <option value="gemini-3.5-flash-lite">gemini-3.5-flash-lite (Ultra Rápido)</option>
-          <option value="gemini-3.6-flash">gemini-3.6-flash (Equilibrado)</option>
-          <option value="gemini-2.5-flash">gemini-2.5-flash (LTS / Retrocompatible)</option>
+          <option value="gemini-2.5-flash" selected>gemini-2.5-flash (Recomendado • Rápido y Gratuito)</option>
+          <option value="gemini-2.5-flash-lite">gemini-2.5-flash-lite (Alta Velocidad • Cuota Ligera)</option>
+          <option value="gemini-2.5-pro">gemini-2.5-pro (Razonamiento Profundo)</option>
+          <option value="gemini-2.0-flash">gemini-2.0-flash (Alta Compatibilidad)</option>
+          <option value="gemini-1.5-flash">gemini-1.5-flash (Respaldo Estable)</option>
         </select>
-        <p class="text-[11px] text-zinc-400 mt-1">Modelos con soporte en el nivel gratuito de Google AI Studio.</p>
+        <p class="text-[11px] text-zinc-400 mt-1">Modelos oficiales vigentes con soporte en el nivel gratuito de Google AI Studio.</p>
       </div>
       <div class="flex justify-end gap-2">
         <button id="saveApiKeyBtn" class="bg-[#c5a059] hover:bg-[#d4b26f] text-zinc-950 text-xs font-bold px-4 py-2 rounded-xl transition-all">Guardar Configuración</button>
@@ -265,10 +260,6 @@
       </div>
 
       <div class="flex items-center gap-2 min-w-max">
-        <button type="button" id="quickCalcBtn" class="bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 text-xs px-3.5 py-2 rounded-xl transition-all font-medium flex items-center gap-1.5">
-          <i class="fa-solid fa-calculator text-[#d4b26f]"></i>
-          <span>Cálculo Rápido</span>
-        </button>
         <button type="button" id="runFullAnalysisBtn" class="bg-white hover:bg-zinc-200 text-zinc-950 font-bold text-xs px-4 py-2 rounded-xl transition-all shadow-sm flex items-center gap-2">
           <i class="fa-solid fa-wand-magic-sparkles text-[#a3803f]"></i>
           <span>Dictamen Estratégico IA</span>
@@ -913,8 +904,8 @@
           <button type="button" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-semibold px-4 py-2.5 rounded-xl transition-all" onclick="switchTab(4)">
             <i class="fa-solid fa-arrow-left mr-1"></i> Anterior
           </button>
-          <button type="button" id="calcAndGoTab5Btn" class="bg-[#c5a059] hover:bg-[#d4b26f] text-zinc-950 text-xs font-bold px-5 py-2.5 rounded-xl transition-all flex items-center gap-2">
-            <span>Calcular y Ver Resultados</span>
+          <button type="button" id="calcAndGoTab5Btn" class="bg-[#c5a059] hover:bg-[#d4b26f] text-zinc-950 text-xs font-bold px-5 py-2.5 rounded-xl transition-all flex items-center gap-2" onclick="switchTab(6)">
+            <span>Siguiente: Diagnóstico y Reporte</span>
             <i class="fa-solid fa-arrow-right"></i>
           </button>
         </div>
@@ -929,35 +920,157 @@
           <i class="fa-solid fa-circle-notch"></i>
         </div>
         <div>
-          <h3 class="text-base font-bold text-white">Procesando Dictamen Estratégico...</h3>
-          <p class="text-xs text-zinc-400 max-w-md mx-auto mt-1">Evaluando viabilidad financiera, micro-localización, estructura de costos y generando plan estratégico de mitigación.</p>
+          <h3 class="text-base font-bold text-white">Consultando a Gemini AI en Tiempo Real...</h3>
+          <p class="text-xs text-zinc-400 max-w-md mx-auto mt-1">Enviando perfil de negocio, ubicación, estructura de costos y flujos proyectados a Google Gemini con tu API Key para generar el dictamen personalizado.</p>
         </div>
       </div>
 
-      <!-- STATUS BANNER -->
+      <!-- 1. DICTAMEN ESTRATÉGICO REAL CON GEMINI AI (AL PRINCIPIO) -->
+      <div id="geminiReportSection" class="glass-panel p-6 rounded-[20px] border border-[#c5a059]/40 space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-zinc-800">
+          <div class="flex items-center gap-3">
+            <div id="geminiSectionIconBox" class="w-11 h-11 rounded-xl bg-zinc-900 border border-[#c5a059]/40 flex items-center justify-center text-[#d4b26f] shadow">
+              <i class="fa-solid fa-wand-magic-sparkles text-lg"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2 flex-wrap">
+                <h2 class="text-base font-bold text-white">Dictamen Estratégico con Inteligencia Artificial (Gemini AI)</h2>
+                <span id="geminiSectionStatusBadge" class="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-zinc-800 text-zinc-400 border border-zinc-700">Pendiente de ejecutar con API Key</span>
+                <span id="viabilityScoreBadge" class="hidden px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#c5a059] text-zinc-950 shadow">Score IA: 85/100</span>
+              </div>
+              <p class="text-xs text-zinc-400">Análisis cualitativo profundo generado en vivo por Google Gemini usando tu API Key y todos los datos del proyecto.</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 no-print">
+            <span id="geminiTimestampBadge" class="text-[11px] text-zinc-400"></span>
+            <button id="reanalyzeBtn" type="button" class="bg-[#c5a059] hover:bg-[#d4b26f] text-zinc-950 text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow flex items-center gap-1.5 cursor-pointer">
+              <i class="fa-solid fa-brain"></i>
+              <span>Analizar con Gemini AI</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Executive Summary IA -->
+        <div>
+          <h4 class="text-xs font-bold uppercase tracking-wider text-[#d4b26f] mb-2 flex items-center gap-1.5">
+            <i class="fa-solid fa-file-lines"></i> Dictamen Ejecutivo de Gemini AI
+          </h4>
+          <p id="geminiExecutiveSummary" class="text-sm text-zinc-300 leading-relaxed bg-zinc-900/60 p-4 rounded-xl border border-zinc-800">
+            Configura tu <strong>API Key de Gemini</strong> en la barra superior y presiona <strong>"Analizar con Gemini AI"</strong> para que la inteligencia artificial evalúe tu modelo de negocio, ubicación, competencia y flujos financieros.
+          </p>
+        </div>
+
+        <!-- Detalles del Dictamen IA (Se muestran al generarse con Gemini) -->
+        <div id="geminiDetailsContainer" class="space-y-5">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div class="bg-zinc-900/60 p-4 rounded-xl border border-zinc-800">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-zinc-200 mb-2 flex items-center gap-1.5">
+                <i class="fa-solid fa-map-location-dot text-[#d4b26f]"></i> Evaluación IA de Ubicación & Tráfico
+              </h4>
+              <p id="geminiLocationAnalysis" class="text-xs text-zinc-300 leading-relaxed">
+                Pendiente de análisis con Gemini AI.
+              </p>
+            </div>
+
+            <div class="bg-zinc-900/60 p-4 rounded-xl border border-zinc-800">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-zinc-200 mb-2 flex items-center gap-1.5">
+                <i class="fa-solid fa-shield-halved text-[#d4b26f]"></i> Evaluación IA de Competencia & Diferenciador
+              </h4>
+              <p id="geminiCompetitionAnalysis" class="text-xs text-zinc-300 leading-relaxed">
+                Pendiente de análisis con Gemini AI.
+              </p>
+            </div>
+          </div>
+
+          <div class="bg-zinc-900/60 p-4 rounded-xl border border-zinc-800">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-[#d4b26f] mb-2 flex items-center gap-1.5">
+              <i class="fa-solid fa-calculator"></i> Recomendación IA sobre Estructura de Costos y Precios
+            </h4>
+            <p id="geminiCostAnalysis" class="text-xs text-zinc-300 leading-relaxed">
+              Pendiente de análisis con Gemini AI.
+            </p>
+          </div>
+
+          <div>
+            <h4 class="text-xs font-bold uppercase tracking-wider text-rose-300 mb-2 flex items-center gap-1.5">
+              <i class="fa-solid fa-triangle-exclamation"></i> Matriz de Riesgos Detectados por IA y Mitigación
+            </h4>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-zinc-900 text-zinc-400 font-semibold border-b border-zinc-800">
+                  <tr>
+                    <th class="py-2.5 px-3">Categoría</th>
+                    <th class="py-2.5 px-3">Riesgo Identificado</th>
+                    <th class="py-2.5 px-3">Severidad</th>
+                    <th class="py-2.5 px-3">Estrategia de Mitigación</th>
+                  </tr>
+                </thead>
+                <tbody id="geminiRisksTableBody" class="divide-y divide-slate-800/80 text-zinc-300">
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div class="bg-zinc-900/60 p-4 rounded-xl border border-zinc-800">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-[#d4b26f] mb-3 flex items-center gap-1.5">
+                <i class="fa-solid fa-list-check"></i> Plan de Acción Recomendado por IA
+              </h4>
+              <ul id="geminiActionPlanList" class="space-y-2 text-xs text-zinc-300"></ul>
+            </div>
+
+            <div class="bg-zinc-900/60 p-4 rounded-xl border border-zinc-800">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-white mb-3 flex items-center gap-1.5">
+                <i class="fa-solid fa-arrow-trend-up text-[#d4b26f]"></i> Tácticas IA de Crecimiento
+              </h4>
+              <ul id="geminiGrowthList" class="space-y-2 text-xs text-zinc-300"></ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. DIAGNÓSTICO MATEMÁTICO Y FINANCIERO AUTOMÁTICO -->
       <div id="viabilityBanner" class="p-5 rounded-[20px] border flex flex-col sm:flex-row sm:items-center justify-between gap-4 glass-panel">
         <div class="flex items-center gap-4">
           <div id="viabilityIconBox" class="w-12 h-12 rounded-xl flex items-center justify-center text-xl shadow-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
             <i class="fa-solid fa-circle-check"></i>
           </div>
           <div>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 flex-wrap">
               <span id="viabilityStatusText" class="font-bold text-base text-white">Proyecto Altamente Viable</span>
-              <span id="viabilityScoreBadge" class="hidden px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#c5a059] text-zinc-950 shadow">Score: 85/100</span>
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-zinc-800 text-[#d4b26f] border border-[#c5a059]/30">Cálculo Automático en Tiempo Real</span>
             </div>
-            <p id="viabilityVerdictSub" class="text-xs text-zinc-400 mt-0.5">El proyecto supera la tasa de descuento exigida con un retorno saludable.</p>
+            <p id="viabilityVerdictSub" class="text-xs text-zinc-300 mt-1">El proyecto supera la tasa de descuento exigida con un retorno saludable.</p>
           </div>
         </div>
 
-        <div class="flex flex-wrap items-center gap-2">
-          <button id="tab6ExportCsvBtn" type="button" class="bg-zinc-900 hover:bg-zinc-800 border border-[#c5a059]/40 text-[#d4b26f] text-xs font-semibold px-3.5 py-2 rounded-xl transition-all shadow flex items-center gap-1.5 no-print cursor-pointer">
-            <i class="fa-solid fa-file-excel"></i>
-            <span>Exportar Excel / CSV</span>
+        <div class="flex flex-wrap items-center gap-2 no-print">
+          <button type="button" onclick="if(window.printFullStudioReport) window.printFullStudioReport(); else window.print();" class="bg-zinc-900 hover:bg-zinc-800 border border-[#c5a059]/40 text-[#d4b26f] text-xs font-semibold px-4 py-2 rounded-xl transition-all shadow flex items-center gap-1.5 cursor-pointer">
+            <i class="fa-solid fa-print"></i>
+            <span>Imprimir / PDF Completo</span>
           </button>
-          <button id="reanalyzeBtn" class="bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-bold px-4 py-2 rounded-xl transition-all shadow flex items-center gap-1.5 no-print">
-            <i class="fa-solid fa-brain text-[#a3803f]"></i>
-            <span>Solicitar Dictamen IA</span>
-          </button>
+        </div>
+      </div>
+
+      <!-- SÍNTESIS CUANTITATIVA AUTOMÁTICA (ESTRUCTURA DE COSTOS, EQUILIBRIO Y VIABILIDAD) -->
+      <div id="autoQuantDiagnosisSection" class="glass-panel p-5 rounded-[20px] border border-zinc-800 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-zinc-900/70 p-4 rounded-xl border border-zinc-800">
+          <div class="text-xs font-bold uppercase tracking-wider text-[#d4b26f] mb-1.5 flex items-center gap-1.5">
+            <i class="fa-solid fa-coins"></i> Diagnóstico de Rentabilidad y Flujos
+          </div>
+          <p id="autoQuantRentabilidadText" class="text-xs text-zinc-300 leading-relaxed">Calculando métricas de valor presente neto y tasa interna de retorno...</p>
+        </div>
+        <div class="bg-zinc-900/70 p-4 rounded-xl border border-zinc-800">
+          <div class="text-xs font-bold uppercase tracking-wider text-[#d4b26f] mb-1.5 flex items-center gap-1.5">
+            <i class="fa-solid fa-scale-unbalanced"></i> Diagnóstico de Costos y Punto de Equilibrio
+          </div>
+          <p id="autoQuantCostosText" class="text-xs text-zinc-300 leading-relaxed">Calculando estructura de margen de contribución y cobertura de costos fijos...</p>
+        </div>
+        <div class="bg-zinc-900/70 p-4 rounded-xl border border-zinc-800">
+          <div class="text-xs font-bold uppercase tracking-wider text-[#d4b26f] mb-1.5 flex items-center gap-1.5">
+            <i class="fa-solid fa-shield-heart"></i> Diagnóstico de Riesgo Operativo y Mermas
+          </div>
+          <p id="autoQuantRiesgoText" class="text-xs text-zinc-300 leading-relaxed">Evaluando margen de seguridad e impacto de mermas sobre utilidad neta...</p>
         </div>
       </div>
 
@@ -1240,110 +1353,6 @@
         </div>
       </details>
 
-      <!-- GEMINI STRATEGIC CONSULTANCY SECTION -->
-      <div id="geminiReportSection" class="glass-panel p-6 rounded-[20px] border border-zinc-800 space-y-6">
-        <div class="flex items-center justify-between pb-4 border-b border-zinc-800">
-          <div class="flex items-center gap-3">
-            <div id="geminiSectionIconBox" class="w-10 h-10 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 shadow">
-              <i class="fa-solid fa-brain"></i>
-            </div>
-            <div>
-              <div class="flex items-center gap-2">
-                <h2 class="text-base font-bold text-white">Dictamen Estratégico y Consultoría Ejecutiva</h2>
-                <span id="geminiSectionStatusBadge" class="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-zinc-800 text-zinc-400 border border-zinc-700">Pendiente de análisis</span>
-              </div>
-              <p class="text-xs text-zinc-400">Evaluación cualitativa, micro-localización, ventajas competitivas y plan de acción.</p>
-            </div>
-          </div>
-          <span id="geminiTimestampBadge" class="text-[11px] text-zinc-400"></span>
-        </div>
-
-        <!-- Executive Summary -->
-        <div>
-          <h4 class="text-xs font-bold uppercase tracking-wider text-[#d4b26f] mb-2 flex items-center gap-1.5">
-            <i class="fa-solid fa-file-lines"></i> Diagnóstico Ejecutivo del Consultor
-          </h4>
-          <p id="geminiExecutiveSummary" class="text-sm text-zinc-300 leading-relaxed bg-zinc-900/60 p-4 rounded-xl border border-zinc-800">
-            Presiona el botón <strong>"Dictamen Estratégico IA"</strong> para generar el diagnóstico cualitativo profundo.
-          </p>
-        </div>
-
-        <!-- Location & Competition 2-col -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div class="bg-zinc-900/60 p-4 rounded-xl border border-zinc-800">
-            <h4 class="text-xs font-bold uppercase tracking-wider text-zinc-200 mb-2 flex items-center gap-1.5">
-              <i class="fa-solid fa-map-location-dot text-[#d4b26f]"></i> Análisis de Ubicación & Tráfico
-            </h4>
-            <p id="geminiLocationAnalysis" class="text-xs text-zinc-300 leading-relaxed">
-              Pendiente de generación.
-            </p>
-          </div>
-
-          <div class="bg-zinc-900/60 p-4 rounded-xl border border-zinc-800">
-            <h4 class="text-xs font-bold uppercase tracking-wider text-zinc-200 mb-2 flex items-center gap-1.5">
-              <i class="fa-solid fa-shield-halved text-[#d4b26f]"></i> Análisis de Competencia & Moat
-            </h4>
-            <p id="geminiCompetitionAnalysis" class="text-xs text-zinc-300 leading-relaxed">
-              Pendiente de generación.
-            </p>
-          </div>
-        </div>
-
-        <!-- Cost Structure Analysis -->
-        <div class="bg-zinc-900/60 p-4 rounded-xl border border-zinc-800">
-          <h4 class="text-xs font-bold uppercase tracking-wider text-[#d4b26f] mb-2 flex items-center gap-1.5">
-            <i class="fa-solid fa-calculator"></i> Diagnóstico de Estructura de Costos y Margen de Contribución
-          </h4>
-          <p id="geminiCostAnalysis" class="text-xs text-zinc-300 leading-relaxed">
-            Pendiente de generación.
-          </p>
-        </div>
-
-        <!-- Risks Matrix -->
-        <div>
-          <h4 class="text-xs font-bold uppercase tracking-wider text-rose-300 mb-2 flex items-center gap-1.5">
-            <i class="fa-solid fa-triangle-exclamation"></i> Matriz de Riesgos Principales y Mitigación
-          </h4>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs">
-              <thead class="bg-zinc-900 text-zinc-400 font-semibold border-b border-zinc-800">
-                <tr>
-                  <th class="py-2.5 px-3">Categoría</th>
-                  <th class="py-2.5 px-3">Riesgo Identificado</th>
-                  <th class="py-2.5 px-3">Severidad</th>
-                  <th class="py-2.5 px-3">Estrategia de Mitigación</th>
-                </tr>
-              </thead>
-              <tbody id="geminiRisksTableBody" class="divide-y divide-slate-800/80 text-zinc-300">
-                <!-- Dynamically rendered -->
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Action Plan & Growth Tactics -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div class="bg-zinc-900/60 p-4 rounded-xl border border-zinc-800">
-            <h4 class="text-xs font-bold uppercase tracking-wider text-[#d4b26f] mb-3 flex items-center gap-1.5">
-              <i class="fa-solid fa-list-check"></i> Plan de Acción Paso a Paso
-            </h4>
-            <ul id="geminiActionPlanList" class="space-y-2 text-xs text-zinc-300">
-              <!-- Dynamically rendered -->
-            </ul>
-          </div>
-
-          <div class="bg-zinc-900/60 p-4 rounded-xl border border-zinc-800">
-            <h4 class="text-xs font-bold uppercase tracking-wider text-white mb-3 flex items-center gap-1.5">
-              <i class="fa-solid fa-arrow-trend-up text-[#d4b26f]"></i> Tácticas para Maximizar Ganancias
-            </h4>
-            <ul id="geminiGrowthList" class="space-y-2 text-xs text-zinc-300">
-              <!-- Dynamically rendered -->
-            </ul>
-          </div>
-        </div>
-
-      </div>
-
       <!-- EXPORT DATA TO CONTROL OPERATIVO -->
       <div class="glass-panel p-6 rounded-[20px] border border-zinc-800/80 mt-6 no-print">
         <div class="flex items-center gap-3 mb-6 pb-4 border-b border-zinc-800">
@@ -1418,7 +1427,7 @@ window.mermaid = mermaid;
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 </script>
-<script src="studio-engine.js?v=20261106_3"></script>
+<script src="studio-engine.js?v=20261107_1"></script>
   <!-- MODAL DE SUGERENCIAS DE ADQUISICIÓN POR GEOLOCALIZACIÓN -->
   <div id="geoAcquisitionModal" class="fixed inset-0 z-[100] bg-black/80 hidden items-center justify-center p-4 backdrop-blur-sm overflow-y-auto">
     <div class="bg-zinc-900 border border-zinc-700 rounded-[20px] w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl my-6">

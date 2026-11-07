@@ -323,10 +323,20 @@ async def get_acquisition_suggestions(
     base_plan = generate_heuristic_acquisition_plan(b)
     
     # Si hay API Key de Gemini, enriquecer con análisis de IA
-    if api_key:
+    if api_key and api_key not in ("tu_api_key_aqui", "tu_api_key_de_google_aistudio_aqui"):
         try:
-            model = req.gemini_model or "gemini-3.8-flash"
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+            alias_map = {
+                "gemini-3.8-flash": "gemini-2.5-flash",
+                "gemini-3.5-flash": "gemini-2.5-flash",
+                "gemini-3.5-flash-lite": "gemini-2.5-flash-lite",
+                "gemini-3.6-flash": "gemini-2.5-pro",
+            }
+            req_model = (req.gemini_model or "gemini-2.5-flash").strip()
+            req_model = alias_map.get(req_model, req_model) or "gemini-2.5-flash"
+            candidate_models = []
+            for m in [req_model, "gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash", "gemini-1.5-flash"]:
+                if m not in candidate_models:
+                    candidate_models.append(m)
             prompt = f"""
             Eres un experto en Cadena de Suministro (Supply Chain), Logística y Adquisiciones comerciales en México.
             Analiza el siguiente negocio y genera recomendaciones estratégicas de compra de productos e insumos:
@@ -337,7 +347,7 @@ async def get_acquisition_suggestions(
             - Municipio / Ciudad: {b.municipality or 'No especificado'}
             - Tipo de Zona: {b.zone_type or 'Corredor comercial'}
             - Descripción: {b.description}
-            - Inversión Inicial estimada: ${b.target_market}
+            - Mercado Objetivo: {b.target_market}
 
             Responde estrictamente en formato JSON con las siguientes claves:
             {{
@@ -353,32 +363,34 @@ async def get_acquisition_suggestions(
               ]
             }}
             """
-            async with httpx.AsyncClient(timeout=25) as client:
-                resp = await client.post(url, json={
-                    "contents": [{"parts": [{"text": prompt}]}],
-                    "generationConfig": {"temperature": 0.2, "responseMimeType": "application/json"}
-                })
-                if resp.status_code == 200:
-                    data = resp.json()
-                    raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
-                    parsed = json.loads(raw_text)
-                    
-                    products = [KeyProductSuggestion(**p) for p in parsed.get("recommended_key_products", [])] or base_plan.recommended_key_products
-                    calendar = [SeasonalCalendarItem(**c) for c in parsed.get("seasonal_buying_calendar", [])] or base_plan.seasonal_buying_calendar
-                    
-                    return AcquisitionSuggestionResponse(
-                        state=b.state or "Ciudad de México",
-                        zone_type=b.zone_type or "Corredor comercial",
-                        sector=b.sector or "Comercio",
-                        commercial_branch=b.commercial_branch or b.business_type or "Comercio",
-                        regional_supply_strategy=parsed.get("regional_supply_strategy", base_plan.regional_supply_strategy),
-                        local_vs_import_verdict=parsed.get("local_vs_import_verdict", base_plan.local_vs_import_verdict),
-                        logistics_and_freight_insights=parsed.get("logistics_and_freight_insights", base_plan.logistics_and_freight_insights),
-                        recommended_key_products=products,
-                        seasonal_buying_calendar=calendar,
-                        local_competitive_pricing=parsed.get("local_competitive_pricing", base_plan.local_competitive_pricing),
-                        generated_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    )
+            async with httpx.AsyncClient(timeout=30) as client:
+                for model in candidate_models:
+                    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+                    resp = await client.post(url, json={
+                        "contents": [{"parts": [{"text": prompt}]}],
+                        "generationConfig": {"temperature": 0.2, "responseMimeType": "application/json"}
+                    })
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
+                        parsed = json.loads(raw_text)
+                        
+                        products = [KeyProductSuggestion(**p) for p in parsed.get("recommended_key_products", [])] or base_plan.recommended_key_products
+                        calendar = [SeasonalCalendarItem(**c) for c in parsed.get("seasonal_buying_calendar", [])] or base_plan.seasonal_buying_calendar
+                        
+                        return AcquisitionSuggestionResponse(
+                            state=b.state or "Ciudad de México",
+                            zone_type=b.zone_type or "Corredor comercial",
+                            sector=b.sector or "Comercio",
+                            commercial_branch=b.commercial_branch or b.business_type or "Comercio",
+                            regional_supply_strategy=parsed.get("regional_supply_strategy", base_plan.regional_supply_strategy),
+                            local_vs_import_verdict=parsed.get("local_vs_import_verdict", base_plan.local_vs_import_verdict),
+                            logistics_and_freight_insights=parsed.get("logistics_and_freight_insights", base_plan.logistics_and_freight_insights),
+                            recommended_key_products=products,
+                            seasonal_buying_calendar=calendar,
+                            local_competitive_pricing=parsed.get("local_competitive_pricing", base_plan.local_competitive_pricing),
+                            generated_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        )
         except Exception:
             # Si hay cualquier fallo de red o API de Gemini, fallback a la heurística especializada
             pass

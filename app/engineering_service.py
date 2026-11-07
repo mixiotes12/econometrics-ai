@@ -8,26 +8,32 @@ from .models import (
     ProcessRequest, FlowchartResponse, ActivityItem, ConsumableItem
 )
 
+MODEL_ALIASES = {
+    "gemini-3.8-flash": "gemini-2.5-flash",
+    "gemini-3.5-flash": "gemini-2.5-flash",
+    "gemini-3.5-flash-lite": "gemini-2.5-flash-lite",
+    "gemini-3.6-flash": "gemini-2.5-pro",
+}
+
 async def _call_gemini(prompt: str, system_instruction: str, api_key: str, model_name: str) -> str:
-    clean_model = model_name.strip() if model_name else "gemini-3.8-flash"
-    if not clean_model:
-        clean_model = "gemini-3.8-flash"
-        
-    ordered = [clean_model, "gemini-3.8-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-2.5-flash"]
+    clean_model = (model_name or "").strip()
+    clean_model = MODEL_ALIASES.get(clean_model, clean_model) or "gemini-2.5-flash"
+
+    ordered = [clean_model, "gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash", "gemini-1.5-flash"]
     candidate_models = []
     for m in ordered:
         if m not in candidate_models:
             candidate_models.append(m)
-            
+
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],
         "systemInstruction": {"parts": [{"text": system_instruction}]},
         "generationConfig": {"temperature": 0.2, "topP": 0.95, "responseMimeType": "application/json"}
     }
-    
+
+    last_err = "Fallo la comunicación con Gemini API"
     async with httpx.AsyncClient(timeout=90.0) as client:
         for model in candidate_models:
-            success = False
             for api_version in ["v1beta", "v1"]:
                 url = f"https://generativelanguage.googleapis.com/{api_version}/models/{model}:generateContent?key={api_key}"
                 try:
@@ -37,10 +43,17 @@ async def _call_gemini(prompt: str, system_instruction: str, api_key: str, model
                         candidates = data.get("candidates", [])
                         if candidates:
                             raw_text = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-                            return raw_text
-                except Exception:
-                    pass
-    raise Exception("Fallo la comunicación con Gemini API")
+                            if raw_text:
+                                return raw_text
+                    elif response.status_code in (400, 403):
+                        try:
+                            last_err = response.json().get("error", {}).get("message", response.text)
+                        except Exception:
+                            last_err = response.text
+                        break
+                except Exception as exc:
+                    last_err = str(exc)
+    raise Exception(last_err)
 
 def _parse_json(raw_text: str) -> dict:
     clean_json_str = raw_text.strip()

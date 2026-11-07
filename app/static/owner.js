@@ -81,25 +81,57 @@
   }
 
   // ---------- Carga Principal y Recálculo
-  async function loadAll() {
-    const days = +$("daysWindowSelect").value || 30;
-    const useRealVol = $("useRealSalesVolumeChk").checked;
+  async function loadAll(showFeedback = false) {
+    const btn = $("refreshRecalcBtn");
+    const origHtml = btn ? btn.innerHTML : "";
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-rotate fa-spin"></i> Recalculando...`;
+    }
 
-    const [liveData, recalcData] = await Promise.all([
-      api(`/api/ops/live-parameters?days=${days}`),
-      api(`/api/ops/recalculate`, {
-        method: "POST",
-        body: { days_window: days, use_real_sales_volume: useRealVol },
-      }),
-    ]);
+    try {
+      const days = +($("daysWindowSelect")?.value || 30);
+      const useRealVol = Boolean($("useRealSalesVolumeChk")?.checked);
 
-    lastLiveData = liveData;
-    lastRecalcData = recalcData;
+      const [liveData, recalcData] = await Promise.all([
+        api(`/api/ops/live-parameters?days=${days}`),
+        api(`/api/ops/recalculate`, {
+          method: "POST",
+          body: { days_window: days, use_real_sales_volume: useRealVol },
+        }),
+      ]);
 
-    renderDashboardAndComparison(liveData, recalcData);
-    renderAssetsTable(liveData.assets || [], liveData.breakdown);
-    renderExpensesAndPayroll(liveData.expenses || [], liveData.breakdown);
-    populateSimulatorInputs(recalcData.current_inputs);
+      lastLiveData = liveData;
+      lastRecalcData = recalcData;
+
+      renderDashboardAndComparison(liveData, recalcData);
+      renderAssetsTable(liveData.assets || [], liveData.breakdown);
+      renderExpensesAndPayroll(liveData.expenses || [], liveData.breakdown);
+      populateSimulatorInputs(recalcData.current_inputs);
+
+      if (showFeedback === true) {
+        const tsEl = $("recalcTimestamp");
+        if (tsEl) {
+          tsEl.textContent = `¡Recalculado con éxito! (${recalcData.generated_at})`;
+          tsEl.classList.add("text-emerald-300");
+        }
+      }
+    } catch (err) {
+      console.error("Error en loadAll ERP:", err);
+      const titleEl = $("bannerProjectTitle");
+      if (titleEl && titleEl.textContent.includes("Cargando")) {
+        titleEl.textContent = "Proyecto Activo · (Sincronizando ERP)";
+      }
+      const tsEl = $("recalcTimestamp");
+      if (tsEl) {
+        tsEl.textContent = `Aviso: ${err.message || "Error al sincronizar parámetros"}`;
+      }
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = origHtml || `<i class="fa-solid fa-rotate"></i> Recalcular`;
+      }
+    }
   }
 
   function renderDashboardAndComparison(liveData, recalcData) {
@@ -450,9 +482,9 @@
       if (e.key === "Enter") doLogin();
     });
 
-    $("refreshRecalcBtn").addEventListener("click", loadAll);
-    $("daysWindowSelect").addEventListener("change", loadAll);
-    $("useRealSalesVolumeChk").addEventListener("change", loadAll);
+    $("refreshRecalcBtn").addEventListener("click", () => loadAll(true));
+    $("daysWindowSelect").addEventListener("change", () => loadAll(true));
+    $("useRealSalesVolumeChk").addEventListener("change", () => loadAll(true));
 
     // Botón rápido para enviar los datos reales actuales a EconoMetrics Studio
     $("sendToStudioBtn").addEventListener("click", () => {

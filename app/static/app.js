@@ -26,6 +26,9 @@ document.addEventListener("DOMContentLoaded", async () => {
           const el = document.getElementById(id);
           if (el && val !== undefined && val !== null) el.value = val;
         };
+        if (typeof setCatalogInputMode === "function") {
+          setCatalogInputMode("simple");
+        }
         if (payload.project_name) setVal("businessName", payload.project_name);
         if (payload.business_type) setVal("businessType", payload.business_type);
         setVal("initialInvestment", f.initial_investment);
@@ -45,7 +48,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         updateSuggestedReserveHelper();
         updateBankAndShrinkageHelpers();
         scheduleAutoSave();
-        switchTab(4);
+        switchTab(5);
         await runQuickCalculation();
         showToast("Parámetros reales del establecimiento importados desde el Portal del Dueño.", true);
       }
@@ -56,11 +59,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   
   const transferredInvestment = localStorage.getItem("econometrics_transfer_investment");
   if(transferredInvestment) {
-    document.getElementById("initialInvestment").value = transferredInvestment;
+    const invEl = document.getElementById("initialInvestment");
+    if (invEl) invEl.value = transferredInvestment;
     localStorage.removeItem("econometrics_transfer_investment");
-    // Auto trigger quick calc
-    const quickCalcBtn = document.getElementById("quickCalcBtn");
-    if(quickCalcBtn) quickCalcBtn.click();
+    await runQuickCalculation();
   }
 });
 
@@ -103,18 +105,38 @@ function switchTab(tabIndex) {
   if (idx === 2 && typeof window.renderPendingMermaid === "function") {
     window.renderPendingMermaid();
   }
+  if (idx === 6 && typeof runQuickCalculation === "function") {
+    runQuickCalculation();
+  }
 }
 window.switchTab = switchTab;
 
 let hasServerApiKey = false;
 
+function getActiveGeminiApiKey() {
+  const fromStorage = (localStorage.getItem("gemini_api_key") || "").trim();
+  const fromInput = (document.getElementById("geminiApiKeyInput")?.value || "").trim();
+  const key = fromStorage || fromInput;
+  if (key && !fromStorage) {
+    localStorage.setItem("gemini_api_key", key);
+  }
+  return key;
+}
+
+function getActiveGeminiModel() {
+  const validModels = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.5-pro", "gemini-2.0-flash", "gemini-1.5-flash"];
+  const raw = document.getElementById("geminiModelSelect")?.value || localStorage.getItem("gemini_model") || "gemini-2.5-flash";
+  return validModels.includes(raw) ? raw : "gemini-2.5-flash";
+}
+
 // ----------------- API KEY & SETTINGS -----------------
 async function initApiKey() {
   const savedKey = localStorage.getItem("gemini_api_key") || "";
-  let savedModel = localStorage.getItem("gemini_model") || "gemini-3.8-flash";
-  const validModels = ["gemini-3.8-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.6-flash", "gemini-2.5-flash"];
+  let savedModel = localStorage.getItem("gemini_model") || "gemini-2.5-flash";
+  const validModels = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.5-pro", "gemini-2.0-flash", "gemini-1.5-flash"];
   if (!validModels.includes(savedModel)) {
-    savedModel = "gemini-3.8-flash";
+    savedModel = "gemini-2.5-flash";
+    localStorage.setItem("gemini_model", savedModel);
   }
 
   try {
@@ -201,10 +223,11 @@ function initEventListeners() {
   });
   document.getElementById("saveApiKeyBtn")?.addEventListener("click", () => {
     const key = document.getElementById("geminiApiKeyInput")?.value.trim() || "";
-    const model = document.getElementById("geminiModelSelect")?.value || "gemini-3.8-flash";
+    const model = getActiveGeminiModel();
     if (key) {
       localStorage.setItem("gemini_api_key", key);
       updateApiKeyBadge(true, "API Key: Configurada");
+      showToast("API Key de Gemini guardada correctamente.", true);
     } else {
       localStorage.removeItem("gemini_api_key");
       updateApiKeyBadge(hasServerApiKey, hasServerApiKey ? "API Key: Servidor Activa" : "API Key: Inactiva");
@@ -230,14 +253,10 @@ function initEventListeners() {
   });
 
   // Action Buttons
-  document.getElementById("quickCalcBtn")?.addEventListener("click", () => {
-    runQuickCalculation().then(() => switchTab(6));
-  });
-
   const calcAndGoBtn = document.getElementById("calcAndGoTab5Btn") || document.getElementById("calcAndGoTab3Btn");
   if (calcAndGoBtn) {
     calcAndGoBtn.addEventListener("click", () => {
-      runQuickCalculation().then(() => switchTab(6));
+      switchTab(6);
     });
   }
 
@@ -252,21 +271,7 @@ function initEventListeners() {
   const exportPdfBtn = document.getElementById("exportPdfBtn");
   if (exportPdfBtn) {
     exportPdfBtn.addEventListener("click", () => {
-      window.print();
-    });
-  }
-
-  const exportCsvBtn = document.getElementById("exportCsvBtn");
-  if (exportCsvBtn) {
-    exportCsvBtn.addEventListener("click", () => {
-      exportFinancialReportToCsv();
-    });
-  }
-
-  const tab6ExportCsvBtn = document.getElementById("tab6ExportCsvBtn");
-  if (tab6ExportCsvBtn) {
-    tab6ExportCsvBtn.addEventListener("click", () => {
-      exportFinancialReportToCsv();
+      printFullStudioReport();
     });
   }
 
@@ -505,6 +510,11 @@ function applyFormData(data) {
   setVal("geoZoneType", b.zone_type);
 
   setVal("initialInvestment", f.initial_investment);
+  const invEl = document.getElementById("initialInvestment");
+  if (invEl) {
+    invEl.removeAttribute("readonly");
+    invEl.classList.remove("bg-zinc-800", "cursor-not-allowed");
+  }
   setVal("discountRate", f.discount_rate_pct);
   setVal("bankRiskFreeRate", f.bank_risk_free_rate_pct !== undefined ? f.bank_risk_free_rate_pct : 10.5);
   setVal("shrinkageLossPct", f.shrinkage_risk_loss_pct !== undefined ? f.shrinkage_risk_loss_pct : 2.0);
@@ -813,7 +823,26 @@ function getFormData() {
   return { business, financials, engineering, product_catalog, catalog_mode };
 }
 
-// ----------------- QUICK FINANCIAL CALCULATION -----------------
+// ----------------- QUICK FINANCIAL CALCULATION & FULL PDF PRINT -----------------
+async function printFullStudioReport() {
+  await runQuickCalculation();
+  if (typeof window.renderPendingMermaid === "function") {
+    await window.renderPendingMermaid();
+  }
+  const detailsEls = Array.from(document.querySelectorAll("details.advanced-panel"));
+  const prevOpen = detailsEls.map(d => d.open);
+  detailsEls.forEach(d => { d.open = true; });
+
+  if (cashFlowChartInstance) cashFlowChartInstance.resize();
+  if (breakEvenChartInstance) breakEvenChartInstance.resize();
+
+  setTimeout(() => {
+    window.print();
+    detailsEls.forEach((d, idx) => { d.open = prevOpen[idx]; });
+  }, 200);
+}
+window.printFullStudioReport = printFullStudioReport;
+
 async function runQuickCalculation() {
   const { financials } = getFormData();
   try {
@@ -832,9 +861,8 @@ async function runQuickCalculation() {
     const report = await res.json();
     currentFinancialReport = report;
     renderFinancialReport(report);
-    document.getElementById("exportPdfBtn").classList.remove("hidden");
-    const exportCsvBtn = document.getElementById("exportCsvBtn");
-    if (exportCsvBtn) exportCsvBtn.classList.remove("hidden");
+    const pdfBtn = document.getElementById("exportPdfBtn");
+    if (pdfBtn) pdfBtn.classList.remove("hidden");
   } catch (err) {
     console.error("Calculation error:", err);
   }
@@ -842,19 +870,24 @@ async function runQuickCalculation() {
 
 // ----------------- FULL GEMINI ANALYSIS -----------------
 async function runFullGeminiAnalysis() {
-  const key = localStorage.getItem("gemini_api_key") || document.getElementById("geminiApiKeyInput").value.trim();
+  const key = getActiveGeminiApiKey();
   if (!key && !hasServerApiKey) {
-    document.getElementById("apiKeyModal").classList.remove("hidden");
-    alert("Por favor ingresa tu API Key de Gemini para continuar con el análisis estratégico.");
+    document.getElementById("apiKeyModal")?.classList.remove("hidden");
+    showToast("Ingresa tu API Key de Gemini para ejecutar el Dictamen Estratégico con IA.", false);
     return;
   }
 
-  const model = document.getElementById("geminiModelSelect").value || localStorage.getItem("gemini_model") || "gemini-3.5-flash";
-  const { business, financials } = getFormData();
+  const model = getActiveGeminiModel();
+  const { business, financials, engineering } = getFormData();
+  // Enriquecer descripción del negocio con datos de ingeniería/procesos si existen
+  const enrichedBusiness = { ...business };
+  if (engineering && engineering.process_description) {
+    enrichedBusiness.description = `${business.description || ""} | Proceso productivo: ${engineering.process_description}`.trim();
+  }
 
   switchTab(6);
   const spinner = document.getElementById("aiLoadingSpinner");
-  spinner.classList.remove("hidden");
+  if (spinner) spinner.classList.remove("hidden");
 
   try {
     const headers = { "Content-Type": "application/json" };
@@ -862,7 +895,7 @@ async function runFullGeminiAnalysis() {
       headers["x-gemini-api-key"] = key;
     }
     const payload = {
-      business,
+      business: enrichedBusiness,
       financials,
       gemini_model: model
     };
@@ -887,11 +920,13 @@ async function runFullGeminiAnalysis() {
     renderFinancialReport(fullData.financial_report);
     if (fullData.strategic_advice) {
       renderStrategicAdvice(fullData.strategic_advice, fullData.generated_at);
+      showToast("Dictamen Estratégico generado con éxito por Gemini AI.", true);
     }
   } catch (err) {
-    alert("Error de análisis: " + err.message);
+    showToast("Error en Gemini AI: " + err.message, false);
+    alert("No se pudo generar el dictamen con Gemini AI:\n\n" + err.message);
   } finally {
-    spinner.classList.add("hidden");
+    if (spinner) spinner.classList.add("hidden");
   }
 }
 
@@ -1017,6 +1052,27 @@ function renderFinancialReport(report) {
   // Render Financial Ratios 360° (Fase 4)
   if (report.ratios) {
     renderFinancialRatios(report.ratios);
+  }
+
+  // Render Síntesis Cuantitativa Automática (incorporada en los cálculos normales sin requerir IA)
+  const rentEl = document.getElementById("autoQuantRentabilidadText");
+  const costEl = document.getElementById("autoQuantCostosText");
+  const riskEl = document.getElementById("autoQuantRiesgoText");
+  if (rentEl) {
+    const irrTxt = report.irr_pct !== null ? `${report.irr_pct.toFixed(1)}%` : "N/D";
+    const pbTxt = report.payback_years !== null ? `${report.payback_years.toFixed(1)} años` : "mayor al horizonte";
+    rentEl.innerHTML = report.npv >= 0
+      ? `El modelo crea valor neto positivo por <strong>${fmt(report.npv)}</strong> con una TIR de <strong>${irrTxt}</strong> (superando el WACC de ${report.discount_rate_pct}%). La inversión inicial de ${fmt(report.initial_investment)} se recupera en <strong>${pbTxt}</strong> con un ROI anual promedio de <strong>${report.roi_annual_avg_pct.toFixed(1)}%</strong>.`
+      : `Con los parámetros actuales el VAN es de <strong>${fmt(report.npv)}</strong> (TIR: ${irrTxt} vs WACC: ${report.discount_rate_pct}%). Se requiere ajustar margen unitario, volumen o inversión inicial para superar el costo de capital.`;
+  }
+  if (costEl && report.break_even) {
+    const be = report.break_even;
+    costEl.innerHTML = `Cada unidad vendida aporta <strong>${fmt(be.unit_contribution_margin)}</strong> (${be.contribution_margin_ratio_pct.toFixed(1)}% de margen de contribución). Necesitas vender <strong>${Math.round(be.monthly_breakeven_units).toLocaleString()} uds/mes</strong> (${fmt(be.monthly_breakeven_revenue)}/mes) para cubrir todos los gastos fijos y reservas.`;
+  }
+  if (riskEl && report.break_even) {
+    const mos = report.break_even.margin_of_safety_pct;
+    const pessNpv = report.scenarios?.pessimistic?.npv ?? 0;
+    riskEl.innerHTML = `Tu margen de seguridad operativo es de <strong>${mos.toFixed(1)}%</strong> sobre el punto de equilibrio, absorbiendo una merma mensual estimada de <strong>${fmt(report.shrinkage_monthly_loss || 0)}</strong>. En un escenario pesimista (-20% ventas), el VAN sería de <strong>${fmt(pessNpv)}</strong>.`;
   }
 }
 
@@ -1350,9 +1406,11 @@ function initEngineeringAndTrackerListeners() {
   const useInvestmentBtn = document.getElementById("useInvestmentBtn");
   
   let selectedBudgetCost = 0;
+  let selectedBudgetOption = null;
   let lastBudgetsData = null;
   let lastFlowchartData = null;
   let pendingMermaidCode = null;
+  window.getSelectedBudgetOption = () => selectedBudgetOption;
 
   function createEquipmentRow(item = {}) {
     const div = document.createElement("div");
@@ -1388,7 +1446,14 @@ function initEngineeringAndTrackerListeners() {
     });
 
     if(items.length === 0) {
-      alert("Añade al menos un equipo.");
+      showToast("Añade al menos un equipo para cotizar presupuestos.", false);
+      return;
+    }
+
+    const apiKey = getActiveGeminiApiKey();
+    if (!hasServerApiKey && !apiKey) {
+      showToast("Configura tu API Key de Google Gemini para generar presupuestos con IA.", false);
+      document.getElementById("apiKeyModal")?.classList.remove("hidden");
       return;
     }
 
@@ -1397,22 +1462,29 @@ function initEngineeringAndTrackerListeners() {
     budgetsLoader.classList.add("flex");
     
     try {
-      const apiKey = localStorage.getItem("gemini_api_key");
       const headers = { "Content-Type": "application/json" };
       if(apiKey) headers["x-gemini-api-key"] = apiKey;
 
       const res = await fetch("/api/generate-budgets", {
         method: "POST",
         headers,
-        body: JSON.stringify({ items })
+        body: JSON.stringify({
+          items,
+          custom_api_key: apiKey || null,
+          gemini_model: getActiveGeminiModel()
+        })
       });
       
-      if(!res.ok) throw new Error(await res.text());
+      if(!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(formatApiError(errData) || `Error del servidor (${res.status})`);
+      }
       const data = await res.json();
       
       renderBudgets(data);
+      showToast("3 opciones de presupuesto generadas con Gemini AI.", true);
     } catch (e) {
-      alert("Error: " + e.message);
+      showToast("Error al cotizar con IA: " + e.message, false);
     } finally {
       budgetsLoader.classList.add("hidden");
       budgetsLoader.classList.remove("flex");
@@ -1422,6 +1494,7 @@ function initEngineeringAndTrackerListeners() {
   function renderBudgets(data) {
     lastBudgetsData = data;
     selectedBudgetCost = 0;
+    selectedBudgetOption = null;
     useInvestmentBtn.classList.add("hidden");
     budgetsGrid.innerHTML = "";
     
@@ -1448,6 +1521,7 @@ function initEngineeringAndTrackerListeners() {
         document.querySelectorAll("#budgetsGrid > div").forEach(c => c.classList.remove("ring-2", "ring-emerald-500"));
         card.classList.add("ring-2", "ring-emerald-500");
         selectedBudgetCost = b.total_cost;
+        selectedBudgetOption = b;
         useInvestmentBtn.classList.remove("hidden");
       });
       
@@ -1458,23 +1532,25 @@ function initEngineeringAndTrackerListeners() {
     const currentInv = parseFloat(document.getElementById("initialInvestment")?.value || 0);
     const cards = budgetsGrid.querySelectorAll(":scope > div");
     let matchedCard = null;
-    let matchedCost = 0;
+    let matchedBudget = null;
     data.budgets.forEach((b, idx) => {
       if (Math.abs(b.total_cost - currentInv) < 1) {
         matchedCard = cards[idx];
-        matchedCost = b.total_cost;
+        matchedBudget = b;
       } else if (!matchedCard && (b.budget_type.toLowerCase().includes("están") || b.budget_type.toLowerCase().includes("estan"))) {
         matchedCard = cards[idx];
-        matchedCost = b.total_cost;
+        matchedBudget = b;
       }
     });
     if (!matchedCard && cards.length > 0) {
-      matchedCard = cards[Math.min(1, cards.length - 1)];
-      matchedCost = data.budgets[Math.min(1, cards.length - 1)].total_cost;
+      const idx = Math.min(1, cards.length - 1);
+      matchedCard = cards[idx];
+      matchedBudget = data.budgets[idx];
     }
-    if (matchedCard) {
+    if (matchedCard && matchedBudget) {
       matchedCard.classList.add("ring-2", "ring-emerald-500");
-      selectedBudgetCost = matchedCost;
+      selectedBudgetCost = matchedBudget.total_cost;
+      selectedBudgetOption = matchedBudget;
       useInvestmentBtn.classList.remove("hidden");
     }
     
@@ -1483,15 +1559,25 @@ function initEngineeringAndTrackerListeners() {
     scheduleAutoSave();
   }
 
-  useInvestmentBtn?.addEventListener("click", () => {
+  useInvestmentBtn?.addEventListener("click", async () => {
     const invInput = document.getElementById("initialInvestment");
     if (invInput) {
       invInput.value = selectedBudgetCost;
-      invInput.setAttribute("readonly", true);
-      invInput.classList.add("bg-zinc-800", "cursor-not-allowed");
+      invInput.removeAttribute("readonly");
+      invInput.classList.remove("bg-zinc-800", "cursor-not-allowed");
     }
-    showToast(`Inversión de $${selectedBudgetCost.toLocaleString('es-MX')} aplicada al modelo.`, true);
+    updateSuggestedReserveHelper();
+    updateBankAndShrinkageHelpers();
     scheduleAutoSave();
+    await runQuickCalculation();
+
+    // Sincronizar automáticamente la inversión y maquinaria del presupuesto con el ERP del Dueño
+    if (typeof window.syncPlanToErpBaseline === "function") {
+      await window.syncPlanToErpBaseline({ replaceAssets: true, silent: true });
+    }
+
+    const budgetName = selectedBudgetOption?.budget_type || "Seleccionado";
+    showToast(`Presupuesto "${budgetName}" ($${selectedBudgetCost.toLocaleString('es-MX')}) cargado al modelo y sincronizado con el ERP.`, true);
     switchTab(5);
   });
 
@@ -1508,29 +1594,46 @@ function initEngineeringAndTrackerListeners() {
 
   genFlowchartBtn?.addEventListener("click", async () => {
     const desc = processDesc.value.trim();
-    if(!desc) { alert("Describe el proceso primero."); return; }
+    if(!desc) {
+      showToast("Describe el proceso operativo primero.", false);
+      return;
+    }
+
+    const apiKey = getActiveGeminiApiKey();
+    if (!hasServerApiKey && !apiKey) {
+      showToast("Configura tu API Key de Google Gemini para generar el diagrama de procesos con IA.", false);
+      document.getElementById("apiKeyModal")?.classList.remove("hidden");
+      return;
+    }
 
     flowOutput.classList.add("hidden");
     flowLoader.classList.remove("hidden");
     flowLoader.classList.add("flex");
     
     try {
-      const apiKey = localStorage.getItem("gemini_api_key");
       const headers = { "Content-Type": "application/json" };
       if(apiKey) headers["x-gemini-api-key"] = apiKey;
 
       const res = await fetch("/api/generate-flowchart", {
         method: "POST",
         headers,
-        body: JSON.stringify({ process_description: desc })
+        body: JSON.stringify({
+          process_description: desc,
+          custom_api_key: apiKey || null,
+          gemini_model: getActiveGeminiModel()
+        })
       });
       
-      if(!res.ok) throw new Error(await res.text());
+      if(!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(formatApiError(errData) || `Error del servidor (${res.status})`);
+      }
       const data = await res.json();
       
-      renderFlowchart(data);
+      await renderFlowchart(data);
+      showToast("Diagrama de procesos y tabla de suministros generados con IA.", true);
     } catch (e) {
-      alert("Error: " + e.message);
+      showToast("Error al generar ingeniería de procesos: " + e.message, false);
     } finally {
       flowLoader.classList.add("hidden");
       flowLoader.classList.remove("flex");
@@ -1835,6 +1938,9 @@ async function openGeoAcquisitionModal() {
   if (badge) badge.textContent = `${state} • ${sector.split(' ')[0]}`;
   if (subtitle) subtitle.textContent = `Estrategia de abastecimiento y adquisición para ${branch} en ${state}`;
 
+  const activeKey = getActiveGeminiApiKey();
+  const activeModel = getActiveGeminiModel();
+
   const payload = {
     business: {
       name,
@@ -1850,14 +1956,13 @@ async function openGeoAcquisitionModal() {
       municipality,
       zone_type: zoneType
     },
-    custom_api_key: localStorage.getItem("gemini_api_key") || null,
-    gemini_model: localStorage.getItem("gemini_model") || "gemini-3.5-flash"
+    custom_api_key: activeKey || null,
+    gemini_model: activeModel
   };
 
   try {
     const headers = { "Content-Type": "application/json" };
-    const savedKey = localStorage.getItem("gemini_api_key");
-    if (savedKey) headers["X-Gemini-API-Key"] = savedKey;
+    if (activeKey) headers["X-Gemini-API-Key"] = activeKey;
 
     const res = await fetch("/api/geo/acquisition-suggestions", {
       method: "POST",
@@ -2199,6 +2304,84 @@ function exportFinancialReportToCsv() {
 }
 
 // ----------------- PUENTE CON EL PORTAL DEL DUEÑO (OPS / ERP) -----------------
+function buildAssetsToExportFromStudio(f, eng) {
+  const eqItems = Array.isArray(eng?.equipment_items) ? eng.equipment_items : [];
+  const selectedBudget = typeof window.getSelectedBudgetOption === "function" ? window.getSelectedBudgetOption() : null;
+  const detailsList = Array.isArray(selectedBudget?.details) ? selectedBudget.details : [];
+
+  // Si hay un presupuesto IA seleccionado con desglose de costos ("Horno: $45,000 MXN"), extraer costos reales
+  const parsedDetailCosts = detailsList.map((line) => {
+    const match = String(line).match(/\$\s*([\d,]+(?:\.\d+)?)/);
+    if (!match) return null;
+    const cost = parseFloat(match[1].replace(/,/g, ""));
+    const label = String(line).split(/[:$-]/)[0].trim();
+    return !isNaN(cost) && cost > 0 ? { label, cost } : null;
+  });
+
+  if (eqItems.length > 0) {
+    const totalInv = parseFloat(f.initial_investment || 0);
+    const count = eqItems.length;
+    const fallbackUnitCost = count > 0 && totalInv > 0 ? Math.round((totalInv * 0.65) / count) : 15000;
+
+    return eqItems.map((it, idx) => {
+      const parsed = parsedDetailCosts[idx];
+      const explicitCost = (parseFloat(it.price_standard || 0) * parseFloat(it.qty || 1));
+      const cost = (parsed && parsed.cost) || explicitCost || fallbackUnitCost;
+      return {
+        name: `${it.name || parsed?.label || "Equipo"} (${it.category || "Maquinaria"})`,
+        category: it.category || "Maquinaria Presupuestada",
+        purchase_cost: Math.round(cost),
+        useful_life_years: f.depreciation_years || 5,
+        monthly_maintenance: 0
+      };
+    }).filter(a => a.purchase_cost > 0);
+  }
+
+  // Si no hay renglones pero sí detalles del presupuesto IA seleccionado
+  const validParsed = parsedDetailCosts.filter(Boolean);
+  if (validParsed.length > 0) {
+    return validParsed.map(p => ({
+      name: p.label || "Equipo Presupuestado",
+      category: "Maquinaria Presupuestada",
+      purchase_cost: Math.round(p.cost),
+      useful_life_years: f.depreciation_years || 5,
+      monthly_maintenance: 0
+    }));
+  }
+
+  return [];
+}
+
+window.syncPlanToErpBaseline = async function({ replaceAssets = true, silent = false } = {}) {
+  const data = getFormData();
+  const b = data.business || {};
+  const f = data.financials || {};
+  const eng = data.engineering || {};
+  const assetsToExport = buildAssetsToExportFromStudio(f, eng);
+  const shouldReplace = Boolean(replaceAssets && assetsToExport.length > 0);
+
+  const res = await fetch("/api/ops/baseline", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      project_name: b.name || "Mi Negocio",
+      business_type: b.business_type || "Comercio / Servicios",
+      financials: f,
+      replace_assets: shouldReplace,
+      assets: shouldReplace ? assetsToExport : null
+    })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(formatApiError(err) || "No se pudo publicar el Plan Base al ERP.");
+  }
+  const result = await res.json();
+  if (!silent) {
+    showToast(`Plan Base "${b.name || 'Mi Proyecto'}" publicado en el Portal del Dueño exitosamente.`, true);
+  }
+  return result;
+};
+
 function initOpsBridgeListeners() {
   const publishBtn = document.getElementById("publishBaselineBtn");
   if (!publishBtn) return;
@@ -2208,21 +2391,7 @@ function initOpsBridgeListeners() {
     const b = data.business || {};
     const f = data.financials || {};
     const eng = data.engineering || {};
-
-    // Extraer maquinaria presupuestada si existe en la pestaña 3
-    let assetsToExport = [];
-    if (Array.isArray(eng.equipment_items) && eng.equipment_items.length > 0) {
-      const totalInv = parseFloat(f.initial_investment || 0);
-      const count = eng.equipment_items.length;
-      const estimatedUnitCost = count > 0 && totalInv > 0 ? Math.round((totalInv * 0.5) / count) : 15000;
-      assetsToExport = eng.equipment_items.map(it => ({
-        name: `${it.name || "Equipo"} (${it.category || "Maquinaria"})`,
-        category: it.category || "Maquinaria Presupuestada",
-        purchase_cost: (parseFloat(it.price_standard || 0) * parseFloat(it.qty || 1)) || estimatedUnitCost,
-        useful_life_years: f.depreciation_years || 5,
-        monthly_maintenance: 0
-      })).filter(a => a.purchase_cost > 0);
-    }
+    const assetsToExport = buildAssetsToExportFromStudio(f, eng);
 
     let replaceAssets = false;
     if (assetsToExport.length > 0) {
@@ -2236,19 +2405,7 @@ function initOpsBridgeListeners() {
     publishBtn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin text-xs"></i><span>Publicando...</span>`;
 
     try {
-      const res = await fetch("/api/ops/baseline", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          project_name: b.name || "Mi Negocio",
-          business_type: b.business_type || "Comercio / Servicios",
-          financials: f,
-          replace_assets: replaceAssets,
-          assets: replaceAssets ? assetsToExport : null
-        })
-      });
-      if (!res.ok) throw new Error("No se pudo publicar el Plan Base al ERP.");
-      showToast(`Plan Base "${b.name || 'Mi Proyecto'}" publicado en el Portal del Dueño exitosamente.`, true);
+      await window.syncPlanToErpBaseline({ replaceAssets, silent: false });
     } catch (e) {
       showToast(e.message || "Error al conectar con el Portal del Dueño", false);
     } finally {

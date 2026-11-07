@@ -492,11 +492,13 @@
         }
         if (liveRes.ok) {
           const live = await liveRes.json();
+          const unified = live.Unified || live.unified || {};
+          const brk = live.breakdown || {};
           document.getElementById("statHeadcount").textContent = `${live.hr?.headcount || 0} colab.`;
-          document.getElementById("statPayrollMonthly").textContent = `Nómina: ${fmtCurrency(live.hr?.monthly_total_payroll || 0)}/mes`;
-          document.getElementById("opsLiveFixed").textContent = fmtCurrency(live.Unified?.monthly_fixed_costs || 0);
-          document.getElementById("opsLiveVarCost").textContent = "$" + Number(live.Unified?.unit_variable_cost || 0).toFixed(2);
-          document.getElementById("opsLiveCapex").textContent = fmtCurrency(live.assets?.active_capex_total || 0);
+          document.getElementById("statPayrollMonthly").textContent = `Nómina: ${fmtCurrency(live.hr?.monthly_total_payroll ?? brk.monthly_payroll_total ?? 0)}/mes`;
+          document.getElementById("opsLiveFixed").textContent = fmtCurrency(unified.monthly_fixed_costs ?? brk.monthly_fixed_costs_total ?? 0);
+          document.getElementById("opsLiveVarCost").textContent = "$" + Number(unified.unit_variable_cost ?? brk.catalog_avg_unit_cost ?? 0).toFixed(2);
+          document.getElementById("opsLiveCapex").textContent = fmtCurrency(live.assets?.active_capex_total ?? live.active_capex_total ?? brk.total_assets_value ?? 0);
         }
       } catch (e) {
         console.warn("Error loading live/baseline metrics:", e);

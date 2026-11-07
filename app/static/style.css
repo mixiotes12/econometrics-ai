@@ -83,7 +83,7 @@ code, pre, .font-mono {
   border-color: rgba(197, 160, 89, 0.4) !important;
 }
 
-/* Print Styling for PDF Export */
+/* Print Styling for Complete Project PDF Export */
 @media print {
   body {
     background-color: #ffffff !important;
@@ -92,18 +92,59 @@ code, pre, .font-mono {
   .no-print {
     display: none !important;
   }
+  /* Mostrar TODAS las pestañas del proyecto al imprimir el PDF */
+  main {
+    display: flex !important;
+    flex-direction: column !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+  #tab1, #tab2, #tab3, #tab4, #tab5, #tab6 {
+    display: block !important;
+    margin-bottom: 1.75rem !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  #tab1 { order: 1; }
+  #tab2 { order: 2; }
+  #tab3 { order: 3; }
+  #tab4 { order: 4; }
+  #tab5 { order: 5; }
+  #tab6 { order: 6; }
+
+  /* Expandir todos los paneles desplegables en el PDF */
+  details.advanced-panel {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+  }
+  details.advanced-panel > .advanced-body {
+    display: block !important;
+  }
   .glass-panel {
     background: #ffffff !important;
-    border: 1px solid #e2e8f0 !important;
+    border: 1px solid #cbd5e1 !important;
     color: #0f172a !important;
     box-shadow: none !important;
+    break-inside: avoid;
   }
-  .text-slate-400, .text-slate-300, .text-slate-200 {
-    color: #475569 !important;
+  .text-white, .text-zinc-100, .text-zinc-200 {
+    color: #0f172a !important;
   }
-  .bg-slate-900, .bg-slate-800, .bg-slate-800\/50, .bg-slate-950 {
+  .text-slate-400, .text-slate-300, .text-slate-200,
+  .text-zinc-300, .text-zinc-400, .text-zinc-500 {
+    color: #334155 !important;
+  }
+  .bg-slate-900, .bg-slate-800, .bg-slate-800\/50, .bg-slate-950,
+  .bg-zinc-900, .bg-zinc-900\/80, .bg-zinc-900\/70, .bg-zinc-900\/60,
+  .bg-zinc-950, .bg-zinc-950\/60, .bg-zinc-800 {
     background-color: #f8fafc !important;
     border-color: #cbd5e1 !important;
+    color: #0f172a !important;
+  }
+  input, select, textarea {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border: 1px solid #94a3b8 !important;
   }
   .print-break-inside-avoid {
     break-inside: avoid;
@@ -111,6 +152,7 @@ code, pre, .font-mono {
   }
   .chart-container {
     max-height: 280px !important;
+    break-inside: avoid;
   }
 }
 

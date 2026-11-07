@@ -243,11 +243,17 @@ for _tmpl in TEMPLATES:
 def get_templates():
     return TEMPLATES
 
+def _get_valid_server_api_key() -> str:
+    val = (os.getenv("GEMINI_API_KEY") or "").strip()
+    if val in ("", "tu_api_key_aqui", "tu_api_key_de_google_aistudio_aqui"):
+        return ""
+    return val
+
 @app.get("/api/config")
 def get_config():
     return {
-        "has_server_api_key": bool(os.getenv("GEMINI_API_KEY")),
-        "default_model": "gemini-3.8-flash"
+        "has_server_api_key": bool(_get_valid_server_api_key()),
+        "default_model": "gemini-2.5-flash"
     }
 
 @app.post("/api/calc-financials", response_model=FinancialReport)
@@ -268,7 +274,7 @@ async def perform_full_analysis(
     x_gemini_api_key: str = Header(None)
 ):
     """
-    Ejecuta el análisis financiero cuantitativo y genera el dictamen estratégico con Gemini 3.7 / 2.5 Flash.
+    Ejecuta el análisis financiero cuantitativo y genera el dictamen estratégico con Gemini 2.5 Flash.
     """
     try:
         # 1. Run rigorous mathematical financial calculation
@@ -276,16 +282,16 @@ async def perform_full_analysis(
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error al calcular las métricas financieras: {str(e)}")
 
-    api_key_to_use = req.custom_api_key or x_gemini_api_key or os.getenv("GEMINI_API_KEY")
+    api_key_to_use = (req.custom_api_key or x_gemini_api_key or _get_valid_server_api_key()).strip()
     if not api_key_to_use:
         raise HTTPException(
             status_code=400,
-            detail="Falta la API Key de Gemini. Por favor proporciónala en la casilla superior de la aplicación."
+            detail="Falta la API Key de Gemini. Por favor proporciónala en el botón 'API Key Gemini' de la barra superior."
         )
 
     # 2. Call Gemini
     try:
-        model_name = req.gemini_model or "gemini-3.8-flash"
+        model_name = req.gemini_model or "gemini-2.5-flash"
         advice, raw_text = await generate_gemini_analysis(
             business=req.business,
             financials=req.financials,
@@ -309,7 +315,7 @@ from .engineering_service import generate_equipment_budgets, generate_production
 @app.post("/api/generate-budgets", response_model=BudgetsResponse)
 async def api_generate_budgets(req: EquipmentRequest, x_gemini_api_key: str = Header(None)):
     try:
-        api_key_to_use = req.custom_api_key or x_gemini_api_key or os.getenv("GEMINI_API_KEY")
+        api_key_to_use = (req.custom_api_key or x_gemini_api_key or _get_valid_server_api_key()).strip()
         req.custom_api_key = api_key_to_use
         response = await generate_equipment_budgets(req)
         return response
@@ -319,7 +325,7 @@ async def api_generate_budgets(req: EquipmentRequest, x_gemini_api_key: str = He
 @app.post("/api/generate-flowchart", response_model=FlowchartResponse)
 async def api_generate_flowchart(req: ProcessRequest, x_gemini_api_key: str = Header(None)):
     try:
-        api_key_to_use = req.custom_api_key or x_gemini_api_key or os.getenv("GEMINI_API_KEY")
+        api_key_to_use = (req.custom_api_key or x_gemini_api_key or _get_valid_server_api_key()).strip()
         req.custom_api_key = api_key_to_use
         response = await generate_production_flowchart(req)
         return response
@@ -340,6 +346,15 @@ app.include_router(hr_router)
 # Módulo de Geolocalización y Sugerencias de Adquisición (Fase 4)
 from .geo_service import router as geo_router
 app.include_router(geo_router)
+
+# Módulo de Operaciones / ERP del Dueño (/api/ops) y Autenticación Unificada (/api/auth)
+from .ops import router as ops_router, init_ops_db
+init_ops_db()
+app.include_router(ops_router)
+
+from .auth import router as auth_router, init_auth_db
+init_auth_db()
+app.include_router(auth_router)
 
 # Static files for the frontend
 static_dir = os.path.join(os.path.dirname(__file__), "static")
