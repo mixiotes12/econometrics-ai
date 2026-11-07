@@ -86,6 +86,30 @@ DEFAULT_BASELINE_FINANCIALS = {
 def init_ops_db() -> None:
     init_pos_db()
     with db() as conn:
+        # Migrar ops_baseline si tiene restricción legacy CHECK (id = 1)
+        b_sql_row = conn.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='ops_baseline'").fetchone()
+        if b_sql_row and b_sql_row["sql"] and "CHECK" in str(b_sql_row["sql"]).upper():
+            conn.execute("DROP TABLE IF EXISTS ops_baseline_migrated")
+            conn.execute("""
+                CREATE TABLE ops_baseline_migrated (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    business_id INTEGER NOT NULL DEFAULT 1,
+                    project_name TEXT NOT NULL,
+                    business_type TEXT NOT NULL,
+                    financials_json TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                )
+            """)
+            existing_cols = {r["name"] for r in conn.execute("PRAGMA table_info(ops_baseline)")}
+            biz_expr = "COALESCE(business_id, 1)" if "business_id" in existing_cols else "1"
+            conn.execute(f"""
+                INSERT INTO ops_baseline_migrated (id, business_id, project_name, business_type, financials_json, updated_at)
+                SELECT id, {biz_expr}, project_name, business_type, financials_json, updated_at FROM ops_baseline
+            """)
+            conn.execute("DROP TABLE ops_baseline")
+            conn.execute("ALTER TABLE ops_baseline_migrated RENAME TO ops_baseline")
+            conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_ops_baseline_biz ON ops_baseline(business_id)")
+
         conn.executescript(OPS_SCHEMA)
         # Migrar columnas en ops_baseline si no existen
         b_cols = {r["name"] for r in conn.execute("PRAGMA table_info(ops_baseline)")}
