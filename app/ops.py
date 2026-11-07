@@ -397,6 +397,7 @@ class BaselineIn(BaseModel):
     project_key: Optional[str] = None
     project_name: str = "Mi Negocio"
     business_type: str = "Comercio / Servicios"
+    business: Optional[Dict[str, Any]] = None
     business_id: Optional[int] = None
     branch_id: Optional[int] = None
     financials: Dict[str, Any]
@@ -404,6 +405,8 @@ class BaselineIn(BaseModel):
     assets: Optional[List[Dict[str, Any]]] = None
     engineering: Optional[Dict[str, Any]] = None
     catalog: Optional[List[Dict[str, Any]]] = None
+    products: Optional[List[Dict[str, Any]]] = None
+    staff: Optional[List[Dict[str, Any]]] = None
 
 
 class RecalcIn(BaseModel):
@@ -506,8 +509,15 @@ def save_ops_baseline(req: BaselineIn):
             if biz_row:
                 biz_id = biz_row["id"]
 
-        pname = req.project_name.strip() or "Mi Proyecto"
-        btype = req.business_type.strip() or "Comercio / Servicios"
+        pname = req.project_name
+        btype = req.business_type
+        if req.business and isinstance(req.business, dict):
+            if req.business.get("name"):
+                pname = str(req.business["name"]).strip()
+            if req.business.get("business_type"):
+                btype = str(req.business["business_type"]).strip()
+        pname = pname.strip() if pname else "Mi Proyecto"
+        btype = btype.strip() if btype else "Comercio / Servicios"
 
         if not pkey:
             pkey = generate_project_key(conn, pname)
@@ -583,8 +593,9 @@ def save_ops_baseline(req: BaselineIn):
             )
 
         # 5. Si viene Catálogo Multiproducto desde Studio, aprovisionarlo en la tabla `products` de esta sucursal
-        if req.catalog:
-            for item in req.catalog:
+        catalog_list = req.catalog or req.products or []
+        if catalog_list:
+            for item in catalog_list:
                 sku = str(item.get("sku") or "").strip() or None
                 name = str(item.get("name") or "Producto").strip()
                 price = float(item.get("price") or 0.0)
@@ -611,31 +622,55 @@ def save_ops_baseline(req: BaselineIn):
                     )
                     pid = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
                     log_movement(conn, pid, "entrada", initial_stock, cost, "Aprovisionamiento inicial de Studio", "STUDIO_SYNC", 1, biz_id, br_id)
+        elif conn.execute("SELECT COUNT(*) FROM products WHERE business_id=? AND branch_id=?", (biz_id, br_id)).fetchone()[0] == 0:
+            # Producto base si aún no hay inventario
+            conn.execute(
+                """INSERT INTO products (sku, name, price, cost, stock, track_stock, active, category, business_id, branch_id)
+                   VALUES (?, ?, ?, ?, 100.0, 1, 1, 'General', ?, ?)""",
+                (f"PRD-{biz_id}-001", f"Servicio / Producto Principal ({pname})", clean_fin.get("monthly_price", 100.0), clean_fin.get("unit_variable_cost", 30.0), biz_id, br_id),
+            )
+            pid = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+            log_movement(conn, pid, "entrada", 100.0, clean_fin.get("unit_variable_cost", 30.0), "Aprovisionamiento inicial de Studio", "STUDIO_SYNC", 1, biz_id, br_id)
 
-        # 6. Si vienen Empleados Planeados desde Studio, aprovisionarlos con sus códigos y PIN 1234
-        if req.engineering and "staff" in req.engineering and isinstance(req.engineering["staff"], list):
-            for st in req.engineering["staff"]:
-                role_cand = str(st.get("role") or "cajero").lower()
-                role_key = "cajero"
-                if "gerent" in role_cand or "admin" in role_cand:
-                    role_key = "gerente"
-                elif "almac" in role_cand or "logist" in role_cand or "inven" in role_cand:
-                    role_key = "almacenista"
-                elif "rrhh" in role_cand or "recurs" in role_cand or "personal" in role_cand:
-                    role_key = "rrhh"
-                elif "cont" in role_cand or "finan" in role_cand:
-                    role_key = "contador"
+        # 6. Si vienen Empleados Planeados desde Studio, aprovisionarlos con sus códigos estructurados y PIN 1234
+        staff_items = []
+        if req.engineering and isinstance(req.engineering, dict) and isinstance(req.engineering.get("staff"), list):
+            staff_items.extend(req.engineering["staff"])
+        if req.staff and isinstance(req.staff, list):
+            staff_items.extend(req.staff)
 
-                sync_employee_and_cashier(
-                    conn,
-                    name=str(st.get("name") or "Colaborador"),
-                    role=role_key,
-                    business_id=biz_id,
-                    branch_id=br_id,
-                    pin="1234",
-                    position=str(st.get("position") or st.get("name") or "Colaborador"),
-                    monthly_salary=float(st.get("salary") or st.get("monthly_salary") or 10000.0),
-                )
+        # Si el negocio aún no tiene empleados en esta sucursal, aprovisionar plantilla esencial
+        existing_emp_count = conn.execute("SELECT COUNT(*) FROM employees WHERE business_id=?", (biz_id,)).fetchone()[0]
+        if existing_emp_count == 0 and not staff_items:
+            staff_items = [
+                {"name": "Cajero Principal", "role": "cajero", "position": "Cajero / Operaciones", "monthly_salary": 12000.0},
+                {"name": "Encargado de Almacén", "role": "almacenista", "position": "Encargado de Inventario y Logística", "monthly_salary": 14000.0},
+                {"name": "Coordinador de RRHH", "role": "rrhh", "position": "Gestión de Personal y Nómina", "monthly_salary": 16000.0},
+                {"name": "Gerente de Sucursal", "role": "gerente", "position": "Gerente General de Sucursal", "monthly_salary": 22000.0},
+            ]
+
+        for st in staff_items:
+            role_cand = str(st.get("role") or "cajero").lower()
+            role_key = "cajero"
+            if "gerent" in role_cand or "admin" in role_cand:
+                role_key = "gerente"
+            elif "almac" in role_cand or "logist" in role_cand or "inven" in role_cand:
+                role_key = "almacenista"
+            elif "rrhh" in role_cand or "recurs" in role_cand or "personal" in role_cand:
+                role_key = "rrhh"
+            elif "cont" in role_cand or "finan" in role_cand:
+                role_key = "contador"
+
+            sync_employee_and_cashier(
+                conn,
+                name=str(st.get("name") or "Colaborador"),
+                role=role_key,
+                business_id=biz_id,
+                branch_id=br_id,
+                pin="1234",
+                position=str(st.get("position") or st.get("name") or "Colaborador"),
+                monthly_salary=float(st.get("salary") or st.get("monthly_salary") or 10000.0),
+            )
 
     return {
         "ok": True,
